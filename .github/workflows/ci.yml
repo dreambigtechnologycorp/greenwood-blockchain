@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source:
+    name: Source policy and packaging
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Check publishable source
+        run: python3 scripts/check-public-source.py
+      - name: Run existing source packaging tests
+        run: python3 -m unittest discover -s tests/Release -v
+      - name: Verify independent protocol vectors
+        run: |
+          python3 tests/Fixtures/verify_vectors.py
+          python3 tests/Fixtures/verify_contract_vectors.py
+          python3 tests/Fixtures/verify_compute_vectors.py
+          python3 tests/Fixtures/verify_provider_content_vectors.py
+
+  php-unit:
+    name: PHP unit checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Set up PHP
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
+        with:
+          php-version: '8.5.12'
+          extensions: sodium, pdo_sqlite, ffi, curl, pcntl, posix
+          ini-values: ffi.enable=true
+          coverage: none
+          tools: composer:v2
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Validate package metadata
+        run: composer validate --no-check-publish
+      - name: Run existing unit tests
+        run: php -d ffi.enable=true vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Unit

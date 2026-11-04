@@ -1,6 +1,7 @@
 ---
 # Example only. Supply a reviewed root-owned source release and current approved
 # allocation externally. No production inventory is modified by this file.
+# All IP addresses and the application subnet below are synthetic examples.
 all:
   children:
     application_providers:
