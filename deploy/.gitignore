@@ -1,0 +1,32 @@
+# Terraform state and local files
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfstate
+
+# Ansible
+ansible.log
+.inventory
+inventory/generated.ini
+*.retry
+
+# Generated files
+*.tmp
+*.temp
+*.bak
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Bootstrap runtime files (generated during deployment)
+/opt/greenwood/
+/var/lib/greenwood/
+/var/log/greenwood/
+/etc/greenwood/
+ansible/artifacts/

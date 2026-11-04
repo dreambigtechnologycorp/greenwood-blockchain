@@ -1,0 +1,11 @@
+# Managed by Ansible from an operator-verified assignment; no automatic allocation.
+<VirtualHost *:80>
+    ServerName {{ greenwood_ingress_hostname }}
+    ProxySourceAddress {{ greenwood_ingress_source }}
+    ProxyRequests Off
+    ProxyPreserveHost On
+    ProxyPass / http://{{ greenwood_ingress_backend }}:{{ greenwood_ingress_port }}/ connectiontimeout=5 timeout=30
+    ProxyPassReverse / http://{{ greenwood_ingress_backend }}:{{ greenwood_ingress_port }}/
+    ErrorLog ${APACHE_LOG_DIR}/greenwood-app-{{ greenwood_ingress_application_id }}-error.log
+    CustomLog ${APACHE_LOG_DIR}/greenwood-app-{{ greenwood_ingress_application_id }}-access.log combined
+</VirtualHost>

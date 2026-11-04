@@ -1,0 +1,21 @@
+---
+# Explicit post-bootstrap convergence. Never run the legacy gateway cleanup here.
+- name: Reconcile provider application hosting prerequisites
+  hosts: application_providers
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Integrate provider hosting
+      ansible.builtin.import_role:
+        name: provider
+        tasks_from: application_hosting
+
+- name: Reconcile operator-approved edge application route
+  hosts: application_edges
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Integrate approved application ingress
+      ansible.builtin.import_role:
+        name: gateway
+        tasks_from: application_ingress

@@ -1,0 +1,133 @@
+---
+# Common Greenwood Role Tasks
+# This role installs dependencies common to both validators and providers
+
+- name: Greenwood host profile (architecture, OS, resources)
+  ansible.builtin.include_tasks: host_profile.yml
+  when: greenwood_system is not defined
+
+- name: Verify node architecture (declared inventory value)
+  ansible.builtin.debug:
+    msg: "Architecture: {{ greenwood_architecture }}"
+
+- name: Verify OS version (lightweight profile)
+  ansible.builtin.debug:
+    msg: "OS: {{ greenwood_distribution }} {{ greenwood_distribution_version }}"
+
+- name: Verify hostname
+  ansible.builtin.debug:
+    msg: "Hostname: {{ inventory_hostname }}"
+
+# =============================================================================
+# PHP Runtime Installation
+# =============================================================================
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  changed_when: false
+
+- name: Install prerequisites for PHP PPA
+  ansible.builtin.apt:
+    name: "{{ Greenwood_COMMON_DEPENDENCIES }}"
+    state: present
+  changed_when: false
+
+- name: Install approved PHP security runtime
+  ansible.builtin.import_tasks: "{{ playbook_dir }}/../tasks/php_runtime.yml"
+
+- name: Verify PHP version
+  ansible.builtin.command: php --version
+  register: php_version
+  changed_when: false
+
+- name: Display PHP version
+  ansible.builtin.debug:
+    msg: "PHP version: {{ php_version.stdout_lines[0] | default('unknown') }}"
+
+# =============================================================================
+# Wasmtime Installation
+# =============================================================================
+
+- name: Create Wasmtime destination before extracting on a blank host
+  ansible.builtin.file:
+    path: "{{ Greenwood_BASE_DIR }}/wasmtime-{{ Greenwood_WASMTIME_VERSION }}/lib"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Download Wasmtime 48.0.1 for aarch64-linux (C API library)
+  ansible.builtin.shell: |
+    curl -fSL --retry 3 --retry-delay 5 -o "/tmp/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api.tar.xz" \
+      "https://github.com/bytecodealliance/wasmtime/releases/download/v{{ Greenwood_WASMTIME_VERSION }}/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api.tar.xz"
+  args:
+    creates: "/tmp/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api.tar.xz"
+
+- name: Verify Wasmtime artifact checksum
+  ansible.builtin.shell: |
+    sha256sum "/tmp/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api.tar.xz" | awk '{print $1}'
+  register: wasmtime_checksum_raw
+  changed_when: false
+  failed_when: false
+
+- name: Verify Wasmtime checksum matches expected
+  ansible.builtin.assert:
+    that:
+      - wasmtime_checksum_raw.stdout | default('') == wasmtime_aarch64_linux_c_api_sha256
+    fail_msg: "Wasmtime SHA256 mismatch. Download may be incomplete."
+    success_msg: "Wasmtime SHA256 verified successfully."
+  changed_when: false
+
+- name: Display Wasmtime checksum verification
+  ansible.builtin.debug:
+    msg: "Wasmtime SHA256: {{ wasmtime_checksum_raw.stdout | default('unknown') }} (expected: {{ wasmtime_aarch64_linux_c_api_sha256 }})"
+
+- name: Extract Wasmtime archive
+  ansible.builtin.unarchive:
+    src: "/tmp/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api.tar.xz"
+    dest: "{{ Greenwood_BASE_DIR }}"
+    remote_src: true
+    creates: "{{ Greenwood_BASE_DIR }}/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api/lib/libwasmtime.so"
+
+- name: Copy Wasmtime library to expected location
+  ansible.builtin.copy:
+    src: "{{ Greenwood_BASE_DIR }}/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api/lib/libwasmtime.so"
+    dest: "{{ Greenwood_BASE_DIR }}/wasmtime-{{ Greenwood_WASMTIME_VERSION }}/lib/libwasmtime.so"
+    remote_src: true
+    mode: '0755'
+    force: yes
+
+- name: Verify Wasmtime library exists
+  ansible.builtin.stat:
+    path: "{{ Greenwood_WASMTIME_LIB_PATH }}"
+  register: wasmtime_lib
+  failed_when: not wasmtime_lib.stat.exists
+
+- name: Display Wasmtime library status
+  ansible.builtin.debug:
+    msg: "Wasmtime library present: {{ wasmtime_lib.stat.exists | default(false) | string }}"
+# Runtime Directories
+# =============================================================================
+
+- name: Create runtime directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ Greenwood_RUNTIME_DIRS }}"
+
+# =============================================================================
+# Systemd Configuration
+# =============================================================================
+
+- name: Create systemd unit directory
+  ansible.builtin.file:
+    path: "{{ Greenwood_SYSTEMD_DIR }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'

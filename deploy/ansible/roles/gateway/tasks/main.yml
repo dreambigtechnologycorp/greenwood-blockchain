@@ -1,0 +1,21 @@
+---
+# Normal convergence is non-destructive. Network changes require a separate plan.
+- name: Require inventory-supplied gateway addresses
+  ansible.builtin.assert:
+    that:
+      - greenwood_gateway_required_addresses is defined
+      - greenwood_gateway_required_addresses | length > 0
+
+- name: Inspect existing gateway addresses
+  ansible.builtin.command:
+    argv: [ip, -json, address, show]
+  register: gateway_addresses
+  changed_when: false
+  check_mode: false
+
+- name: Verify required addresses without altering routing
+  ansible.builtin.assert:
+    that:
+      - item in (gateway_addresses.stdout | from_json | map(attribute='addr_info') | flatten | map(attribute='local') | list)
+    fail_msg: Required gateway address is absent; provision network access separately
+  loop: "{{ greenwood_gateway_required_addresses }}"

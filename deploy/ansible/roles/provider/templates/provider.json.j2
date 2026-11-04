@@ -1,0 +1,19 @@
+{
+  "chainId": "{{ provider_chain_id | default('greenwood-physical-v1') }}",
+  "rpcEndpoint": "http://127.0.0.1:9201",
+  "keyFile": "/etc/greenwood/provider.key",
+  "dataPath": "{{ provider_data_dir }}",
+  "workerUid": {{ worker_uid }},
+  "workerGid": {{ worker_gid }},
+  "containerdSocket": "/run/containerd/containerd.sock",
+  "snapshotter": "{% if greenwood_os_family == 'Debian' %}{{ containerd_snapshotter }}{% else %}erofs{% endif %}",
+  "trustClasses": [0],
+  "maxConcurrent": {{ [3, (greenwood_processor_vcpus | int)] | min }},
+  "maxCpuMillis": {{ (greenwood_processor_vcpus | int * 1000 * (0.60 if inventory_hostname == 'node-1' else 0.65)) | round | int }},
+  "maxMemoryBytes": {{ (greenwood_memtotal_mb | int * 1024 * 1024 * (0.60 if inventory_hostname == 'node-1' else 0.65)) | round | int }},
+  "maxPids": 256,
+  "maxTimeoutMs": 3600000,
+  "maxOutputBytes": 1048576,
+  "controlTimeoutMs": 120000,
+  "pollIntervalMs": 1000
+}

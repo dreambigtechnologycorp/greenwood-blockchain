@@ -1,0 +1,88 @@
+# OS/editor
+.DS_Store
+._*
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Composer
+/vendor
+composer.phar
+
+# Build output
+/build/
+/dist/
+
+# Greenwood runtime state
+/storage/
+
+# Local acceptance, verification, audit scripts and evidence (never source)
+/docs/acceptance/
+/docs/acceptance-4def/
+__pycache__/
+*.py[cod]
+/writable/
+
+# Runtime databases
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
+
+# Runtime keys/secrets
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Logs/process/temp
+*.log
+*.pid
+*.tmp
+/tmp/
+/coverage/
+/test-results/
+
+# Terraform runtime state
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Backup/editor artifacts
+*.bak
+*.bak*
+*.orig
+*.pre-*
+
+# Wasmtime runtime distributions (platform-specific)
+runtime/wasmtime/
+
+# Nested containerd git repository (not tracked)
+
+# Generated Ansible inventory (machine-specific)
+deploy/ansible/inventory/generated.ini
+deploy/ansible/inventory/hosts
+
+# Local deployment inputs and test caches
+/deploy/ansible/inventory/controller.ini
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+.phpunit.cache/
+.phpunit.result.cache
+/local-genesis/
+/local-data/
+
+# Keep OS metadata excluded even when an example filename is allowed above.
+._*

@@ -1,0 +1,63 @@
+---
+# Lightweight Greenwood host profile (replaces Ansible setup/fact gathering).
+#
+# Collects exactly the metadata the canonical deployment pipeline needs:
+#   system kernel name
+#   declared architecture (uname fallback)
+#   OS distribution ID, version, codename (release)
+#   processor count
+#   total memory
+#
+# These are collected using command modules that work when Ansible's setup
+# module hangs (observed on NFS-rooted nodes). Facts are set as
+# greenwood_* variables, used in apt repo configuration, resource capacity
+# computation, and platform assertions.
+
+- name: Host profile | system (uname -s)
+  ansible.builtin.command: uname -s
+  register: greenwood_system_cmd
+  timeout: 15
+  changed_when: false
+
+- name: Host profile | architecture (uname fallback)
+  ansible.builtin.command: uname -m
+  when: architecture | default('') | length == 0
+  register: greenwood_arch_cmd
+  timeout: 15
+  changed_when: false
+
+- name: Host profile | operating system (/etc/os-release)
+  ansible.builtin.shell: |
+    set -eu
+    . /etc/os-release
+    printf '%s|%s|%s' "$ID" "$VERSION_ID" "$VERSION_CODENAME"
+  args:
+    executable: /bin/bash
+  register: greenwood_os_cmd
+  timeout: 15
+  changed_when: false
+
+- name: Host profile | processor count
+  ansible.builtin.command: nproc
+  register: greenwood_vcpus_cmd
+  timeout: 15
+  changed_when: false
+
+- name: Host profile | total memory (MiB)
+  ansible.builtin.shell: free -m | awk '/^Mem:/ {print $2}'
+  args:
+    executable: /bin/bash
+  register: greenwood_mem_cmd
+  timeout: 15
+  changed_when: false
+
+- name: Set Greenwood host facts
+  ansible.builtin.set_fact:
+    greenwood_system: "{{ greenwood_system_cmd.stdout }}"
+    greenwood_architecture: "{{ architecture | default(greenwood_arch_cmd.stdout | default(''), true) }}"
+    greenwood_distribution: "{{ greenwood_os_cmd.stdout.split('|')[0] | trim }}"
+    greenwood_distribution_version: "{{ greenwood_os_cmd.stdout.split('|')[1] | trim }}"
+    greenwood_distribution_release: "{{ greenwood_os_cmd.stdout.split('|')[2] | trim }}"
+    greenwood_processor_vcpus: "{{ greenwood_vcpus_cmd.stdout | int }}"
+    greenwood_memtotal_mb: "{{ greenwood_mem_cmd.stdout | int }}"
+    greenwood_os_family: "{{ 'Debian' if greenwood_os_cmd.stdout.split('|')[0] | trim in ['ubuntu', 'debian'] else 'Unknown' }}"

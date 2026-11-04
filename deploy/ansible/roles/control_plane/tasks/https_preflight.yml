@@ -1,0 +1,10 @@
+---
+- name: Reject unsafe HTTPS inventory
+  ansible.builtin.assert:
+    that:
+      - greenwood_https_frontends | greenwood_https_valid
+
+- name: Reject unsafe policy SFTP inventory before provisioning
+  ansible.builtin.assert:
+    that:
+      - greenwood_policy_sftp | greenwood_policy_sftp_valid(greenwood_policy_mode, greenwood_policy_environment)

@@ -1,0 +1,8 @@
+containerd runtime version: 2.2.2
+upstream tag: v2.2.2
+upstream commit SHA: 301b2dac98f15c27117da5c8af12118a041a31d9
+grpc version: 1.84.0RC1 (ext-grpc)
+grpc/grpc: 1.82.0 (Composer)
+protoc version: 3.21.12
+protobuf version: 5.36.1
+generation date: 2026-09-11

@@ -1,0 +1,6 @@
+*.wasm
+*.wat
+node_modules/
+__pycache__/
+*.pyc
+local-state/

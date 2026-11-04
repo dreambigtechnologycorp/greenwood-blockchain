@@ -1,0 +1,93 @@
+---
+# One-shot initial installation on already booted Ubuntu ARM64 hosts with SSH.
+# No existing chain may be overwritten. All hosts preflight before mutations.
+- name: Preflight the complete fresh cluster
+  hosts: "validators:control_plane"
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/fresh_preflight.yml
+
+- name: Provision approved gateway network
+  hosts: gateway
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/fresh_network.yml
+
+# This precedes the build controller: its PHP packages need the approved repo.
+- ansible.builtin.import_playbook: bootstrap_greenwood.yml
+- ansible.builtin.import_playbook: deploy_greenwood.yml
+
+- name: Provision and validate all protocol identities before starting any node
+  hosts: validators
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/fresh_identity.yml
+
+- name: Start the approved validator set
+  hosts: validators
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Enable and start validators after the all-node identity gate
+      ansible.builtin.systemd_service:
+        name: greenwoodd
+        daemon_reload: true
+        enabled: true
+        state: started
+    - name: Wait for chain-specific RPC readiness
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9201/v1/chain/status
+        return_content: true
+      register: fresh_rpc
+      until: fresh_rpc.status == 200 and fresh_rpc.json.chain_id == provider_chain_id and fresh_rpc.json.finalized_height | int > 0
+      retries: 60
+      delay: 5
+    - name: Enable and start providers
+      ansible.builtin.systemd_service:
+        name: greenwood-provider
+        enabled: true
+        state: started
+
+- name: Install runtime release on the non-validator edge
+  hosts: application_edges
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  vars_files:
+    - ../roles/common/defaults/main.yml
+  vars:
+    greenwood_release_artifact: "{{ hostvars[groups['controller'][0]].greenwood_release_artifact }}"
+    greenwood_release_sha256: "{{ hostvars[groups['controller'][0]].greenwood_release_sha256 }}"
+    greenwood_release_tree_digest: "{{ hostvars[groups['controller'][0]].greenwood_release_tree_digest }}"
+    greenwood_release_entrypoints: [system-services/deployment-controller/autoload.php, vendor/autoload.php]
+    greenwood_preserved_runtime_entries: ["wasmtime-48.0.1", "wasmtime-v48.0.1-aarch64-linux-c-api"]
+    greenwood_staging_dir: /opt/greenwood-release-staging
+    greenwood_staged_artifact: /tmp/greenwood-release.tar.gz
+  tasks:
+    - ansible.builtin.import_tasks: ../roles/common/tasks/converge_release_tree.yml
+    - ansible.builtin.import_tasks: ../tasks/fresh_edge.yml
+
+- name: Install application hosting without publishing an application route
+  hosts: application_providers
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: provider
+        tasks_from: application_hosting
+    - ansible.builtin.import_tasks: ../tasks/application_recovery.yml
+    - name: Adopt the validated provider hosting configuration
+      ansible.builtin.systemd_service:
+        name: greenwood-provider
+        state: restarted
+
+- ansible.builtin.import_playbook: control_plane.yml
+- ansible.builtin.import_playbook: activate_hosting.yml

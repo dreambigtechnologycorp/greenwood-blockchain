@@ -1,0 +1,30 @@
+ServerRoot /etc/apache2
+PidFile /run/greenwood-{{ item.name }}-https/httpd.pid
+DefaultRuntimeDir /run/greenwood-{{ item.name }}-https
+Listen {{ item.address }}:{{ item.port }}
+ServerName {{ item.tls_name }}
+{% for module in ['mpm_event','authz_core','ssl','socache_shmcb','proxy','proxy_http','reqtimeout'] %}
+LoadModule {{ module }}_module /usr/lib/apache2/modules/mod_{{ module }}.so
+{% endfor %}
+User www-data
+Group www-data
+ServerTokens Prod
+ServerSignature Off
+TraceEnable Off
+# Do not persist signed query strings or registry credentials in request logs.
+ErrorLog /dev/null
+RequestReadTimeout header=10-20,MinRate=500 body=10,MinRate=500
+LimitRequestBody {{ item.request_limit }}
+SSLSessionCache shmcb:/run/greenwood-{{ item.name }}-https/sslcache(512000)
+<VirtualHost {{ item.address }}:{{ item.port }}>
+    SSLEngine on
+    SSLProtocol -all +TLSv1.2 +TLSv1.3
+    SSLCertificateFile {{ item.certificate }}
+    SSLCertificateKeyFile {{ item.private_key }}
+    ProxyRequests Off
+    ProxyPass / {{ item.backend }}/ connectiontimeout=3 timeout=300
+    ProxyPassReverse / {{ item.backend }}/
+    <Location />
+        Require all granted
+    </Location>
+</VirtualHost>

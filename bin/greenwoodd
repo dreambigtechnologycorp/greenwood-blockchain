@@ -1,0 +1,128 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+require __DIR__.'/../vendor/autoload.php';
+use Greenwood\Node\ChainConfig;
+use Greenwood\Node\{Chain,Configuration};
+use Greenwood\Persistence\{BlockFilesystem,StateSqlite};
+use Greenwood\Consensus\Messages\Certificate;
+use Greenwood\Consensus\Journal\SafetyJournal;
+use Greenwood\Consensus\Runtime\ConsensusDriver;
+use Greenwood\Crypto\Ed25519KeyPair;
+use Greenwood\Block\Block;
+try {
+    $options=getopt('', ['genesis:','config:','data-dir:','node:','key:','validator-key:','endpoint:','replay','operator-socket:','operator-token-file:']);
+    $genesisPath=$options['genesis']??throw new InvalidArgumentException('--genesis required');
+    $dir=$options['data-dir']??throw new InvalidArgumentException('--data-dir required');
+    if (!is_dir($dir)) mkdir($dir,0700,true);
+    $lease=fopen($dir.'/node.lock','c');
+    if (!$lease || !flock($lease,LOCK_EX|LOCK_NB)) throw new RuntimeException('Data directory already in use');
+    [$g,$peers]=Configuration::load($genesisPath); $validators=$g->getValidators();
+    $verify=static function(Block $b,?string $cert) use ($g,$validators): void {
+        if ($cert===null) throw new RuntimeException('Missing finality certificate');
+        $round=Certificate::decode($cert)->verify($validators,$g->getChainId(),$g->getGenesisHash(),'precommit',$b->getHeight(),$b->getHash());
+        if ($round<$b->getHeader()->getRound()) throw new InvalidArgumentException('Certificate predates block round');
+    };
+    
+    // Authorization check: if validator mode is requested, validate the key
+    $journal=null;
+    $validatorKeyId=$options['node']??null;
+    $validatorKeyPath=$options['validator-key']??$options['key']??null;
+    $isValidatorMode=false;
+    
+    if ($validatorKeyId !== null && $validatorKeyPath !== null) {
+        $isValidatorMode=true;
+        
+        // Load the validator's private key
+        $key=Ed25519KeyPair::fromBytes(file_get_contents($validatorKeyPath));
+        $derivedPublicKey=$key->getPublicKey();
+        
+        // Verify the validator ID exists in canonical validator set
+        if (!isset($validators[$validatorKeyId])) {
+            throw new InvalidArgumentException(
+                'Validator authorization failed: validator ID "' . $validatorKeyId . 
+                '" is not in the canonical validator set for this network. ' .
+                'You may be trying to join the wrong network, or this validator ID is not authorized.'
+            );
+        }
+        
+        // Verify the public key from the private key matches the authorized key for this validator ID
+        $authorizedPublicKey=$validators[$validatorKeyId]['publicKey'];
+        if ($derivedPublicKey!==$authorizedPublicKey) {
+            throw new InvalidArgumentException(
+                'Validator authorization failed: the private key provided does not match ' .
+                'the canonical validator key for ID "' . $validatorKeyId . '". ' .
+                'Expected: ' . bin2hex($authorizedPublicKey) . ', Got: ' . bin2hex($derivedPublicKey)
+            );
+        }
+        
+        // Verify key integrity
+        if (strlen($key->getPrivateKey())!==64 || 
+            sodium_crypto_sign_publickey_from_secretkey($key->getPrivateKey())!==$derivedPublicKey) {
+            throw new InvalidArgumentException('Invalid validator key structure');
+        }
+        
+        // Refuse to recreate missing safety state for an already initialized validator
+        if (is_file($dir.'/validator.initialized') && !is_file($dir.'/signing.sqlite')) {
+            throw new RuntimeException('Missing safety journal');
+        }
+        
+        // Initialize safety journal
+        $journal=new SafetyJournal($dir.'/signing.sqlite',$key,$g->getGenesisHash(),$validatorKeyId);
+        \Greenwood\Persistence\AtomicFile::write($dir.'/validator.initialized',$g->getGenesisHash());
+    } elseif ($validatorKeyId !== null && $validatorKeyPath === null) {
+        throw new InvalidArgumentException(
+            'Validator mode requires cryptographic identity. ' .
+            'Use --validator-key=/path/to/validator.key to provide validator credentials. ' .
+            'If you only want to run as a full node/observer, omit --node.'
+        );
+    }
+    
+    // Initialize chain
+    $chain=new Chain($g,new BlockFilesystem($dir.'/blocks'),new StateSqlite($dir.'/state.sqlite'),$verify);
+
+    // Authoritative V1 chain configuration (consensus cadence + economics).
+    // Default path owned by the deployment: /etc/greenwood/chain.json
+    $configPath=$options['config']??'/etc/greenwood/chain.json';
+    $config=is_file($configPath) ? ChainConfig::load($configPath) : ChainConfig::defaults();
+    
+    // Replay mode (no authorization check needed - read-only)
+    if (isset($options['replay'])) { 
+        echo json_encode(['height'=>$chain->tip->getHeight(),'hash'=>bin2hex($chain->tip->getHash()),'root'=>bin2hex($chain->state->getStateRoot())],JSON_THROW_ON_ERROR)."\n"; 
+        exit(0); 
+    }
+    
+    // Determine endpoint
+    $id=$validatorKeyId ?? 'fullnode';
+    $endpoint=$options['endpoint']??($validatorKeyId ? ($peers[$validatorKeyId]??throw new InvalidArgumentException('--endpoint required for validator')) : ($peers[$id]??'http://127.0.0.1:9201'));
+    
+    // Initialize consensus driver
+    $driver=new ConsensusDriver($chain,$id,$peers,$journal,$endpoint,$config);
+    
+    // Operator API (optional, for local management)
+    if (isset($options['operator-socket'])) {
+        $tokenPath=$options['operator-token-file']??throw new InvalidArgumentException('--operator-token-file required with --operator-socket');
+        $operator=new \Greenwood\Rpc\OperatorApi(
+            \Greenwood\Rpc\OperatorAuth::fromFile($tokenPath),
+            validatorStatus: fn(): array => $driver->operatorStatus(),
+            validatorConsensus: fn(): array => $driver->operatorConsensus(),
+        );
+        $driver->operatorTransport=new \Greenwood\Consensus\Network\Transport('unix://'.$options['operator-socket'],
+            fn($method,$path,$body,$headers=[])=>$operator->handle($method,$path,$body,$headers));
+    }
+    
+    // Startup complete
+    echo json_encode([
+        'event'=>'started',
+        'node'=>$id,
+        'mode'=>$isValidatorMode ? 'validator' : 'full_node',
+        'height'=>$chain->tip->getHeight(),
+        'chain_id'=>$g->getChainId(),
+        'validator_id'=>$isValidatorMode ? $validatorKeyId : null
+    ],JSON_THROW_ON_ERROR)."\n";
+    
+    // Main loop
+    $running=true;
+    if (function_exists('pcntl_async_signals')) { pcntl_async_signals(true); pcntl_signal(SIGTERM,function() use (&$running) { $running=false; }); pcntl_signal(SIGINT,function() use (&$running) { $running=false; }); }
+    while ($running) { $driver->tick(); usleep(5000); }
+} catch (Throwable $e) { fwrite(STDERR,get_class($e).': '.$e->getMessage()."\n"); exit(1); }

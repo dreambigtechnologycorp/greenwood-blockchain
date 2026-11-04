@@ -1,0 +1,134 @@
+---
+- name: Require approved network plan and safe interface names
+  ansible.builtin.assert:
+    that:
+      - greenwood_network_apply_approved | default(false) | bool
+      - greenwood_netplan_sha256 is match('^[a-f0-9]{64}$')
+      - greenwood_lan_interface is match('^[a-zA-Z0-9_-]+$')
+      - greenwood_wan_interface is match('^[a-zA-Z0-9_-]+$')
+      - greenwood_lan_interface != greenwood_wan_interface
+      - greenwood_lan_cidr is match('^[0-9.]+/[0-9]+$')
+      - greenwood_dnsmasq_sha256 is match('^[a-f0-9]{64}$')
+
+- name: Verify approved network file sources
+  ansible.builtin.stat:
+    path: "{{ item.src }}"
+    checksum_algorithm: sha256
+  delegate_to: localhost
+  become: false
+  loop:
+    - {src: "{{ greenwood_netplan_src }}", sha256: "{{ greenwood_netplan_sha256 }}"}
+    - {src: "{{ greenwood_dnsmasq_src }}", sha256: "{{ greenwood_dnsmasq_sha256 }}"}
+  register: network_sources
+
+- name: Reject changed network plans
+  ansible.builtin.assert:
+    that:
+      - item.stat.isreg | default(false)
+      - not (item.stat.islnk | default(true))
+      - item.stat.checksum == item.item.sha256
+  loop: "{{ network_sources.results }}"
+
+- name: Install gateway networking packages without automatic activation
+  ansible.builtin.apt:
+    name: [netplan.io, dnsmasq, nftables]
+    state: present
+    update_cache: true
+    policy_rc_d: 101
+
+- name: Install approved netplan and DNS DHCP configuration
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: '0600'
+  loop:
+    - {src: "{{ greenwood_netplan_src }}", dest: /etc/netplan/90-greenwood.yaml}
+    - {src: "{{ greenwood_dnsmasq_src }}", dest: /etc/dnsmasq.d/greenwood.conf}
+  diff: false
+  no_log: true
+
+- name: Validate complete netplan configuration before applying
+  ansible.builtin.command: netplan generate
+  changed_when: false
+
+- name: Validate DNS DHCP configuration before starting
+  ansible.builtin.command: dnsmasq --test
+  changed_when: false
+
+- name: Apply explicitly approved networking asynchronously
+  ansible.builtin.command: netplan apply
+  async: 60
+  poll: 0
+  register: network_apply
+
+- name: Reconnect to the approved management address
+  ansible.builtin.wait_for_connection:
+    delay: 10
+    timeout: 120
+
+- name: Confirm network application completed successfully
+  ansible.builtin.async_status:
+    jid: "{{ network_apply.ansible_job_id }}"
+  register: network_result
+  until: network_result.finished
+  retries: 12
+  delay: 5
+
+- name: Enable IPv4 forwarding persistently
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/90-greenwood-gateway.conf
+    content: "net.ipv4.ip_forward=1\n"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Apply forwarding setting
+  ansible.builtin.command: sysctl -p /etc/sysctl.d/90-greenwood-gateway.conf
+  changed_when: true
+
+- name: Install isolated outbound NAT table
+  ansible.builtin.copy:
+    dest: /etc/greenwood-gateway.nft
+    content: |
+      table ip greenwood_gateway {
+        chain postrouting {
+          type nat hook postrouting priority srcnat; policy accept;
+          ip saddr {{ greenwood_lan_cidr }} oifname "{{ greenwood_wan_interface }}" masquerade
+        }
+      }
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Check gateway NAT syntax
+  ansible.builtin.command: nft --check --file /etc/greenwood-gateway.nft
+  changed_when: false
+
+- name: Install persistent gateway NAT unit without flushing unrelated tables
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/greenwood-gateway-network.service
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Greenwood gateway outbound NAT
+      Wants=network-online.target
+      After=network-online.target
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=/usr/sbin/nft --file /etc/greenwood-gateway.nft
+      ExecStop=/usr/sbin/nft delete table ip greenwood_gateway
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Start gateway services
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop: [greenwood-gateway-network, dnsmasq]

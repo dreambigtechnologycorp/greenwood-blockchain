@@ -1,0 +1,49 @@
+---
+# Common Greenwood configuration for all nodes
+
+# Installation paths
+Greenwood_BASE_DIR: "/opt/greenwood"
+Greenwood_DATA_DIR: "/var/lib/greenwood"
+Greenwood_LOG_DIR: "/var/log/greenwood"
+Greenwood_ETC_DIR: "/etc/greenwood"
+Greenwood_RUN_DIR: "/run/greenwood"
+Greenwood_SYSTEMD_DIR: "/etc/systemd/system"
+
+# Wasmtime configuration
+Greenwood_WASMTIME_VERSION: "48.0.1"
+Greenwood_WASMTIME_LIB_PATH: "{{ Greenwood_BASE_DIR }}/wasmtime-{{ Greenwood_WASMTIME_VERSION }}/lib/libwasmtime.so"
+wasmtime_aarch64_linux_c_api_sha256: "1c521a9be661644541158b360df8f7c7ec5bc2d88d23ff4dbbc12f639247c266"
+
+# PHP configuration
+PHP_VERSION: "8.5"
+PHP_EXTENSION_SODIUM: true
+PHP_EXTENSION_SQLITE3: true
+
+# Runtime directories
+Greenwood_RUNTIME_DIRS:
+  - "{{ Greenwood_DATA_DIR }}"
+  - "{{ Greenwood_LOG_DIR }}"
+  - "{{ Greenwood_ETC_DIR }}"
+  - "{{ Greenwood_RUN_DIR }}"
+
+# Common PHP packages (required by both validators and providers)
+Greenwood_PHP_PACKAGES:
+  - php{{ PHP_VERSION }}
+  - php{{ PHP_VERSION }}-cli
+  - php{{ PHP_VERSION }}-common
+  - php-sodium
+  - php{{ PHP_VERSION }}-curl
+  - php{{ PHP_VERSION }}-xml
+  - php{{ PHP_VERSION }}-mbstring
+  - php{{ PHP_VERSION }}-sqlite3
+
+# Common dependencies
+Greenwood_COMMON_DEPENDENCIES:
+  - ca-certificates
+  - gnupg
+  - software-properties-common
+  - wget
+  - curl
+  - git
+  - rsync
+  - jq

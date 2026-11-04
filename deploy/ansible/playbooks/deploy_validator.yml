@@ -1,0 +1,204 @@
+---
+# Greenwood Validator Application Deployment Playbook v5
+#
+# This playbook deploys a pre-built Greenwood validator release artifact
+# to physical nodes. It does NOT run Composer, contact Packagist, or
+# build vendor - those are handled by build-validator-release.sh.
+#
+# Deployment sequence:
+#   bootstrap_greenwood.yml -> PHP runtime, Wasmtime, directories
+#   build-validator-release.sh -> Creates immutable artifact + SHA256
+#   THIS PLAYBOOK (deploy_validator.yml) -> Extracts release artifact
+#   Validator identity distribution -> Keys, genesis, config
+#   Systemd start -> Consensus activation
+#
+# Required variables:
+#   greenwood_release_artifact: Path to release tarball
+#   greenwood_release_sha256: Expected SHA256 checksum
+#   greenwood_release_id: Release identifier for logging
+#
+# Example invocation:
+#   ansible-playbook deploy_validator.yml -e greenwood_release_artifact=build/release/artifacts/greenwood-validator-1.0.0-20250915221400.tar.gz -e greenwood_release_sha256=a1b2c3... -e greenwood_release_id=1.0.0-20250915221400
+#
+
+- name: Deploy Greenwood Validator Application
+  hosts: validators
+  become: true
+  gather_facts: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+    # Release artifact (required, passed via -e)
+    greenwood_release_artifact: "{{ greenwood_release_artifact | default(omit) }}"
+    greenwood_release_sha256: "{{ greenwood_release_sha256 | default(omit) }}"
+    greenwood_release_id: "{{ greenwood_release_id | default('unknown') }}"
+
+    # Greenwood installation paths
+    Greenwood_BASE_DIR: "/opt/greenwood"
+    Greenwood_SOURCE_DIR: "{{ Greenwood_BASE_DIR }}/src"
+    Greenwood_RUNTIME_DIR: "{{ Greenwood_BASE_DIR }}/runtime"
+    Greenwood_CONFIG_DIR: "{{ Greenwood_BASE_DIR }}/config"
+    Greenwood_BIN_DIR: "{{ Greenwood_BASE_DIR }}/bin"
+    Greenwood_VENDOR_DIR: "{{ Greenwood_BASE_DIR }}/vendor"
+    Greenwood_DATA_DIR: "/var/lib/greenwood"
+    Greenwood_LOG_DIR: "/var/log/greenwood"
+    Greenwood_ETC_DIR: "/etc/greenwood"
+    Greenwood_SYSTEMD_DIR: "/etc/systemd/system"
+    Greenwood_RUN_DIR: "/run/greenwood"
+    Greenwood_SYSTEMD_BIN_DIR: "/usr/local/bin"
+    Greenwood_ARTIFACT_TEMP: "/tmp/greenwood-release.tar.gz"
+
+  pre_tasks:
+    - name: Verify release artifact path is provided
+      ansible.builtin.assert:
+        that:
+          - greenwood_release_artifact is defined and greenwood_release_artifact != ""
+        fail_msg: "greenwood_release_artifact variable is required"
+
+    - name: Verify release SHA256 is provided
+      ansible.builtin.assert:
+        that:
+          - greenwood_release_sha256 is defined and greenwood_release_sha256 != ""
+        fail_msg: "greenwood_release_sha256 variable is required"
+
+    - name: Verify node architecture matches deployment target
+      ansible.builtin.debug:
+        msg: "Target: {{ ansible_facts['architecture'] }} (expected: aarch64)"
+      failed_when: ansible_facts['architecture'] != "aarch64"
+
+    - name: Verify OS version
+      ansible.builtin.debug:
+        msg: "OS: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+
+    - name: Verify hostname and inventory mapping
+      ansible.builtin.debug:
+        msg: "Inventory hostname: {{ inventory_hostname }}"
+
+  tasks:
+    - name: Copy release artifact to target node
+      ansible.builtin.copy:
+        src: "{{ greenwood_release_artifact }}"
+        dest: "{{ Greenwood_ARTIFACT_TEMP }}"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+      failed_when: false
+
+    - name: Verify release artifact exists
+      ansible.builtin.stat:
+        path: "{{ Greenwood_ARTIFACT_TEMP }}"
+      register: artifact_stat
+      failed_when: false
+
+    - name: Verify release artifact checksum
+      ansible.builtin.shell: >-
+        shasum -a 256 "{{ Greenwood_ARTIFACT_TEMP }}" | cut -d' ' -f1
+      register: artifact_sha
+      changed_when: false
+      failed_when: false
+
+    - name: Display artifact SHA256
+      ansible.builtin.debug:
+        msg: "Artifact SHA256: {{ artifact_sha.stdout }}"
+
+    - name: Verify artifact checksum matches expected
+      ansible.builtin.assert:
+        that:
+          - artifact_sha.stdout == greenwood_release_sha256
+        fail_msg: >-
+          SHA256 mismatch! Expected: {{ greenwood_release_sha256 }}, Got: {{ artifact_sha.stdout }}
+        success_msg: "Artifact checksum verified"
+
+    - name: Extract release artifact
+      ansible.builtin.unarchive:
+        src: "{{ Greenwood_ARTIFACT_TEMP }}"
+        dest: "{{ Greenwood_BASE_DIR }}"
+        remote_src: yes
+      notify:
+        - Cleanup temporary artifact
+
+    - name: Verify vendor/autoload.php exists
+      ansible.builtin.stat:
+        path: "{{ Greenwood_BASE_DIR }}/vendor/autoload.php"
+      register: autoload_stat
+
+    - name: Verify bin/greenwoodd exists and is executable
+      ansible.builtin.stat:
+        path: "{{ Greenwood_BASE_DIR }}/bin/greenwoodd"
+      register: greenwoodd_stat
+
+    - name: Display deployment verification
+      ansible.builtin.debug:
+        msg: "bin/greenwoodd executable: {{ 'true' if greenwoodd_stat.stat.exists and greenwoodd_stat.stat.executable else 'false' }}"
+
+    - name: Test greenwoodd --help (dry-run execution)
+      ansible.builtin.command: "{{ Greenwood_BASE_DIR }}/bin/greenwoodd --help"
+      register: greenwoodd_help
+      changed_when: false
+      failed_when: false
+
+    - name: Display greenwoodd help output
+      ansible.builtin.debug:
+        msg: "{{ greenwoodd_help.stdout_lines | default([]) }}"
+      changed_when: false
+
+    - name: Verify PHP dependencies loaded
+      ansible.builtin.shell: >
+        php -r "require '{{ Greenwood_BASE_DIR }}/vendor/autoload.php';"
+      register: autoload_test
+      changed_when: false
+      failed_when: false
+
+    - name: Display autoload verification
+      ansible.builtin.debug:
+        msg: "PHP dependencies work: {{ 'true' if autoload_test.rc == 0 else 'false' }}"
+
+    - name: Create systemd unit directory
+      ansible.builtin.file:
+        path: "{{ Greenwood_SYSTEMD_DIR }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Create greenwoodd systemd unit
+      ansible.builtin.copy:
+        dest: "{{ Greenwood_SYSTEMD_DIR }}/greenwoodd.service"
+        content: |
+          [Unit]
+          Description=Greenwood Validator Node
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=root
+          Group=root
+          WorkingDirectory={{ Greenwood_BASE_DIR }}
+          ExecStart={{ Greenwood_BASE_DIR }}/bin/greenwoodd --genesis=/etc/greenwood/genesis.json --data-dir={{ Greenwood_DATA_DIR }} --node={{ validator_label }} --key=/etc/greenwood/validator.key --endpoint=http://0.0.0.0:9201 --operator-socket={{ Greenwood_RUN_DIR }}/operator.sock --operator-token-file={{ Greenwood_ETC_DIR }}/operator.token
+          Restart=on-failure
+          RestartSec=5
+          StandardOutput=journal
+          StandardError=journal
+          Environment=GREENWOOD_WASMTIME_LIB={{ Greenwood_BASE_DIR }}/wasmtime-48.0.1/lib/libwasmtime.so
+          Environment=FFI_ENABLE=true
+
+          [Install]
+          WantedBy=multi-user.target
+        mode: "0644"
+      notify:
+        - Reload systemd daemon
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+      changed_when: false
+
+  handlers:
+    - name: Cleanup temporary artifact
+      ansible.builtin.file:
+        path: "{{ Greenwood_ARTIFACT_TEMP }}"
+        state: absent
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true

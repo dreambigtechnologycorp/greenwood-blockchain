@@ -1,0 +1,12 @@
+Greenwood
+Copyright 2026 DreamBIG Technology Corporation
+
+Original Greenwood source code is licensed under the Apache License, Version 2.0.
+See LICENSE for its terms.
+
+This distribution includes third-party schemas and generated bindings from
+containerd, containerd/ttrpc, and Google RPC. Their copyright and license
+notices remain intact. See THIRD_PARTY_NOTICES.md and LICENSES/, including
+LICENSES/containerd-NOTICE.txt, for the applicable upstream attribution.
+
+This NOTICE is informational and does not modify the Apache License, Version 2.0.

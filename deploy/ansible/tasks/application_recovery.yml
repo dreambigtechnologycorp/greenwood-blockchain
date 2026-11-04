@@ -1,0 +1,32 @@
+---
+- name: Install recovery environment using canonical provider paths
+  ansible.builtin.copy:
+    dest: /etc/greenwood/application-recovery.env
+    content: |
+      GREENWOOD_RECOVERY_ROOT={{ greenwood_hosting_release }}
+      GREENWOOD_PROVIDER_CONFIG=/etc/greenwood/provider.json
+      GREENWOOD_APPLICATION_NETWORK_POLICY=/etc/greenwood/application-network.json
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Install application recovery service and timer
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../application-recovery/greenwood-application-recovery.{{ item }}"
+    dest: "/etc/systemd/system/greenwood-application-recovery.{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: [service, timer]
+
+- name: Validate installed recovery unit
+  ansible.builtin.command:
+    argv: [systemd-analyze, verify, /etc/systemd/system/greenwood-application-recovery.service, /etc/systemd/system/greenwood-application-recovery.timer]
+  changed_when: false
+
+- name: Enable retained-application recovery
+  ansible.builtin.systemd_service:
+    name: greenwood-application-recovery.timer
+    daemon_reload: true
+    enabled: true
+    state: started

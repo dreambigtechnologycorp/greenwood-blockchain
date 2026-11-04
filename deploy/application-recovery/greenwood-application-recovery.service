@@ -1,0 +1,13 @@
+[Unit]
+Description=Restore Greenwood running application tasks and networking
+Wants=network-online.target greenwood-provider.service
+Requires=containerd.service greenwood-application-forwarding.service
+After=network-online.target containerd.service greenwood-application-forwarding.service greenwood-provider.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/greenwood/application-recovery.env
+ExecStart=/usr/bin/php -d ffi.enable=true ${GREENWOOD_RECOVERY_ROOT}/bin/greenwood-application-recovery --config=${GREENWOOD_PROVIDER_CONFIG} --application-network-policy=${GREENWOOD_APPLICATION_NETWORK_POLICY}
+UMask=0077
+TimeoutStartSec=240

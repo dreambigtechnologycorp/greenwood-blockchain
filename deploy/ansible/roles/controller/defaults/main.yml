@@ -1,0 +1,26 @@
+---
+# Controller role configuration (node-1 operations role only; no protocol identity)
+
+# Canonical Greenwood source (private repository)
+greenwood_repo_url: "git@github.com:dreambigtechnologycorp/greenwood-blockchain.git"
+greenwood_source_sha: ""
+greenwood_containerd_submodule_sha: "301b2dac98f15c27117da5c8af12118a041a31d9"
+
+# Directory ownership: source/build workspace vs runtime/state/config
+# Preserve the older dirty controller checkout; each release has an isolated source tree.
+greenwood_build_user: "{{ ansible_user }}"
+greenwood_source_dir: "/home/{{ greenwood_build_user }}/greenwood-releases/{{ greenwood_source_sha }}"
+greenwood_build_dir: "{{ greenwood_source_dir }}/build/release"
+
+# Deployment-owned release builder (lives in deploy/, not in the source repo)
+greenwood_builder_src: "build-validator-release.sh"
+greenwood_builder_dest: "/home/{{ greenwood_build_user }}/deploy/build-validator-release.sh"
+
+# Build dependencies (composer.lock is authoritative; no update, no platform ignores)
+greenwood_controller_packages:
+  - git
+  - rsync
+  - composer
+  - php{{ PHP_VERSION | default('8.5') }}-grpc
+  - php{{ PHP_VERSION | default('8.5') }}-sqlite3
+  - php-sodium

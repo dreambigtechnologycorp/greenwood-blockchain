@@ -1,0 +1,12 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+// Minimal trusted OS boundary. No Composer/autoload, gRPC channel, key read or
+// Greenwood protocol logic. Close inherited descriptors BEFORE dropping UID.
+if (PHP_OS_FAMILY !== 'Linux' || posix_geteuid() !== 0 || count($argv) !== 5
+    || !ctype_digit($argv[1]) || !ctype_digit($argv[2]) || (int)$argv[1] < 1 || (int)$argv[2] < 1) exit(70);
+$libc = FFI::cdef('int close_range(unsigned int first, unsigned int last, int flags);', 'libc.so.6');
+if ($libc->close_range(3, 0xffffffff, 0) !== 0) exit(71);
+pcntl_exec('/usr/bin/setpriv', ['--reuid=' . $argv[1], '--regid=' . $argv[2], '--clear-groups', '--no-new-privs',
+    PHP_BINARY, $argv[3], $argv[4]], ['PATH' => '/usr/bin:/bin']);
+exit(72);

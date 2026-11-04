@@ -1,0 +1,8 @@
+---
+# Linux only. This is not a macOS developer installation.
+- name: Prepare local Linux Greenwood runtime
+  hosts: localhost
+  become: true
+  gather_facts: false
+  roles:
+    - common

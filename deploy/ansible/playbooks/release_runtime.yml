@@ -1,0 +1,102 @@
+---
+# Runtime-only upgrade using the canonical controller and convergence tasks.
+# From deploy/ansible, build first with --tags controller; distribute with --tags runtime_release.
+# --tags runtime_release never rebuilds. --check --tags runtime_release_preflight
+# reads controller metadata and validates the existing local cache without cutover.
+
+- name: Converge controller (node-1) with canonical source and release build
+  hosts: controller
+  become: true
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  roles:
+    - role: controller
+      tags: [controller]
+
+- name: Fetch canonical release artifact from controller
+  hosts: controller
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tags: [runtime_release, runtime_release_preflight]
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - "{{ playbook_dir }}/../roles/controller/defaults/main.yml"
+  tasks:
+    - name: Require a single canonical artifact export host
+      ansible.builtin.assert:
+        that:
+          - groups['controller'] | length == 1
+    - name: Read recorded release facts
+      ansible.builtin.slurp:
+        src: "{{ greenwood_build_dir }}/artifacts/latest-release.json"
+      register: release_facts_raw
+
+    - name: Parse release facts
+      ansible.builtin.set_fact:
+        release_facts: "{{ release_facts_raw.content | b64decode | from_json }}"
+
+    - name: Require release facts to identify the pinned runtime source
+      ansible.builtin.assert:
+        that:
+          - release_facts.source_sha == greenwood_source_sha
+        fail_msg: "Controller release facts do not identify the pinned runtime source"
+
+    - name: Fetch artifact to Ansible controller cache
+      ansible.builtin.fetch:
+        src: "{{ release_facts.artifact }}"
+        dest: "{{ playbook_dir }}/../artifacts/"
+        flat: true
+        fail_on_missing: true
+        validate_checksum: true
+
+    - name: Export controller-owned canonical artifact facts
+      ansible.builtin.set_fact:
+        greenwood_controller_release:
+          artifact: "{{ playbook_dir }}/../artifacts/{{ release_facts.artifact | basename }}"
+          sha256: "{{ release_facts.sha256 }}"
+          tree_digest: "{{ release_facts.tree_digest | default('') }}"
+          source_sha: "{{ release_facts.source_sha }}"
+
+- name: Preflight canonical artifact on every deployment target before any stop
+  hosts: validators
+  become: false
+  gather_facts: false
+  any_errors_fatal: true
+  strategy: linear
+  tags: [runtime_release, runtime_release_preflight]
+  vars_files:
+    - "{{ playbook_dir }}/../roles/controller/defaults/main.yml"
+  tasks:
+    - name: Validate and bind controller-owned release inputs
+      ansible.builtin.import_tasks: "{{ playbook_dir }}/../tasks/runtime_release_preflight.yml"
+
+- name: Deploy runtime to validator nodes (runtime-only upgrade)
+  tags: [runtime_release]
+  hosts: validators
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - "{{ playbook_dir }}/../roles/common/defaults/main.yml"
+    - "{{ playbook_dir }}/../roles/validator/defaults/main.yml"
+  tasks:
+    - name: Stop protocol services before runtime replacement
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+      loop: [greenwoodd, greenwood-provider]
+
+    - name: Apply canonical release tree convergence
+      ansible.builtin.import_tasks: "{{ playbook_dir }}/../roles/common/tasks/converge_release_tree.yml"
+
+    - name: Start protocol services after runtime replacement
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: started
+      loop: [greenwoodd, greenwood-provider]

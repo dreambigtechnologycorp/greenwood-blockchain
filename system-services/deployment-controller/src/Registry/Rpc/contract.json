@@ -1,0 +1,395 @@
+{
+  "getHealth": {
+    "method": "GET",
+    "path": "/v1/health",
+    "schema": {
+      "ok": "bool"
+    },
+    "policy": "R3"
+  },
+  "getReady": {
+    "method": "GET",
+    "path": "/v1/ready",
+    "schema": {
+      "ready": "bool",
+      "role": "string",
+      "checks": {
+        "chain_state": "bool",
+        "transaction_index": "bool",
+        "identity": "bool"
+      },
+      "finalized_height": "uint"
+    },
+    "policy": "R3"
+  },
+  "getMetrics": {
+    "method": "GET",
+    "path": "/v1/metrics",
+    "schema": "metrics",
+    "policy": "R3"
+  },
+  "getChainStatus": {
+    "method": "GET",
+    "path": "/v1/chain/status",
+    "schema": {
+      "chain_id": "nonempty",
+      "api_version": "enum:v1",
+      "role": "string",
+      "height": "uint",
+      "finalized_height": "uint",
+      "block_hash": "hex64",
+      "state_root": "hex64",
+      "validator_count": "uint",
+      "validator_ids": [
+        "string"
+      ],
+      "block_time_seconds": "?uint",
+      "supply": {
+        "hard_cap": "?uint",
+        "total_supply": "decimal",
+        "account_count": "uint",
+        "emitted_rewards": "uint",
+        "burned_fees": "uint"
+      },
+      "economy": "?object",
+      "syncing": "bool"
+    },
+    "policy": "R1"
+  },
+  "getFinality": {
+    "method": "GET",
+    "path": "/v1/chain/finality",
+    "schema": {
+      "height": "uint",
+      "round": "?uint",
+      "block_hash": "hex64",
+      "certificate_present": "bool",
+      "precommit_count": "uint",
+      "validator_count": "uint"
+    },
+    "policy": "R1"
+  },
+  "getValidators": {
+    "method": "GET",
+    "path": "/v1/chain/validators",
+    "schema": {
+      "validators": [
+        {
+          "validator_id": "string",
+          "public_key": "hex64",
+          "voting_power": "uint",
+          "active": "bool"
+        }
+      ]
+    },
+    "policy": "R1"
+  },
+  "getStateRoot": {
+    "method": "GET",
+    "path": "/v1/chain/state-root",
+    "schema": {
+      "state_root": "hex64",
+      "finalized_height": "uint"
+    },
+    "policy": "R1"
+  },
+  "getBlock": {
+    "method": "GET",
+    "path": "/v1/blocks/{height}",
+    "schema": {
+      "height": "uint",
+      "round": "uint",
+      "block_hash": "hex64",
+      "parent_hash": "hex64",
+      "state_root": "hex64",
+      "previous_state_root": "hex64",
+      "transactions_root": "hex64",
+      "proposer": "hex",
+      "transactions": [
+        "hex64"
+      ],
+      "finality_certificate_present": "bool"
+    },
+    "policy": "R2"
+  },
+  "getBlockByHash": {
+    "method": "GET",
+    "path": "/v1/blocks/hash/{hash}",
+    "schema": {
+      "height": "uint",
+      "round": "uint",
+      "block_hash": "hex64",
+      "parent_hash": "hex64",
+      "state_root": "hex64",
+      "previous_state_root": "hex64",
+      "transactions_root": "hex64",
+      "proposer": "hex",
+      "transactions": [
+        "hex64"
+      ],
+      "finality_certificate_present": "bool"
+    },
+    "policy": "R2"
+  },
+  "getAccount": {
+    "method": "GET",
+    "path": "/v1/accounts/{id}",
+    "schema": {
+      "account_id": "hex64",
+      "finalized_height": "uint",
+      "balance": "decimal",
+      "nonce": "uint"
+    },
+    "policy": "R2"
+  },
+  "getBalance": {
+    "method": "GET",
+    "path": "/v1/accounts/{id}/balance",
+    "schema": {
+      "account_id": "hex64",
+      "finalized_height": "uint",
+      "balance": "decimal"
+    },
+    "policy": "R2"
+  },
+  "getNonce": {
+    "method": "GET",
+    "path": "/v1/accounts/{id}/nonce",
+    "schema": {
+      "account_id": "hex64",
+      "finalized_height": "uint",
+      "nonce": "uint"
+    },
+    "policy": "R2"
+  },
+  "getContract": {
+    "method": "GET",
+    "path": "/v1/contracts/{id}",
+    "schema": {
+      "contract_id": "hex64",
+      "abi_version": "uint",
+      "wasm_hash": "hex64",
+      "balance": "decimal",
+      "finalized_height": "uint"
+    },
+    "policy": "R2"
+  },
+  "callContract": {
+    "method": "POST",
+    "path": "/v1/contracts/{id}/call",
+    "schema": {
+      "contract_id": "hex64",
+      "method": "string",
+      "status": "enum:SUCCESS,TRAP,OUT_OF_GAS,MISSING_EXPORT,EXECUTION_ERROR",
+      "fuel_used": "uint",
+      "finalized_height": "uint"
+    },
+    "policy": "R2"
+  },
+  "getTransaction": {
+    "method": "GET",
+    "path": "/v1/transactions/{hash}",
+    "schema": {
+      "tx_hash": "hex64",
+      "status": "enum:UNKNOWN,PENDING,FINALIZED"
+    },
+    "policy": "R3/R2"
+  },
+  "getTransactionStatus": {
+    "method": "GET",
+    "path": "/v1/transactions/{hash}/status",
+    "schema": {
+      "tx_hash": "hex64",
+      "status": "enum:UNKNOWN,PENDING,FINALIZED"
+    },
+    "policy": "R3/R2"
+  },
+  "getTransactionReceipt": {
+    "method": "GET",
+    "path": "/v1/transactions/{hash}/receipt",
+    "schema": {
+      "tx_hash": "hex64",
+      "included_height": "uint",
+      "block_hash": "hex64",
+      "finalized_height": "uint",
+      "receipt": {
+        "status": "enum:SUCCESS,TRAP,OUT_OF_GAS,MISSING_EXPORT,EXECUTION_ERROR",
+        "gas_used": "uint",
+        "return_data": "hex",
+        "events": [
+          "object"
+        ],
+        "contract_id": "?hex64",
+        "transaction_hash": "hex64"
+      },
+      "provenance": "enum:derived_finalized_execution"
+    },
+    "policy": "R3/R2"
+  },
+  "getComputeProviders": {
+    "method": "GET",
+    "path": "/v1/compute/providers",
+    "schema": {
+      "providers": [
+        {
+          "provider_id": "hex64",
+          "status": "enum:ACTIVE,DRAINING,SUSPENDED",
+          "trust_classes": [
+            "enum:OPEN,TRUSTED,SOVEREIGN"
+          ],
+          "capability_nonce": "uint",
+          "architectures": [
+            "enum:linux/arm64/v8,linux/amd64"
+          ],
+          "cpu_capacity_millis": "uint",
+          "memory_capacity_bytes": "decimal",
+          "pid_capacity": "uint",
+          "max_concurrent_jobs": "uint",
+          "reserved": {
+            "cpu_millis": "uint",
+            "memory_bytes": "decimal",
+            "pids": "uint",
+            "jobs": "uint"
+          },
+          "available": {
+            "cpu_millis": "uint",
+            "memory_bytes": "decimal",
+            "pids": "uint",
+            "jobs": "uint"
+          }
+        }
+      ],
+      "next_cursor": "?hex64"
+    },
+    "policy": "R2"
+  },
+  "getComputeProvider": {
+    "method": "GET",
+    "path": "/v1/compute/providers/{id}",
+    "schema": {
+      "provider_id": "hex64",
+      "status": "enum:ACTIVE,DRAINING,SUSPENDED",
+      "trust_classes": [
+        "enum:OPEN,TRUSTED,SOVEREIGN"
+      ],
+      "capability_nonce": "uint",
+      "architectures": [
+        "enum:linux/arm64/v8,linux/amd64"
+      ],
+      "cpu_capacity_millis": "uint",
+      "memory_capacity_bytes": "decimal",
+      "pid_capacity": "uint",
+      "max_concurrent_jobs": "uint",
+      "reserved": {
+        "cpu_millis": "uint",
+        "memory_bytes": "decimal",
+        "pids": "uint",
+        "jobs": "uint"
+      },
+      "available": {
+        "cpu_millis": "uint",
+        "memory_bytes": "decimal",
+        "pids": "uint",
+        "jobs": "uint"
+      }
+    },
+    "policy": "R2"
+  },
+  "getComputeProviderReservations": {
+    "method": "GET",
+    "path": "/v1/compute/providers/{id}/reservations",
+    "schema": {
+      "provider_id": "hex64",
+      "reserved": {
+        "cpu_millis": "uint",
+        "memory_bytes": "decimal",
+        "pids": "uint",
+        "jobs": "uint"
+      },
+      "finalized_height": "uint"
+    },
+    "policy": "R2"
+  },
+  "getComputeRequest": {
+    "method": "GET",
+    "path": "/v1/compute/requests/{id}",
+    "schema": {
+      "request_id": "hex64",
+      "requester": "hex64",
+      "trust_class": "enum:OPEN,TRUSTED,SOVEREIGN",
+      "workload_digest": "hex64",
+      "workload_ref": "string",
+      "input_digest": "hex64",
+      "cpu_limit_millis": "uint",
+      "memory_limit_bytes": "decimal",
+      "pid_limit": "uint",
+      "execution_timeout_ms": "decimal",
+      "max_payment": "decimal",
+      "deadline_height": "uint",
+      "lifecycle": "enum:PENDING,ASSIGNED,TERMINAL",
+      "current_generation": "?uint",
+      "current_provider": "?hex64",
+      "assignment_deadline": "?uint",
+      "terminal_receipt": "?hex64",
+      "finalized_height": "uint"
+    },
+    "policy": "R2"
+  },
+  "getComputeRequestHistory": {
+    "method": "GET",
+    "path": "/v1/compute/requests/{id}/history",
+    "schema": {
+      "request_id": "hex64",
+      "lifecycle": "enum:PENDING,ASSIGNED,TERMINAL",
+      "assignments": [
+        {
+          "generation": "uint",
+          "provider_id": "hex64",
+          "height": "uint",
+          "status": "enum:ASSIGNED,SETTLED,REASSIGNED,STALE"
+        }
+      ]
+    },
+    "policy": "R2"
+  },
+  "getComputeRequestReceipt": {
+    "method": "GET",
+    "path": "/v1/compute/requests/{id}/receipt",
+    "schema": {
+      "receipt_id": "hex64",
+      "request_id": "hex64",
+      "generation": "uint",
+      "provider_id": "hex64",
+      "execution_id": "hex64",
+      "status": "enum:COMPLETED,FAILED,TIMED_OUT,TERMINATED,RUNTIME_ERROR",
+      "exit_code": "int",
+      "fuel_used": "?decimal",
+      "cpu_time_ms": "decimal",
+      "memory_peak_bytes": "decimal",
+      "duration_ms": "decimal",
+      "output_digest": "hex64",
+      "output_bytes_observed": "decimal"
+    },
+    "policy": "R2"
+  },
+  "getComputeReceipt": {
+    "method": "GET",
+    "path": "/v1/compute/receipts/{id}",
+    "schema": {
+      "receipt_id": "hex64",
+      "request_id": "hex64",
+      "generation": "uint",
+      "provider_id": "hex64",
+      "execution_id": "hex64",
+      "status": "enum:COMPLETED,FAILED,TIMED_OUT,TERMINATED,RUNTIME_ERROR",
+      "exit_code": "int",
+      "fuel_used": "?decimal",
+      "cpu_time_ms": "decimal",
+      "memory_peak_bytes": "decimal",
+      "duration_ms": "decimal",
+      "output_digest": "hex64",
+      "output_bytes_observed": "decimal"
+    },
+    "policy": "R2"
+  }
+}

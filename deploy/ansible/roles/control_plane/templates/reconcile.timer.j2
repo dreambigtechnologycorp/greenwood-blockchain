@@ -1,0 +1,9 @@
+[Unit]
+Description=Greenwood managed ingress reconciliation cadence
+[Timer]
+OnBootSec=15
+OnUnitInactiveSec=5
+AccuracySec=1
+Unit=greenwood-managed-edge.service
+[Install]
+WantedBy=timers.target

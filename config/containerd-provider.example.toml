@@ -1,0 +1,19 @@
+# Merge these entries into containerd 2.2.2's existing configuration.
+# Replace gid and platform with this host's worker group and native platform.
+version = 3
+
+[grpc]
+  gid = 988
+
+[plugins."io.containerd.snapshotter.v1.erofs"]
+  default_size = "256MiB"
+
+[[plugins."io.containerd.transfer.v1.local".unpack_config]]
+  platform = "linux/arm64/v8"
+  snapshotter = "overlayfs"
+  differ = "walking"
+
+[[plugins."io.containerd.transfer.v1.local".unpack_config]]
+  platform = "linux/arm64/v8"
+  snapshotter = "erofs"
+  differ = "erofs"

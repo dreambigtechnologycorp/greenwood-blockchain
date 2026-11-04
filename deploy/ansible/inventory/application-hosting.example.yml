@@ -1,0 +1,32 @@
+---
+# Example only. Supply a reviewed root-owned source release and current approved
+# allocation externally. No production inventory is modified by this file.
+all:
+  children:
+    application_providers:
+      hosts:
+        provider_example:
+          ansible_host: 10.77.0.100
+          greenwood_hosting_release: /opt/greenwood
+          greenwood_provider_address: 10.77.0.100
+          greenwood_edge_address: 10.77.0.103
+          greenwood_hosting_network_policy:
+            providerAddress: 10.77.0.100
+            edgeAddress: 10.77.0.103
+            subnet: 10.254.32.0/24
+            firstPort: 21000
+            lastPort: 21063
+            forwardTable: greenwood_app_ingress
+            forwardChain: forward
+            protectedServices: []
+    application_edges:
+      hosts:
+        edge_example:
+          ansible_host: 10.77.0.103
+          greenwood_ingress_application_id: 1
+          greenwood_ingress_hostname: app-1.greenwoodblockchain.com
+          greenwood_ingress_backend: 10.77.0.100
+          greenwood_ingress_source: 10.77.0.103
+          greenwood_ingress_port: 21001
+          # Never change to true without verifying finalized assignment and health.
+          greenwood_ingress_assignment_verified: false

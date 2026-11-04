@@ -1,0 +1,67 @@
+---
+# Validator Role Tasks
+# This role deploys Greenwood validator runtime to validator nodes
+
+- name: Verify validator label
+  ansible.builtin.debug:
+    msg: "Validator label: {{ validator_label | default('unknown') }}"
+
+# =============================================================================
+# Greenwood Application Deployment (via release artifact)
+# =============================================================================
+
+# The canonical artifact is built on node-1 (controller) and fetched to the
+# Ansible controller by the deploy playbook before this role runs. Every
+# validator receives the SAME artifact bytes; the runtime tree is converged to
+# that release (see common/tasks/converge_release_tree.yml) instead of being
+# extracted over arbitrary historical contents.
+
+- name: Converge validator runtime tree to the canonical release
+  ansible.builtin.include_tasks: "{{ role_path }}/../common/tasks/converge_release_tree.yml"
+
+# =============================================================================
+# Validator Systemd Unit
+# =============================================================================
+
+- name: Create greenwoodd systemd unit
+  ansible.builtin.copy:
+    dest: "{{ Greenwood_SYSTEMD_DIR }}/greenwoodd.service"
+    content: |
+      [Unit]
+      Description=Greenwood Validator Node
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=root
+      Group=root
+      WorkingDirectory={{ Greenwood_BASE_DIR }}
+      ExecStartPre=-/usr/bin/rm -f {{ Greenwood_RUN_DIR }}/operator.sock
+      ExecStart={{ Greenwood_BASE_DIR }}/bin/greenwoodd --genesis=/etc/greenwood/genesis.json --config=/etc/greenwood/chain.json --data-dir={{ Greenwood_DATA_DIR }} --node={{ validator_label }} --key=/etc/greenwood/validator.key --endpoint=http://0.0.0.0:9201 --operator-socket={{ Greenwood_RUN_DIR }}/operator.sock --operator-token-file={{ Greenwood_ETC_DIR }}/operator.token
+      Restart=on-failure
+      RestartSec=5
+      StandardOutput=journal
+      StandardError=journal
+      Environment=GREENWOOD_WASMTIME_LIB={{ Greenwood_WASMTIME_LIB_PATH }}
+      Environment=FFI_ENABLE=true
+
+      [Install]
+      WantedBy=multi-user.target
+    mode: "0644"
+  notify:
+    - Reload systemd daemon
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  changed_when: false
+
+- name: Ensure greenwoodd remains stopped (identity gate is a later phase)
+  ansible.builtin.systemd:
+    name: greenwoodd
+    state: stopped
+    enabled: false
+
+- name: Display validator deployment verification
+  ansible.builtin.debug:
+    msg: "Validator deployment complete"

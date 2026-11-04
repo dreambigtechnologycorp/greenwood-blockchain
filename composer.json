@@ -1,0 +1,46 @@
+{
+    "name": "greenwoodphp/greenwood",
+    "description": "Greenwood PHP Node v1",
+    "type": "project",
+    "require": {
+        "php": "^8.5",
+        "ext-sodium": "*",
+        "ext-pdo_sqlite": "*",
+        "ext-ffi": "*",
+        "google/protobuf": "^5.36",
+        "grpc/grpc": "^1.82"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Greenwood Contributors",
+            "email": "dev@greenwoodphp.com"
+        }
+    ],
+    "autoload": {
+        "classmap": [
+            "runtime/containerd/generated/Status.php"
+        ],
+        "psr-4": {
+            "Greenwood\\": "src/",
+            "Containerd\\": "runtime/containerd/generated/Containerd/",
+            "GPBMetadata\\": "runtime/containerd/generated/GPBMetadata/",
+            "Ttrpc\\": "runtime/containerd/generated/Ttrpc/",
+            "Google\\Rpc\\": "runtime/containerd/generated/Google/Rpc/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Greenwood\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "@test:source",
+        "test:contracts": "@php -d ffi.enable=true vendor/bin/phpunit --testsuite contracts",
+        "test:source": "@php -d ffi.enable=true vendor/bin/phpunit --testsuite source",
+        "test:native": "@php -d ffi.enable=true vendor/bin/phpunit --testsuite native"
+    }
+}

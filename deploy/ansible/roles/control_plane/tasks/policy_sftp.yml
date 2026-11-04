@@ -1,0 +1,125 @@
+---
+- name: Validate dedicated policy SFTP inputs
+  ansible.builtin.assert:
+    that:
+      - greenwood_policy_mode == 'renew'
+      - greenwood_policy_sftp.user is match('^gw-policy-[a-z0-9-]+$')
+      - greenwood_policy_sftp.port | int >= 1024
+      - greenwood_policy_sftp.port | int <= 65535
+      - greenwood_policy_sftp.address is match('^[0-9.]+$')
+      - greenwood_policy_sftp.host_key is match('^/etc/greenwood/[A-Za-z0-9_/-]+$')
+      - "'..' not in greenwood_policy_sftp.host_key"
+      - greenwood_policy_sftp.client_public_key is match('^ssh-ed25519 [A-Za-z0-9+/]+={0,2}$')
+      - greenwood_policy_environment.GREENWOOD_POLICY_PUBLIC_DIRECTORY is match('^/var/lib/greenwood-control-plane/[A-Za-z0-9_-]+$')
+      - greenwood_policy_environment.GREENWOOD_POLICY_PUBLIC_DIRECTORY != greenwood_policy_environment.GREENWOOD_POLICY_PUBLISHER_DIRECTORY
+
+- name: Install dedicated SFTP prerequisite without modifying administrative SSH configuration
+  ansible.builtin.apt:
+    name: openssh-server
+    state: present
+    policy_rc_d: 101
+
+- name: Require an existing protected host key
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/php
+      - -r
+      - >-
+        for($p=$argv[1];;$p=dirname($p)){
+        if(is_link($p)||!file_exists($p)||fileowner($p)!==0||(fileperms($p)&0022)!==0)exit(1);
+        if($p==='/')break;}
+        if(!is_file($argv[1])||(fileperms($argv[1])&0077)!==0)exit(2);
+      - "{{ greenwood_policy_sftp.host_key }}"
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Inspect an existing transport account before changing it
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/php
+      - -r
+      - >-
+        $u=posix_getpwnam($argv[1]);if($u===false)exit(0);
+        if($u['uid']===0||$u['dir']!=='/nonexistent'||$u['shell']!=='/usr/sbin/nologin')exit(1);
+      - "{{ greenwood_policy_sftp.user }}"
+  changed_when: false
+  check_mode: false
+
+- name: Create locked transport-only account without a home or login shell
+  ansible.builtin.user:
+    name: "{{ greenwood_policy_sftp.user }}"
+    system: true
+    create_home: false
+    home: /nonexistent
+    shell: /usr/sbin/nologin
+    password_lock: true
+
+- name: Inspect publication directory without changing its permissions
+  ansible.builtin.stat:
+    path: "{{ greenwood_policy_environment.GREENWOOD_POLICY_PUBLIC_DIRECTORY }}"
+  register: policy_public_directory
+
+- name: Create new publication directory privately before inspection
+  ansible.builtin.file:
+    path: "{{ greenwood_policy_environment.GREENWOOD_POLICY_PUBLIC_DIRECTORY }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: not policy_public_directory.stat.exists
+
+- name: Require publication directory to contain only signed public output
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/php
+      - -r
+      - >-
+        $d=$argv[1];if(!is_dir($d)||is_link($d)||fileowner($d)!==0)exit(1);
+        foreach(scandir($d) as $f){if($f==='.'||$f==='..')continue;
+        if($f!=='bundle.json'||!is_file($d.'/'.$f)||is_link($d.'/'.$f)||fileowner($d.'/'.$f)!==0)exit(2);}
+      - "{{ greenwood_policy_environment.GREENWOOD_POLICY_PUBLIC_DIRECTORY }}"
+  changed_when: false
+  check_mode: false
+
+- name: Allow traversal only inside the public bundle chroot
+  ansible.builtin.file:
+    path: "{{ greenwood_policy_environment.GREENWOOD_POLICY_PUBLIC_DIRECTORY }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Stage public-key authorization outside the transport account home
+  ansible.builtin.copy:
+    content: "restrict {{ greenwood_policy_sftp.client_public_key }}\n"
+    dest: /etc/ssh/greenwood-policy-sftp-authorized-keys
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure OpenSSH privilege separation directory exists for configtest
+  ansible.builtin.file:
+    path: /run/sshd
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Stage standalone SFTP server configuration
+  ansible.builtin.template:
+    src: policy-sftp.conf.j2
+    dest: /etc/greenwood/control-plane/policy-sftp.conf
+    owner: root
+    group: root
+    mode: '0600'
+    validate: /usr/sbin/sshd -t -f %s
+
+- name: Stage standalone SFTP unit without starting it
+  ansible.builtin.template:
+    src: policy-sftp.service.j2
+    dest: /etc/systemd/system/greenwood-policy-sftp.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload control-plane units

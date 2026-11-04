@@ -1,0 +1,18 @@
+[Unit]
+Description=Greenwood {{ item.name }} authenticated HTTPS entrypoint
+After=network-online.target
+[Service]
+Type=simple
+User=root
+Group=root
+RuntimeDirectory=greenwood-{{ item.name }}-https
+ExecStartPre=/usr/sbin/apache2 -t -f /etc/greenwood/control-plane/{{ item.name }}-https.conf
+ExecStart=/usr/sbin/apache2 -f /etc/greenwood/control-plane/{{ item.name }}-https.conf -DFOREGROUND
+ExecReload=/usr/sbin/apache2 -f /etc/greenwood/control-plane/{{ item.name }}-https.conf -k graceful
+UMask=0077
+Restart=on-failure
+PrivateTmp=true
+ProtectHome=true
+NoNewPrivileges=true
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,150 @@
+---
+- name: Require explicit fresh installation approval and immutable inputs
+  ansible.builtin.assert:
+    that:
+      - greenwood_fresh_cluster_approved | default(false) | bool
+      - not ansible_check_mode
+      - groups['validators'] | sort == ['node-1', 'node-2', 'node-3']
+      - groups['providers'] | sort == ['node-1', 'node-2', 'node-3']
+      - groups['control_plane'] | sort == ['node-1', 'node-4']
+      - groups['application_providers'] == ['node-1']
+      - groups['application_edges'] == ['node-4']
+      - greenwood_source_sha is match('^[a-f0-9]{40}$')
+      - greenwood_genesis_sha256 is match('^[a-f0-9]{64}$')
+      - greenwood_chain_config_sha256 is match('^[a-f0-9]{64}$')
+      - provider_chain_id is match('^[A-Za-z0-9_-]{1,64}$')
+      - greenwood_activate_protocol | default(false) | bool
+      - greenwood_activate_hosting | default(false) | bool
+      - greenwood_hosting_release == '/opt/greenwood'
+    fail_msg: Fresh installation requires a complete approved inventory; use syntax checks rather than check-mode activation
+
+- name: Require the supported Ubuntu ARM64 host profile
+  ansible.builtin.import_tasks: ../roles/common/tasks/host_profile.yml
+
+- name: Reject unsupported fresh-install operating systems
+  ansible.builtin.assert:
+    that:
+      - greenwood_distribution == 'ubuntu'
+      - greenwood_distribution_version == '24.04'
+      - greenwood_architecture == 'aarch64'
+
+- name: Verify actual machine architecture independently of inventory
+  ansible.builtin.command: uname -m
+  register: fresh_actual_arch
+  changed_when: false
+  failed_when: fresh_actual_arch.stdout != 'aarch64'
+
+- name: Require runtime pins before any mutation
+  ansible.builtin.import_tasks: ../roles/provider/tasks/runtime_preflight.yml
+
+- name: Inspect existing installation and durable state
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - /etc/greenwood/genesis.json
+    - /etc/greenwood/control-plane
+    - /var/lib/greenwood/state.sqlite
+    - /var/lib/greenwood/signing.sqlite
+    - /var/lib/greenwood/blocks
+    - /var/lib/greenwood-provider/applications
+    - /var/lib/greenwood-control-plane
+    - /etc/netplan/90-greenwood.yaml
+    - /etc/dnsmasq.d/greenwood.conf
+    - /etc/greenwood-gateway.nft
+  register: fresh_existing
+
+- name: Refuse an existing cluster or interrupted installation
+  ansible.builtin.assert:
+    that: not item.stat.exists
+    fail_msg: Existing Greenwood state detected; reconcile it rather than rerunning fresh installation
+  loop: "{{ fresh_existing.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Verify controller-side public input artifacts
+  ansible.builtin.stat:
+    path: "{{ item.src }}"
+    checksum_algorithm: sha256
+  delegate_to: localhost
+  become: false
+  loop:
+    - {src: "{{ greenwood_genesis_src }}", sha256: "{{ greenwood_genesis_sha256 }}"}
+    - {src: "{{ greenwood_chain_config_src }}", sha256: "{{ greenwood_chain_config_sha256 }}"}
+    - {src: "{{ greenwood_php_repository_key_src }}", sha256: "{{ greenwood_php_repository_key_sha256 }}"}
+  register: fresh_inputs
+
+- name: Reject missing or altered public artifacts
+  ansible.builtin.assert:
+    that:
+      - item.stat.isreg | default(false)
+      - not (item.stat.islnk | default(true))
+      - item.stat.checksum == item.item.sha256
+  loop: "{{ fresh_inputs.results }}"
+
+- name: Inspect per-validator protected source credentials
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  delegate_to: localhost
+  become: false
+  loop:
+    - "{{ greenwood_validator_key_src }}"
+    - "{{ greenwood_provider_key_src }}"
+    - "{{ greenwood_operator_token_src }}"
+  register: fresh_secrets
+  when: inventory_hostname in groups['validators']
+  no_log: true
+
+- name: Require complete hosting composition on its designated hosts
+  ansible.builtin.assert:
+    that:
+      - greenwood_control_configs is mapping
+      - greenwood_control_files | length > 0
+      - greenwood_policy_mode in ['renew', 'pull']
+      - greenwood_control_services | sort == (['controller', 'observer', 'receiver'] if inventory_hostname == 'node-1' else ['edge', 'receiver'])
+      - greenwood_https_frontends is sequence
+      - not (greenwood_control_configs.controller.deployment_enabled | default(false) | bool)
+      - not (greenwood_control_configs.edge.managed_reconciliation_enabled | default(false) | bool)
+  when: inventory_hostname in groups['control_plane']
+  no_log: true
+
+- name: Require explicit genesis-bound provider identity
+  ansible.builtin.assert:
+    that: greenwood_provider_public_key is match('^[a-f0-9]{64}$')
+  when: inventory_hostname in groups['providers']
+
+- name: Require complete offline seed declarations before provisioning
+  ansible.builtin.assert:
+    that:
+      - greenwood_seed_images | map(attribute='id') | sort == ['greenwood-registry', 'greenwood-registry-auth']
+      - greenwood_system_services | map(attribute='id') | sort == ['greenwood-registry', 'greenwood-registry-auth']
+  when: inventory_hostname in groups['application_providers']
+
+- name: Inspect offline seed archives on the Ansible controller
+  ansible.builtin.stat:
+    path: "{{ item.src }}"
+    checksum_algorithm: sha256
+  delegate_to: localhost
+  become: false
+  loop: "{{ greenwood_seed_images | default([]) }}"
+  register: fresh_seeds
+  when: inventory_hostname in groups['application_providers']
+
+- name: Refuse absent or altered offline seed archives
+  ansible.builtin.assert:
+    that:
+      - item.stat.isreg | default(false)
+      - not (item.stat.islnk | default(true))
+      - item.stat.checksum == item.item.sha256
+      - item.item.image_ref == (greenwood_system_services | selectattr('id', 'equalto', item.item.id) | first).imageRef
+  loop: "{{ fresh_seeds.results | default([]) }}"
+  when: inventory_hostname in groups['application_providers']
+
+- name: Require private regular source files
+  ansible.builtin.assert:
+    that:
+      - item.stat.isreg | default(false)
+      - not (item.stat.islnk | default(true))
+      - item.stat.mode == '0600'
+  loop: "{{ fresh_secrets.results | default([]) }}"
+  when: inventory_hostname in groups['validators']
+  no_log: true

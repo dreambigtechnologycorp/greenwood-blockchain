@@ -1,0 +1,5 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+require __DIR__ . '/../vendor/autoload.php';
+\Greenwood\Provider\ProviderWorker::run($argv[1] ?? throw new InvalidArgumentException('Worker job file required'));

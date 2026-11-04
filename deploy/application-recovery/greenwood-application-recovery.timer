@@ -1,0 +1,11 @@
+[Unit]
+Description=Reconcile Greenwood application workloads after boot and runtime failures
+
+[Timer]
+OnBootSec=20s
+OnUnitInactiveSec=30s
+AccuracySec=1s
+Unit=greenwood-application-recovery.service
+
+[Install]
+WantedBy=timers.target

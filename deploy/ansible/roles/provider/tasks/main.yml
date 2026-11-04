@@ -1,0 +1,333 @@
+---
+- name: Validate candidate runtime pins before modifying provider state
+  ansible.builtin.import_tasks: runtime_preflight.yml
+
+# =============================================================================
+# Provider Node Configuration
+# =============================================================================
+
+- name: Verify node architecture (declared inventory value)
+  ansible.builtin.debug:
+    msg: "Architecture: {{ architecture }}"
+
+- name: Verify OS version (lightweight profile)
+  ansible.builtin.debug:
+    msg: "OS: {{ greenwood_distribution }} {{ greenwood_distribution_version }}"
+
+- name: Verify hostname
+  ansible.builtin.debug:
+    msg: "Hostname: {{ inventory_hostname }}"
+
+# =============================================================================
+# Worker User/Group Setup
+# =============================================================================
+
+- name: Install provider PHP gRPC extension
+  ansible.builtin.apt:
+    name: "php{{ PHP_VERSION | default('8.5') }}-grpc"
+    state: present
+
+- name: Install approved PHP security runtime
+  ansible.builtin.import_tasks: "{{ playbook_dir }}/../tasks/php_runtime.yml"
+
+- name: Create provider worker group
+  ansible.builtin.group:
+    name: "{{ worker_username }}"
+    gid: "{{ worker_gid }}"
+    state: present
+    system: true
+  changed_when: false
+
+- name: Create provider worker user
+  ansible.builtin.user:
+    name: "{{ worker_username }}"
+    uid: "{{ worker_uid }}"
+    group: "{{ worker_username }}"
+    shell: "/usr/sbin/nologin"
+    system: true
+    state: present
+  changed_when: false
+
+# =============================================================================
+# Containerd Installation
+# =============================================================================
+
+- name: Download containerd
+  ansible.builtin.get_url:
+    url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-arm64.tar.gz"
+    dest: "/tmp/containerd.tar.gz"
+    mode: "0644"
+    checksum: "sha256:{{ containerd_sha256 }}"
+  register: containerd_download
+  until: containerd_download is succeeded
+  retries: 3
+
+- name: Extract containerd
+  ansible.builtin.unarchive:
+    src: "/tmp/containerd.tar.gz"
+    dest: "/usr"
+    remote_src: true
+  notify:
+    - Cleanup containerd archive
+
+- name: Install canonical containerd systemd unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/containerd.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=containerd container runtime
+      After=network.target local-fs.target
+      [Service]
+      Type=notify
+      ExecStart=/usr/bin/containerd
+      Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      Delegate=yes
+      KillMode=process
+      Restart=always
+      RestartSec=5
+      LimitNOFILE=1048576
+      TasksMax=infinity
+      [Install]
+      WantedBy=multi-user.target
+  notify:
+    - Reload systemd daemon
+    - Restart containerd
+
+# =============================================================================
+# Containerd Configuration
+# =============================================================================
+
+- name: Create containerd config directory
+  ansible.builtin.file:
+    path: "/etc/containerd"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  changed_when: false
+
+- name: Create containerd config.toml with worker group configuration
+  ansible.builtin.copy:
+    dest: "/etc/containerd/config.toml"
+    content: "{{ greenwood_containerd_config }}"
+    validate: /usr/bin/containerd --config %s config dump
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd daemon
+    - Restart containerd
+
+# =============================================================================
+# Runc Installation
+# =============================================================================
+
+- name: Download runc
+  ansible.builtin.get_url:
+    url: "https://github.com/opencontainers/runc/releases/download/v{{ runc_version }}/runc.arm64"
+    dest: "/tmp/runc.arm64"
+    mode: "0644"
+    checksum: "sha256:{{ runc_sha256 }}"
+  register: runc_download
+  until: runc_download is succeeded
+  retries: 3
+
+- name: Install runc
+  ansible.builtin.copy:
+    src: "/tmp/runc.arm64"
+    dest: "/usr/local/sbin/runc"
+    owner: root
+    group: root
+    mode: "0755"
+    remote_src: true
+  notify:
+    - Cleanup runc archive
+
+# =============================================================================
+# EROFS Support
+# =============================================================================
+
+- name: Install EROFS tools
+  ansible.builtin.apt:
+    name:
+      - "erofs-utils={{ erofs_utils_version }}"
+    state: present
+    update_cache: true
+  register: erofs_install
+  until: erofs_install is succeeded
+  retries: 3
+
+- name: Ensure required EROFS snapshotter is available across boots
+  tags: [provider_erofs]
+  when: (containerd_snapshotter if (greenwood_os_family | default('Debian')) == 'Debian' else 'erofs') == 'erofs'
+  block:
+    - name: Persist EROFS kernel module loading
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/greenwood-erofs.conf
+        content: "erofs\n"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart containerd
+
+    - name: Check whether EROFS is loaded
+      ansible.builtin.stat:
+        path: /sys/module/erofs
+      register: provider_erofs_module
+
+    - name: Load EROFS when absent
+      ansible.builtin.command:
+        cmd: modprobe erofs
+      when: not provider_erofs_module.stat.exists
+      changed_when: true
+      notify: Restart containerd
+
+    - name: Reinitialize containerd before verifying plugins
+      ansible.builtin.meta: flush_handlers
+
+    - name: Ensure containerd is enabled and running
+      ansible.builtin.systemd:
+        name: containerd
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Query containerd plugin readiness
+      ansible.builtin.command:
+        argv: [/usr/bin/ctr, plugins, ls]
+      register: provider_erofs_plugins
+      changed_when: false
+
+    - name: Require a healthy EROFS snapshotter
+      ansible.builtin.assert:
+        that:
+          - provider_erofs_plugins.stdout is search('(?m)^io\.containerd\.snapshotter\.v1[ \t]+erofs[ \t]+.*[ \t]+ok[ \t]*$')
+        fail_msg: Required EROFS snapshotter is not healthy in containerd
+        quiet: true
+
+# =============================================================================
+# Greenwood Provider Application
+# =============================================================================
+#
+# The provider application uses the same canonical release artifact built on
+# the controller from the pinned Greenwood source commit.
+#
+# Provider identity and state remain outside the release tree under:
+#
+#   /etc/greenwood
+#   /var/lib/greenwood
+#
+# Runtime behavior is determined by the provider systemd configuration.
+# =============================================================================
+
+- name: Converge provider application runtime tree to the canonical release
+  ansible.builtin.include_tasks:
+    file: "{{ role_path }}/../common/tasks/converge_release_tree.yml"
+
+# =============================================================================
+# Provider Runtime Directories
+# =============================================================================
+
+- name: Create provider runtime directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ provider_data_dir }}"
+    - "{{ provider_archive_dir }}"
+    - "{{ provider_output_dir }}"
+    - "{{ provider_runtime_dir }}"
+# =============================================================================
+# Provider Identity + Configuration
+# =============================================================================
+#
+# The provider uses its OWN cryptographic identity (provider.key), entirely
+# separate from the validator signing key. The A/B/C provider labels are an
+# operational correspondence to the node name only; they are not a reuse of
+# validator credentials. The systemd unit passes --config=/etc/greenwood/provider.json;
+# provider.json carries per-host schedulable capacity computed from live node
+# facts so provider workloads can never consume validator/OS/controller
+# reserved capacity.
+
+- name: Generate provider identity (provider.key) if absent
+  ansible.builtin.command:
+    argv:
+      - "{{ Greenwood_BASE_DIR }}/bin/greenwood-cli"
+      - account
+      - create
+      - "{{ Greenwood_ETC_DIR }}/provider.key"
+    creates: "{{ Greenwood_ETC_DIR }}/provider.key"
+  register: provider_key_generated
+
+- name: Enforce provider key ownership and permissions
+  ansible.builtin.file:
+    path: "{{ Greenwood_ETC_DIR }}/provider.key"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Provision provider configuration (provider.json)
+  ansible.builtin.template:
+    src: "provider.json.j2"
+    dest: "{{ provider_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+# =============================================================================
+# Provider Entrypoint Permissions
+# =============================================================================
+#
+# Ensure all PHP provider entrypoints are executable after release convergence.
+# This prevents systemd status=203/EXEC when source/archive modes are 0644/0664.
+# =============================================================================
+
+- name: Set executable permissions on provider entrypoints
+  ansible.builtin.file:
+    path: "{{ Greenwood_BASE_DIR }}/{{ item }}"
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - bin/greenwood-provider
+    - bin/greenwood-provider-worker
+    - bin/greenwood-worker-launcher
+
+# =============================================================================
+# Greenwood Provider Service
+# =============================================================================
+
+- name: Create provider systemd unit
+  ansible.builtin.template:
+    src: "provider.service.j2"
+    dest: "/etc/systemd/system/greenwood-provider.service"
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd daemon
+
+- name: Enable provider without stopping an existing workload
+  ansible.builtin.systemd:
+    name: greenwood-provider
+    enabled: true
+    daemon_reload: true
+
+# =============================================================================
+# Containerd Socket Permissions
+# =============================================================================
+
+- name: Add provider worker to containerd socket group
+  ansible.builtin.user:
+    name: "{{ worker_username }}"
+    groups:
+      - containerd
+    append: true
+  when:
+    - containerd_group_exists is defined
+    - containerd_group_exists

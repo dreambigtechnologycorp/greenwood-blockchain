@@ -1,0 +1,14 @@
+[Unit]
+Description=Greenwood authenticated managed edge reconciliation
+Requires=apache2.service greenwood-edge.service
+After=network-online.target apache2.service greenwood-edge.service
+[Service]
+Type=oneshot
+User=root
+Group=root
+Environment=GREENWOOD_EDGE_ADMISSION_CONFIG=/etc/greenwood/control-plane/edge.php
+ExecStart=/usr/bin/php {{ greenwood_hosting_release }}/system-services/deployment-controller/deploy/edge-reconcile.php
+UMask=0077
+NoNewPrivileges=true
+ProtectHome=true
+# Apache validation/reload is deliberately confined by the adapter, not a shell.

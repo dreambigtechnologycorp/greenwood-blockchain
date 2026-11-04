@@ -1,0 +1,20 @@
+---
+- name: Require independently approved runtime versions checksums and configuration
+  ansible.builtin.assert:
+    that:
+      - containerd_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - runc_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - containerd_sha256 is defined
+      - containerd_sha256 is match('^[a-f0-9]{64}$')
+      - runc_sha256 is defined
+      - runc_sha256 is match('^[a-f0-9]{64}$')
+      - greenwood_containerd_config is defined
+      - greenwood_containerd_config | length > 0
+    fail_msg: Supply the candidate's reviewed runtime versions checksums and version-matched configuration
+
+- name: Require exact EROFS package version when EROFS is selected
+  ansible.builtin.assert:
+    that:
+      - erofs_utils_version is match('^[0-9][A-Za-z0-9.+:~_-]*$')
+    fail_msg: Supply an exact erofs-utils version from the approved package repository snapshot
+  when: (containerd_snapshotter if (greenwood_os_family | default('Debian')) == 'Debian' else 'erofs') == 'erofs'

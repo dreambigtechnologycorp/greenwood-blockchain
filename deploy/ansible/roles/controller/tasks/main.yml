@@ -1,0 +1,280 @@
+---
+# Controller Role Tasks
+# Converges node-1 into the Linux ARM64 source/build/deployment controller.
+# Operations role only: nothing here touches genesis, validator identity,
+# consensus, or any Greenwood protocol service.
+
+# =============================================================================
+# Fatal platform assertions
+# =============================================================================
+
+- name: Require an explicitly approved source revision
+  ansible.builtin.assert:
+    that:
+      - greenwood_source_sha is match('^[a-f0-9]{40}$')
+      - greenwood_containerd_submodule_sha is match('^[a-f0-9]{40}$')
+
+- name: Greenwood host profile (platform verification)
+  ansible.builtin.include_tasks: "{{ role_path }}/../common/tasks/host_profile.yml"
+  when: greenwood_system is not defined
+
+- name: Assert Linux operating system
+  ansible.builtin.assert:
+    that:
+      - greenwood_system == "Linux"
+    fail_msg: "Controller must run Linux (found {{ greenwood_system }})"
+
+- name: Assert aarch64 architecture
+  ansible.builtin.assert:
+    that:
+      - architecture == "aarch64"
+    fail_msg: "Controller must run aarch64 (found {{ architecture }})"
+
+# =============================================================================
+# Build dependencies
+# =============================================================================
+
+- name: Install approved PHP security runtime before build dependencies
+  ansible.builtin.import_tasks: "{{ playbook_dir }}/../tasks/php_runtime.yml"
+
+- name: Install controller build dependencies
+  ansible.builtin.apt:
+    name: "{{ greenwood_controller_packages }}"
+    state: present
+    update_cache: true
+
+- name: Verify required PHP extensions for build
+  ansible.builtin.command: >
+    php -r "exit(extension_loaded('{{ item }}') ? 0 : 1);"
+  loop:
+    - grpc
+    - sodium
+    - pdo_sqlite
+    - ffi
+    - pcntl
+    - posix
+  changed_when: false
+
+# =============================================================================
+# Ansible-owned source checkout (private repository via forwarded SSH agent)
+# =============================================================================
+
+- name: Create source workspace
+  ansible.builtin.file:
+    path: "{{ greenwood_source_dir }}"
+    state: directory
+    owner: "{{ greenwood_build_user }}"
+    group: "{{ greenwood_build_user }}"
+    mode: "0755"
+
+- name: Inspect the isolated release checkout
+  ansible.builtin.stat:
+    path: "{{ greenwood_source_dir }}/.git"
+  register: greenwood_release_git
+
+# Older ownership tasks changed executable bits recursively. Archive packaging
+# gets committed modes from Git; source-content changes must still fail closed.
+- name: Ignore filesystem mode drift in an existing isolated release checkout
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - "{{ greenwood_source_dir }}"
+      - config
+      - core.fileMode
+      - "false"
+  become: true
+  become_user: "{{ greenwood_build_user }}"
+  when: greenwood_release_git.stat.exists
+  changed_when: false
+
+- name: Ignore filesystem mode drift in existing release submodules
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - "{{ greenwood_source_dir }}"
+      - submodule
+      - foreach
+      - --recursive
+      - git config core.fileMode false
+  become: true
+  become_user: "{{ greenwood_build_user }}"
+  when: greenwood_release_git.stat.exists
+  changed_when: false
+
+- name: Clone/update canonical Greenwood source
+  ansible.builtin.git:
+    repo: "{{ greenwood_repo_url }}"
+    dest: "{{ greenwood_source_dir }}"
+    version: "{{ greenwood_source_sha }}"
+    force: false
+  become: true
+  become_user: "{{ greenwood_build_user }}"
+
+- name: Set build account ownership of source directory
+  ansible.builtin.file:
+    path: "{{ greenwood_source_dir }}"
+    owner: "{{ greenwood_build_user }}"
+    group: "{{ greenwood_build_user }}"
+    recurse: true
+
+- name: Verify source HEAD matches canonical SHA exactly
+  ansible.builtin.command: git -C "{{ greenwood_source_dir }}" rev-parse HEAD
+  register: source_head
+  changed_when: false
+  failed_when: source_head.stdout != greenwood_source_sha
+  become: true
+  become_user: "{{ greenwood_build_user }}"
+
+- name: Initialize submodules
+  ansible.builtin.command: >
+    git -C "{{ greenwood_source_dir }}" submodule update --init --recursive
+  become: true
+  become_user: "{{ greenwood_build_user }}"
+  register: submodule_update
+
+- name: Change ownership of source directory after submodules
+  ansible.builtin.file:
+    path: "{{ greenwood_source_dir }}"
+    owner: "{{ greenwood_build_user }}"
+    group: "{{ greenwood_build_user }}"
+    recurse: true
+
+- name: Verify containerd submodule matches canonical SHA exactly
+  ansible.builtin.command: >
+    git -C "{{ greenwood_source_dir }}/runtime/containerd/proto/containerd-repo" rev-parse HEAD
+  register: submodule_head
+  changed_when: false
+  failed_when: submodule_head.stdout != greenwood_containerd_submodule_sha
+  become: true
+  become_user: "{{ greenwood_build_user }}"
+
+# =============================================================================
+# Composer reconstruction from lockfile (no update, no platform ignores)
+# =============================================================================
+
+- name: Install composer dependencies from composer.lock
+  ansible.builtin.command: >
+    composer install --no-interaction
+  args:
+    chdir: "{{ greenwood_source_dir }}"
+  become: true
+  become_user: "{{ greenwood_build_user }}"
+  register: composer_install
+  changed_when: composer_install.rc == 0 and ('Installing' in composer_install.stdout or 'Generating' in composer_install.stdout)
+
+- name: Change ownership of source directory after composer install
+  ansible.builtin.file:
+    path: "{{ greenwood_source_dir }}"
+    owner: "{{ greenwood_build_user }}"
+    group: "{{ greenwood_build_user }}"
+    recurse: true
+
+# =============================================================================
+# Deployment-owned release builder
+# =============================================================================
+
+- name: Ensure controller deployment directory exists
+  ansible.builtin.file:
+    path: "{{ greenwood_builder_dest | dirname }}"
+    state: directory
+    owner: "{{ greenwood_build_user }}"
+    group: "{{ greenwood_build_user }}"
+    mode: "0755"
+
+- name: Install release builder on controller
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../build-validator-release.sh"
+    dest: "{{ greenwood_builder_dest }}"
+    owner: "{{ greenwood_build_user }}"
+    group: "{{ greenwood_build_user }}"
+    mode: "0755"
+
+- name: Syntax-check release builder
+  ansible.builtin.command: bash -n "{{ greenwood_builder_dest }}"
+  changed_when: false
+
+- name: Check for existing release of the same source SHA
+  ansible.builtin.slurp:
+    src: "{{ greenwood_build_dir }}/artifacts/latest-release.json"
+  register: existing_release_raw
+  failed_when: false
+
+- name: Parse existing release facts
+  ansible.builtin.set_fact:
+    existing_release: "{{ existing_release_raw.content | default('') | b64decode | from_json }}"
+  when: existing_release_raw.content is defined
+
+- name: Build canonical release on controller
+  ansible.builtin.command: "{{ greenwood_builder_dest }}"
+  environment:
+    GREENWOOD_SOURCE_DIR: "{{ greenwood_source_dir }}"
+  become: true
+  become_user: "{{ greenwood_build_user }}"
+  register: release_build
+  when: >
+    existing_release is not defined
+    or existing_release.source_sha is not defined
+    or existing_release.source_sha != greenwood_source_sha
+
+- name: Register release artifact path
+  ansible.builtin.shell: >
+    ls -1t "{{ greenwood_build_dir }}/artifacts"/greenwood-validator-*.tar.gz | head -1
+  register: release_artifact_path
+  changed_when: false
+
+- name: Read runtime source identity from the release artifact
+  ansible.builtin.command:
+    argv:
+      - tar
+      - -xOf
+      - "{{ release_artifact_path.stdout }}"
+      - ./release-source.json
+  register: release_source_identity
+  changed_when: false
+
+- name: Verify artifact was built from the pinned runtime commit
+  ansible.builtin.assert:
+    that:
+      - (release_source_identity.stdout | from_json).source_sha == greenwood_source_sha
+    fail_msg: "Release artifact source identity differs from the pinned runtime commit"
+
+- name: Compute release artifact SHA-256
+  ansible.builtin.command: sha256sum "{{ release_artifact_path.stdout }}"
+  register: release_artifact_sha
+  changed_when: false
+
+- name: Compute canonical release tree digest from the artifact bytes
+  ansible.builtin.shell: >-
+    set -eu -o pipefail;
+    dt="/tmp/gw-tree-digest-$(date +%s)-$$";
+    rm -rf "$dt"; mkdir -p "$dt";
+    tar -xzf "{{ release_artifact_path.stdout }}" -C "$dt";
+    (cd "$dt" && find . -name 'wasmtime-*' -prune -o -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}');
+    rm -rf "$dt"
+  args:
+    executable: /bin/bash
+  register: release_tree_digest
+  changed_when: false
+
+- name: Record release facts for distribution
+  ansible.builtin.copy:
+    dest: "{{ greenwood_build_dir }}/artifacts/latest-release.json"
+    content: |
+      {
+        "source_sha": "{{ greenwood_source_sha }}",
+        "platform": "linux-aarch64",
+        "artifact": "{{ release_artifact_path.stdout }}",
+        "sha256": "{{ release_artifact_sha.stdout.split(' ')[0] }}",
+        "tree_digest": "{{ release_tree_digest.stdout | trim }}"
+      }
+    owner: "{{ greenwood_build_user }}"
+    group: "{{ greenwood_build_user }}"
+    mode: "0644"
+
+- name: Export release facts to play
+  ansible.builtin.set_fact:
+    greenwood_built_artifact: "{{ release_artifact_path.stdout }}"
+    greenwood_built_artifact_sha256: "{{ release_artifact_sha.stdout.split(' ')[0] }}"
+    greenwood_built_tree_digest: "{{ release_tree_digest.stdout | trim }}"

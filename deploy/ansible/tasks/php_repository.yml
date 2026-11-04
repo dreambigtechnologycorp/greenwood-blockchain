@@ -1,0 +1,52 @@
+---
+- name: Require explicit signed PHP repository inputs
+  ansible.builtin.assert:
+    that:
+      - greenwood_php_repository_key_src is defined
+      - greenwood_php_repository_key_sha256 is match('^[a-f0-9]{64}$')
+      - greenwood_php_apt_repository is match('^deb \[signed-by=/etc/apt/keyrings/greenwood-php.asc\] https://[^ ]+ [a-z]+ main$')
+    fail_msg: Supply an approved distribution-appropriate signed PHP repository and its verified public key
+
+- name: Inspect PHP signing key on the Ansible controller
+  ansible.builtin.stat:
+    path: "{{ greenwood_php_repository_key_src }}"
+    checksum_algorithm: sha256
+  delegate_to: localhost
+  become: false
+  register: php_repository_key
+
+- name: Verify PHP repository signing key checksum
+  ansible.builtin.assert:
+    that:
+      - php_repository_key.stat.isreg | default(false)
+      - not (php_repository_key.stat.islnk | default(true))
+      - php_repository_key.stat.checksum == greenwood_php_repository_key_sha256
+
+- name: Install repository tooling
+  ansible.builtin.apt:
+    name: [ca-certificates, gnupg, python3-apt]
+    state: present
+    update_cache: true
+
+- name: Create repository keyring directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install approved repository key
+  ansible.builtin.copy:
+    src: "{{ greenwood_php_repository_key_src }}"
+    dest: /etc/apt/keyrings/greenwood-php.asc
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Configure distribution-appropriate PHP repository
+  ansible.builtin.apt_repository:
+    repo: "{{ greenwood_php_apt_repository }}"
+    filename: greenwood-php
+    state: present
+    update_cache: true

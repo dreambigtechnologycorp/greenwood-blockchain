@@ -1,0 +1,7 @@
+---
+# Common Greenwood Role Handlers
+
+- name: Cleanup Wasmtime archive
+  ansible.builtin.file:
+    path: "/tmp/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux.tar.xz"
+    state: absent

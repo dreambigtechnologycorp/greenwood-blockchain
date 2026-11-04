@@ -1,0 +1,62 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+require __DIR__.'/../vendor/autoload.php';
+use Greenwood\Crypto\{Ed25519KeyPair,ProtocolHash};
+use Greenwood\Node\{Configuration,Chain};
+use Greenwood\Persistence\{AtomicFile,BlockFilesystem,StateSqlite};
+use Greenwood\Transaction\{Transfer,DeployContract,CallContract};
+use Greenwood\Contracts\{ContractLimits,ContractTransactionLimits as L};
+try {
+    $command=$argv[1]??'help';
+    if ($command==='account' && ($argv[2]??'')==='create') {
+        $key=Ed25519KeyPair::generate(); $path=$argv[3]??throw new InvalidArgumentException('Key output path required');
+        if (file_exists($path)) throw new RuntimeException('Key file already exists');
+        AtomicFile::write($path,$key->toBytes());
+        echo json_encode(['public_key'=>bin2hex($key->getPublicKey()),'address'=>bin2hex(ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$key->getPublicKey()))],JSON_THROW_ON_ERROR)."\n";
+    } elseif ($command==='genesis') {
+        $dir=$argv[2]??throw new InvalidArgumentException('Output directory required');
+        if (file_exists($dir)) throw new RuntimeException('Use a new directory');
+        $port=(int)($argv[3]??9201); $data=['chain_id'=>'greenwood-local-v1','validators'=>[],'accounts'=>[]];
+        foreach (['A','B','C','D'] as $i=>$id) {
+            $key=Ed25519KeyPair::generate(); AtomicFile::write($dir.'/keys/'.$id.'.key',$key->toBytes());
+            $data['validators'][$id]=['public_key'=>bin2hex($key->getPublicKey()),'power'=>1,'endpoint'=>'http://127.0.0.1:'.($port+$i)];
+            $data['accounts'][$id]=['public_key'=>bin2hex($key->getPublicKey()),'balance'=>1000000];
+        }
+        AtomicFile::write($dir.'/genesis.json',json_encode($data,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR));
+        echo $dir.'/genesis.json'."\n";
+    } elseif ($command==='transfer-sign') {
+        [$unused,$cmd,$genesis,$keyPath,$recipient,$amount,$nonce]=$argv;
+        [$g]=Configuration::load($genesis); $key=Ed25519KeyPair::fromBytes(file_get_contents($keyPath));
+        $tx=(new Transfer(Configuration::hex($recipient,32),(int)$amount))->createEnvelope($g->getChainId(),ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$key->getPublicKey()),(int)$nonce,$key);
+        echo json_encode(['type'=>'transaction','payload'=>base64_encode($tx->getCanonicalBytes())],JSON_THROW_ON_ERROR)."\n";
+    } elseif ($command==='contract-deploy-sign') {
+        [$unused,$cmd,$genesis,$keyPath,$wasmPath,$initData,$attachedValue,$gasLimit,$nonce]=$argv;
+        [$g]=Configuration::load($genesis);
+        $key=Ed25519KeyPair::fromBytes(file_get_contents($keyPath));
+        $wasm=file_get_contents($wasmPath);
+        if ($wasm===false) throw new InvalidArgumentException('Cannot read WASM file');
+        if (strlen($wasm) > L::MAX_WASM_BYTES) throw new InvalidArgumentException('WASM too large');
+        if (strlen($initData) > ContractLimits::MAX_INPUT_BYTES) throw new InvalidArgumentException('Init data too large');
+        if ((int)$attachedValue < 0 || (int)$gasLimit < 0 || (int)$gasLimit > ContractLimits::MAX_GAS) {
+            throw new InvalidArgumentException('Invalid value or gas limit');
+        }
+        $tx=(new DeployContract($wasm,$initData,(int)$attachedValue,(int)$gasLimit))->createEnvelope($g->getChainId(),ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$key->getPublicKey()),(int)$nonce,$key);
+        echo json_encode(['type'=>'transaction','payload'=>base64_encode($tx->getCanonicalBytes())],JSON_THROW_ON_ERROR)."\n";
+    } elseif ($command==='contract-call-sign') {
+        [$unused,$cmd,$genesis,$keyPath,$contractId,$method,$calldata,$attachedValue,$gasLimit,$nonce]=$argv;
+        [$g]=Configuration::load($genesis);
+        $key=Ed25519KeyPair::fromBytes(file_get_contents($keyPath));
+        if (strlen($contractId)!==64) throw new InvalidArgumentException('Contract ID must be 64 hex chars');
+        $binContractId=hex2bin($contractId);
+        if (strlen($binContractId)!==32) throw new InvalidArgumentException('Invalid contract ID');
+        if ((int)$attachedValue < 0 || (int)$gasLimit < 0 || (int)$gasLimit > ContractLimits::MAX_GAS) {
+            throw new InvalidArgumentException('Invalid value or gas limit');
+        }
+        $tx=new CallContract($binContractId,$method,$calldata,(int)$attachedValue,(int)$gasLimit);
+        $envelope=$tx->createEnvelope($g->getChainId(),ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$key->getPublicKey()),(int)$nonce,$key);
+        echo json_encode(['type'=>'transaction','payload'=>base64_encode($envelope->getCanonicalBytes())],JSON_THROW_ON_ERROR)."\n";
+    } else {
+        echo "account create KEYFILE\ngenesis NEW_DIRECTORY [BASE_PORT]\ntransfer-sign GENESIS KEYFILE RECIPIENT AMOUNT NONCE\ncontract-deploy-sign GENESIS KEYFILE WASM_PATH INIT_DATA ATTACHED_VALUE GAS_LIMIT NONCE\ncontract-call-sign GENESIS KEYFILE CONTRACT_ID METHOD CALLDATA ATTACHED_VALUE GAS_LIMIT NONCE\n";
+    }
+} catch (Throwable $e) { fwrite(STDERR,$e->getMessage()."\n"); exit(1); }

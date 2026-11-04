@@ -1,0 +1,11 @@
+---
+# Explicit maintenance operation, never imported by normal provisioning.
+- name: Remove protocol roles from an explicitly retired gateway
+  hosts: gateway
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Run authorized protocol teardown
+      ansible.builtin.import_role:
+        name: gateway
+        tasks_from: teardown_protocol

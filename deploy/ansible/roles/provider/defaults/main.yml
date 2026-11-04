@@ -1,0 +1,58 @@
+---
+# Provider role defaults
+# Extends common role
+
+provider_label: "{{ provider_label | default('unknown') }}"
+
+# Entrypoints the canonical release must provide on a provider node.
+# Provider A runs application code from the SAME canonical release artifact as
+# the validators; protocol role is determined by configuration/systemd, not by
+# a separate source tree or build pipeline.
+greenwood_release_entrypoints:
+  - "bin/greenwood-provider"
+  - "bin/greenwood-provider-worker"
+  - "bin/greenwood-worker-launcher"
+  - "vendor/autoload.php"
+
+# =============================================================================
+# Canonical release-tree convergence (see common/tasks/converge_release_tree.yml)
+# =============================================================================
+# The application runtime root is converged to the canonical node-1-built
+# release artifact. Deployment-managed runtime dependencies that intentionally
+# live inside that root are preserved by explicit exclusion; they are the ONLY
+# non-release entries allowed to remain.
+#
+# Never touched by release convergence (canonical state / configuration):
+#   Greenwood_DATA_DIR (/var/lib/greenwood)
+#   Greenwood_ETC_DIR  (/etc/greenwood)
+greenwood_preserved_runtime_entries:
+  - "wasmtime-{{ Greenwood_WASMTIME_VERSION }}"
+  - "wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux"
+  - "wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api"
+
+# Clean staging area and staged artifact (siblings of the runtime root, never
+# inside it, so staging can never be mistaken for deployed release content)
+greenwood_staging_dir: "/opt/greenwood-release-staging"
+greenwood_staged_artifact: "/tmp/greenwood-release.tar.gz"
+
+# Worker account configuration (from docs/provider-operations.md)
+worker_uid: 999
+worker_gid: 988
+worker_username: "gw-worker"
+
+# Containerd configuration
+# No runtime version is approved by a role default. Supply the candidate's pins.
+containerd_version: ""
+containerd_snapshotter: "erofs"
+
+# Runc configuration
+runc_version: ""
+erofs_utils_version: ""
+
+# Provider configuration paths
+provider_config_path: "/etc/greenwood/provider.json"
+provider_runtime_dir: "/run/greenwood-provider"
+provider_data_dir: "/var/lib/greenwood-provider"
+provider_archive_dir: "{{ provider_data_dir }}/archive"
+provider_output_dir: "{{ provider_data_dir }}/output"
+provider_workers_dir: "{{ provider_data_dir }}/workers"

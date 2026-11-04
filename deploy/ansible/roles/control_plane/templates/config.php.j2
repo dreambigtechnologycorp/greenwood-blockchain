@@ -1,0 +1,4 @@
+<?php
+declare(strict_types=1);
+// Data only. Private values belong in separately provisioned files.
+return json_decode(base64_decode('{{ item.value | to_json | b64encode }}'), true, 32, JSON_THROW_ON_ERROR);

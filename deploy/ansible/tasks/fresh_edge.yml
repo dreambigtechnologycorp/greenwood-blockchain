@@ -1,0 +1,52 @@
+---
+- name: Install edge Apache without starting the default site
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+    policy_rc_d: 101
+
+- name: Enable managed reverse proxy modules
+  ansible.builtin.command:
+    argv: [a2enmod, "{{ item }}"]
+    creates: "/etc/apache2/mods-enabled/{{ item }}.load"
+  loop: [proxy, proxy_http]
+
+- name: Remove the distribution placeholder site on this fresh host
+  ansible.builtin.file:
+    path: /etc/apache2/sites-enabled/000-default.conf
+    state: absent
+
+- name: Render empty fail-closed ingress using the runtime renderer
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/php
+      - -r
+      - 'require "/opt/greenwood/vendor/autoload.php"; echo (new Greenwood\Edge\ApacheIngressConfiguration())->render([]);'
+  register: empty_ingress
+  changed_when: false
+
+- name: Install empty managed ingress without an application route
+  ansible.builtin.copy:
+    content: "{{ empty_ingress.stdout }}\n"
+    dest: /etc/apache2/sites-enabled/greenwood-managed-ingress.conf
+    owner: root
+    group: root
+    mode: '0644'
+    force: false
+
+- name: Check complete Apache configuration before starting
+  ansible.builtin.command: apache2ctl -t
+  changed_when: false
+
+- name: Start the fail-closed edge listener
+  ansible.builtin.systemd_service:
+    name: apache2
+    enabled: true
+    state: started
+
+- name: Verify no unassigned application is served
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8081/
+    headers:
+      Host: greenwood-unpublished.invalid
+    status_code: 403

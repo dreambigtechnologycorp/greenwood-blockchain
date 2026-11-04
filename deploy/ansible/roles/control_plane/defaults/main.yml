@@ -1,0 +1,19 @@
+---
+# Staging only. Activation requires the separate operator procedure in CONTROL_PLANE_HANDOFF.md.
+greenwood_control_services: []
+greenwood_control_files: []
+greenwood_control_directories: []
+greenwood_control_configs: {}
+greenwood_system_services: []
+greenwood_policy_mode: ''
+greenwood_policy_environment: {}
+greenwood_policy_sftp: {}
+greenwood_https_frontends: []
+greenwood_control_packages:
+  - php8.5-cli
+  - php8.5-curl
+  - php8.5-sqlite3
+  - php8.5-mbstring
+  - ca-certificates
+  - openssl
+greenwood_control_environment: {}

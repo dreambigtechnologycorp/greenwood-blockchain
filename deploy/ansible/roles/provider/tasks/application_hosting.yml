@@ -1,0 +1,141 @@
+---
+# Deliberate post-bootstrap integration; does not run the provider role's stop task.
+- name: Validate approved provider hosting inputs
+  ansible.builtin.assert:
+    that:
+      - greenwood_hosting_release is match('^/opt/[A-Za-z0-9_./-]+$')
+      - "'..' not in greenwood_hosting_release"
+      - greenwood_provider_address is match('^[0-9.]+$')
+      - greenwood_edge_address is match('^[0-9.]+$')
+      - greenwood_hosting_network_policy is mapping
+      - greenwood_hosting_network_policy.providerAddress == greenwood_provider_address
+      - greenwood_hosting_network_policy.edgeAddress == greenwood_edge_address
+      - greenwood_hosting_network_policy.forwardTable == 'greenwood_app_ingress'
+      - greenwood_hosting_network_policy.forwardChain == 'forward'
+
+- name: Install application network prerequisites
+  ansible.builtin.apt:
+    name: [nftables, iproute2, curl]
+    state: present
+
+- name: Establish protected hosting directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /usr/local/libexec
+    - /etc/systemd/system/greenwood-provider.service.d
+    - /etc/greenwood
+
+- name: Inspect independently provisioned provider inputs
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - "{{ greenwood_hosting_release }}/bin/greenwood-provider"
+    - /etc/greenwood/provider.json
+    - /etc/greenwood/operator.token
+  register: hosting_inputs
+  no_log: true
+
+- name: Validate root-owned release ancestry
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/php
+      - -r
+      - >-
+        for($p=$argv[1];;$p=dirname($p)){
+        if(is_link($p)||!file_exists($p)||fileowner($p)!==0||(fileperms($p)&0022)!==0)exit(1);
+        if($p==='/')break;}
+      - "{{ greenwood_hosting_release }}/bin/greenwood-provider"
+  changed_when: false
+  check_mode: false
+
+- name: Require private operator token permissions
+  ansible.builtin.assert:
+    that:
+      - hosting_inputs.results[2].stat.mode == '0600'
+  no_log: true
+
+- name: Require protected provider inputs before integration
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+      - item.stat.isreg
+      - not item.stat.islnk
+      - item.stat.uid == 0
+      - not item.stat.wgrp
+      - not item.stat.woth
+    fail_msg: Provision the reviewed release and protected provider credentials first
+  loop: "{{ hosting_inputs.results }}"
+  no_log: true
+
+- name: Inspect existing network policy
+  ansible.builtin.stat:
+    path: /etc/greenwood/application-network.json
+  register: hosting_policy
+
+- name: Read existing network policy
+  ansible.builtin.slurp:
+    src: /etc/greenwood/application-network.json
+  register: hosting_policy_bytes
+  when: hosting_policy.stat.exists
+
+- name: Reject implicit network policy migrations
+  ansible.builtin.assert:
+    that:
+      - (hosting_policy_bytes.content | b64decode | from_json) == greenwood_hosting_network_policy
+    fail_msg: Existing network policy differs; migrate its durable binding fingerprint explicitly
+  when: hosting_policy.stat.exists
+
+- name: Install approved network policy
+  ansible.builtin.copy:
+    content: "{{ greenwood_hosting_network_policy | to_nice_json }}\n"
+    dest: /etc/greenwood/application-network.json
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Install managed forwarding helper
+  ansible.builtin.copy:
+    src: "{{ role_path }}/../../../provider-observer/greenwood-application-forwarding"
+    dest: /usr/local/libexec/greenwood-application-forwarding
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install managed forwarding unit
+  ansible.builtin.copy:
+    src: "{{ role_path }}/../../../provider-observer/greenwood-application-forwarding.service"
+    dest: /etc/systemd/system/greenwood-application-forwarding.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install authoritative provider hosting drop-in
+  ansible.builtin.template:
+    src: application-hosting.conf.j2
+    dest: /etc/systemd/system/greenwood-provider.service.d/zzzzzz-greenwood-hosting.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable forwarding without restarting the provider
+  ansible.builtin.systemd_service:
+    name: greenwood-application-forwarding.service
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Ensure containerd is available without restarting it
+  ansible.builtin.systemd_service:
+    name: containerd.service
+    enabled: true
+    state: started
+
+- name: Enable provider without changing its current running state
+  ansible.builtin.systemd_service:
+    name: greenwood-provider.service
+    enabled: true

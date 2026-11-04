@@ -1,0 +1,23 @@
+---
+# Greenwood Gateway Network Inspection
+#
+# node-4 is the gateway/router ONLY: 10.77.0.1 (gateway/DNS) + 10.77.0.103
+# (management/legacy) + wlan0 10.77.1.126. It carries NO Greenwood protocol role.
+# Normal convergence never deletes identities or stops protocol services.
+# Destructive removal is isolated in gateway_teardown.yml.
+#
+# Usage:
+#   ansible-playbook gateway.yml -i inventory/generated.ini
+
+- name: Verify inventory-supplied gateway network identities
+  hosts: gateway
+  become: true
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    # node-4 is the gateway/router only; it never pulls private sources, so SSH
+    # agent forwarding (-A from ansible.cfg) is disabled to avoid hangs.
+    ansible_ssh_common_args: "-o ControlMaster=auto -o ControlPersist=60s"
+  roles:
+    - role: gateway
+      tags: [gateway]

@@ -1,0 +1,138 @@
+---
+# Explicit activation only; generic application publication remains authorization-gated.
+- name: Require hosting activation approval on every control-plane host
+  hosts: control_plane
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require scoped hosting activation and matching release path
+      ansible.builtin.assert:
+        that:
+          - greenwood_activate_hosting | default(false) | bool
+          - greenwood_hosting_release == '/opt/greenwood'
+          - greenwood_control_services | length > 0
+          - not (greenwood_control_configs.controller.deployment_enabled | default(false) | bool)
+          - not (greenwood_control_configs.edge.managed_reconciliation_enabled | default(false) | bool)
+
+- name: Import approved offline seed images and start registry services
+  hosts: application_providers
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require seed artifacts for both system services
+      ansible.builtin.assert:
+        that:
+          - greenwood_seed_images | map(attribute='id') | sort == ['greenwood-registry', 'greenwood-registry-auth']
+          - greenwood_system_services | map(attribute='id') | sort == ['greenwood-registry', 'greenwood-registry-auth']
+    - name: Validate seed artifact declarations
+      ansible.builtin.assert:
+        that:
+          - item.sha256 is match('^[a-f0-9]{64}$')
+          - item.image_ref is match('^[A-Za-z0-9.:/_-]+@sha256:[a-f0-9]{64}$')
+          - item.image_ref == (greenwood_system_services | selectattr('id', 'equalto', item.id) | first).imageRef
+      loop: "{{ greenwood_seed_images }}"
+    - name: Create protected seed cache
+      ansible.builtin.file:
+        path: /var/lib/greenwood-seeds
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+    - name: Stage approved OCI archives
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "/var/lib/greenwood-seeds/{{ item.id }}.tar"
+        owner: root
+        group: root
+        mode: '0600'
+      loop: "{{ greenwood_seed_images }}"
+    - name: Hash staged OCI archives before import
+      ansible.builtin.stat:
+        path: "/var/lib/greenwood-seeds/{{ item.id }}.tar"
+        checksum_algorithm: sha256
+      loop: "{{ greenwood_seed_images }}"
+      register: seed_files
+    - name: Reject seed archive checksum mismatch
+      ansible.builtin.assert:
+        that: item.stat.checksum == item.item.sha256
+      loop: "{{ seed_files.results }}"
+    - name: Inspect existing seed image names
+      ansible.builtin.command: ctr --namespace greenwood images list --quiet
+      register: seed_names
+      changed_when: false
+    - name: Import absent digest-scoped seed references using EROFS
+      ansible.builtin.command:
+        argv: [ctr, --namespace, greenwood, images, import, --snapshotter, erofs, --platform, linux/arm64, "{{ '/var/lib/greenwood-seeds/' ~ item.id ~ '.tar' }}"]
+      loop: "{{ greenwood_seed_images }}"
+      when: item.image_ref not in seed_names.stdout_lines
+    - name: Reinspect exact seed references after import
+      ansible.builtin.command: ctr --namespace greenwood images list --quiet
+      register: installed_seed_names
+      changed_when: false
+    - name: Require immutable seed references before any service start
+      ansible.builtin.assert:
+        that: item.image_ref in installed_seed_names.stdout_lines
+      loop: "{{ greenwood_seed_images }}"
+    # The existing supervisor independently checks expectedDigest and owned runtime state.
+    - name: Start the authorized issuer and registry supervisors
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        daemon_reload: true
+        enabled: true
+        state: started
+      loop: [greenwood-registry-auth, greenwood-registry]
+
+- name: Start policy publisher transport first
+  hosts: control_plane
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Validate and start dedicated SFTP when configured
+      ansible.builtin.command: sshd -t -f /etc/greenwood/control-plane/policy-sftp.conf
+      changed_when: false
+      when: greenwood_policy_sftp | default({}) | length > 0
+    - name: Enable dedicated policy SFTP
+      ansible.builtin.systemd_service:
+        name: greenwood-policy-sftp
+        enabled: true
+        state: started
+        daemon_reload: true
+      when: greenwood_policy_sftp | default({}) | length > 0
+    - name: Renew existing approved policy snapshots before consumers start
+      ansible.builtin.systemd_service:
+        name: greenwood-policy.service
+        state: started
+        daemon_reload: true
+      when: greenwood_policy_mode == 'renew'
+
+- name: Activate authenticated policy consumers and service endpoints
+  hosts: control_plane
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Retrieve and validate current signed policy before starting consumers
+      ansible.builtin.systemd_service:
+        name: greenwood-policy.service
+        state: started
+      when: greenwood_policy_mode == 'pull'
+    - name: Enable signed policy maintenance
+      ansible.builtin.systemd_service:
+        name: greenwood-policy.timer
+        enabled: true
+        state: started
+    - name: Start authenticated control-plane services
+      ansible.builtin.systemd_service:
+        name: "greenwood-{{ item }}"
+        enabled: true
+        state: started
+      loop: "{{ greenwood_control_services }}"
+    - name: Start HTTPS frontends
+      ansible.builtin.systemd_service:
+        name: "greenwood-{{ item.name }}-https"
+        enabled: true
+        state: started
+      loop: "{{ greenwood_https_frontends }}"

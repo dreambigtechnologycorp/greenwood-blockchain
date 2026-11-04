@@ -1,0 +1,47 @@
+---
+- name: Require explicit signed policy transport configuration
+  ansible.builtin.assert:
+    that:
+      - greenwood_policy_mode in ['renew', 'pull']
+      - "'receiver' in greenwood_control_configs"
+      - greenwood_policy_environment is mapping
+      - greenwood_control_configs.receiver.revocation_max_age | int >= 90
+      - greenwood_control_configs.receiver.allocation_max_age | int >= 90
+      - greenwood_control_configs.receiver.publisher_validity_seconds | default(300) | int >= 90
+
+- name: Validate policy unit environment without interpreting shell input
+  ansible.builtin.assert:
+    that:
+      - item.key in ['GREENWOOD_POLICY_PUBLIC_DIRECTORY', 'GREENWOOD_POLICY_PUBLISHER_DIRECTORY', 'GREENWOOD_POLICY_TRANSPORT_DIRECTORY', 'GREENWOOD_POLICY_STAGING_DIRECTORY', 'GREENWOOD_POLICY_SSH_PEER', 'GREENWOOD_POLICY_SFTP_PORT']
+      - item.value is match('^[A-Za-z0-9_/@.:-]+$')
+      - "'..' not in item.value"
+  loop: "{{ greenwood_policy_environment | dict2items }}"
+  no_log: true
+
+- name: Require identical publisher state paths
+  ansible.builtin.assert:
+    that:
+      - greenwood_policy_environment.GREENWOOD_POLICY_PUBLISHER_DIRECTORY == greenwood_control_configs.receiver.policy_publisher_directory
+      - greenwood_policy_environment.GREENWOOD_POLICY_PUBLIC_DIRECTORY is match('^/var/lib/greenwood-control-plane/')
+  when: greenwood_policy_mode == 'renew'
+
+- name: Require pinned SSH transport paths
+  ansible.builtin.assert:
+    that:
+      - greenwood_policy_environment.GREENWOOD_POLICY_SSH_PEER is match('^[a-z][a-z0-9-]*@[A-Za-z0-9.:-]+$')
+      - greenwood_policy_environment.GREENWOOD_POLICY_TRANSPORT_DIRECTORY is match('^/etc/greenwood/')
+      - greenwood_policy_environment.GREENWOOD_POLICY_STAGING_DIRECTORY is match('^/var/lib/greenwood-control-plane/')
+      - greenwood_policy_environment.GREENWOOD_POLICY_SFTP_PORT is match('^[0-9]+$')
+      - greenwood_policy_environment.GREENWOOD_POLICY_SFTP_PORT | int >= 1024
+      - greenwood_policy_environment.GREENWOOD_POLICY_SFTP_PORT | int <= 65535
+  when: greenwood_policy_mode == 'pull'
+
+- name: Stage policy service and timer without enabling signing or distribution
+  ansible.builtin.template:
+    src: "policy.{{ item }}.j2"
+    dest: "/etc/systemd/system/greenwood-policy.{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: [service, timer]
+  notify: Reload control-plane units

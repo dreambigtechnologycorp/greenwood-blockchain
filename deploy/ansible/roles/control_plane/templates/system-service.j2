@@ -1,0 +1,16 @@
+[Unit]
+Description=Greenwood hosted {{ item.id }}
+Requires=containerd.service
+After=network-online.target containerd.service
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/usr/bin/php {{ greenwood_hosting_release }}/system-services/runtime/supervise.php /etc/greenwood/system-services/{{ item.id }}.json
+UMask=0077
+KillSignal=SIGTERM
+TimeoutStopSec=30
+# An uncertain container start is reconciled, never blindly replayed.
+Restart=no
+[Install]
+WantedBy=multi-user.target

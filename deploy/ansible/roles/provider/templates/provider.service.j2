@@ -1,0 +1,24 @@
+[Unit]
+Description=Greenwood Provider Node
+After=network.target containerd.service
+Wants=containerd.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+RuntimeDirectory=greenwood-provider
+RuntimeDirectoryMode=0700
+ExecStart=/opt/greenwood/bin/greenwood-provider --config=/etc/greenwood/provider.json
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/greenwood-provider /var/lib/greenwood /var/lib/greenwood-provider /var/log/greenwood /etc/greenwood
+
+[Install]
+WantedBy=multi-user.target

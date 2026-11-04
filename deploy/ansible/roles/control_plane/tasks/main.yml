@@ -1,0 +1,180 @@
+---
+- name: Validate HTTPS inventory before provisioning any prerequisites
+  ansible.builtin.import_tasks: https_preflight.yml
+
+- name: Require immutable release and explicit service selection
+  ansible.builtin.assert:
+    that:
+      - greenwood_hosting_release is match('^/opt/[A-Za-z0-9_/-]+$')
+      - "'..' not in greenwood_hosting_release"
+      - greenwood_control_services | difference(['receiver', 'observer', 'controller', 'edge']) | length == 0
+      - greenwood_control_configs is mapping
+      - greenwood_control_files is sequence
+
+- name: Install PHP control-plane prerequisites
+  ansible.builtin.apt:
+    name: "{{ greenwood_control_packages }}"
+    state: present
+    policy_rc_d: 101
+
+- name: Install approved PHP security runtime
+  ansible.builtin.import_tasks: "{{ playbook_dir }}/../tasks/php_runtime.yml"
+
+- name: Verify approved release and required PHP modules
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/php
+      - -r
+      - >-
+        if(PHP_VERSION_ID!==80512)exit(3);
+        foreach(['curl','openssl','sodium','pdo_sqlite','posix'] as $e)if(!extension_loaded($e))exit(1);
+        for($p=$argv[1];;$p=dirname($p)){
+        if(is_link($p)||!file_exists($p)||fileowner($p)!==0||(fileperms($p)&0022)!==0)exit(2);
+        if($p==='/')break;}
+        require $argv[1];
+      - "{{ greenwood_hosting_release }}/system-services/deployment-controller/autoload.php"
+  changed_when: false
+  check_mode: false
+
+- name: Validate protected destination paths
+  ansible.builtin.assert:
+    that:
+      - item is match('^/(etc/greenwood|var/lib/greenwood-control-plane)/[A-Za-z0-9_./-]+$')
+      - "'..' not in item"
+  loop: "{{ greenwood_control_directories + (greenwood_control_files | map(attribute='dest') | list) }}"
+  no_log: true
+
+- name: Reject unsafe existing destination ancestry before provisioning
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/php
+      - -r
+      - >-
+        for($p=$argv[1];;$p=dirname($p)){
+        if(is_link($p))exit(1);
+        if(file_exists($p)&&(fileowner($p)!==0||(fileperms($p)&0022)!==0))exit(2);
+        if($p==='/')break;}
+      - "{{ item }}"
+  loop: "{{ ['/etc/greenwood/control-plane', '/var/lib/greenwood-control-plane'] + greenwood_control_directories + (greenwood_control_files | map(attribute='dest') | list) }}"
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Establish private state and configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  loop: "{{ ['/etc/greenwood/control-plane', '/var/lib/greenwood-control-plane'] + greenwood_control_directories }}"
+  when: greenwood_policy_sftp | length == 0 or item != greenwood_policy_environment.GREENWOOD_POLICY_PUBLIC_DIRECTORY | default('')
+
+- name: Provision externally authorized certificates keys and signed snapshots
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+  loop: "{{ greenwood_control_files }}"
+  no_log: true
+  diff: false
+
+- name: Validate configuration service names
+  ansible.builtin.assert:
+    that:
+      - item.key in greenwood_control_services
+      - item.value is mapping
+      - not (item.value.deployment_enabled | default(false) | bool)
+      - not (item.value.managed_reconciliation_enabled | default(false) | bool)
+  loop: "{{ greenwood_control_configs | dict2items }}"
+  no_log: true
+
+- name: Install protected data-only service settings
+  ansible.builtin.template:
+    src: config.php.j2
+    dest: "/etc/greenwood/control-plane/{{ item.key }}.php"
+    owner: root
+    group: root
+    mode: '0600'
+    validate: /usr/bin/php -l %s
+    force: false
+  loop: "{{ greenwood_control_configs | dict2items }}"
+  no_log: true
+  diff: false
+
+- name: Inspect installed settings without reading secrets into output
+  ansible.builtin.stat:
+    path: "/etc/greenwood/control-plane/{{ item.key }}.php"
+    checksum_algorithm: sha256
+  loop: "{{ greenwood_control_configs | dict2items }}"
+  register: control_config_stats
+  no_log: true
+
+- name: Reject configuration drift instead of overwriting operational authorization
+  ansible.builtin.assert:
+    that:
+      - control_config_stats.results[config_index].stat.uid == 0
+      - control_config_stats.results[config_index].stat.mode == '0600'
+      - not control_config_stats.results[config_index].stat.islnk
+      - control_config_stats.results[config_index].stat.checksum == (lookup('ansible.builtin.template', 'config.php.j2') | hash('sha256'))
+    fail_msg: Existing configuration differs; reconcile approved settings explicitly before staging
+  loop: "{{ greenwood_control_configs | dict2items }}"
+  loop_control:
+    index_var: config_index
+  no_log: true
+  when: not ansible_check_mode
+
+- name: Require settings for every selected service
+  ansible.builtin.assert:
+    that:
+      - item in greenwood_control_configs
+  loop: "{{ greenwood_control_services }}"
+
+- name: Install control-plane service units without starting or restarting
+  ansible.builtin.template:
+    src: service.j2
+    dest: "/etc/systemd/system/greenwood-{{ item }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ greenwood_control_services }}"
+  notify: Reload control-plane units
+
+- name: Install managed reconciler unit when edge is selected
+  ansible.builtin.template:
+    src: reconcile.service.j2
+    dest: /etc/systemd/system/greenwood-managed-edge.service
+    owner: root
+    group: root
+    mode: '0644'
+  when: "'edge' in greenwood_control_services"
+  notify: Reload control-plane units
+
+- name: Stage approved hosted registry services
+  ansible.builtin.include_tasks: system_services.yml
+  when: greenwood_system_services | length > 0
+
+- name: Stage managed edge timer without enabling publication
+  ansible.builtin.template:
+    src: reconcile.timer.j2
+    dest: /etc/systemd/system/greenwood-managed-edge.timer
+    owner: root
+    group: root
+    mode: '0644'
+  when: "'edge' in greenwood_control_services"
+  notify: Reload control-plane units
+
+- name: Stage explicitly configured signed policy renewal or distribution
+  ansible.builtin.include_tasks: policy.yml
+  when: greenwood_policy_mode != ''
+
+- name: Stage explicitly configured HTTPS frontends
+  ansible.builtin.include_tasks: https.yml
+  when: greenwood_https_frontends | length > 0
+
+- name: Stage isolated read-only policy transport
+  ansible.builtin.include_tasks: policy_sftp.yml
+  when: greenwood_policy_sftp | length > 0

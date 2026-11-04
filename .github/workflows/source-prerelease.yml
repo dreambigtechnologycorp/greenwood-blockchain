@@ -1,0 +1,54 @@
+name: Source prerelease
+
+on:
+  push:
+    tags:
+      - 'v*-alpha.*'
+      - 'v*-beta.*'
+      - 'v*-rc.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-prerelease-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the tagged source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+
+      - name: Verify source and existing packaging tests
+        run: |
+          python3 scripts/check-public-source.py
+          python3 -m unittest discover -s tests/Release -v
+          test -f "docs/releases/$GITHUB_REF_NAME.md"
+
+      - name: Package committed source
+        run: |
+          python3 scripts/package-source.py "$GITHUB_REF_NAME" --output-dir "$RUNNER_TEMP/greenwood-source"
+          cd "$RUNNER_TEMP/greenwood-source"
+          sha256sum -c SHA256SUMS
+
+      - name: Upload source assets and publish the prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/greenwood-source/"* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --draft --prerelease --latest=false \
+            --title "Greenwood $GITHUB_REF_NAME" \
+            --notes-file "docs/releases/$GITHUB_REF_NAME.md"
+          test "$(gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets | length')" = 3
+          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --draft=false --prerelease --latest=false

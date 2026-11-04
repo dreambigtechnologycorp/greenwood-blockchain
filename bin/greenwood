@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+require __DIR__ . '/../vendor/autoload.php';
+
+use Greenwood\Cli\GreenwoodCli;
+use Greenwood\Rpc\RpcClient;
+
+exit(GreenwoodCli::run(
+    $argv,
+    fn (string $endpoint) => new RpcClient($endpoint),
+    fn (string $s) => fwrite(STDOUT, $s),
+    fn (string $s) => fwrite(STDERR, $s),
+));

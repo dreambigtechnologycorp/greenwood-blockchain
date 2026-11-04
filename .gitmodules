@@ -1,0 +1,4 @@
+[submodule "runtime/containerd/proto/containerd-repo"]
+    active = true
+    path = runtime/containerd/proto/containerd-repo
+    url = https://github.com/containerd/containerd.git

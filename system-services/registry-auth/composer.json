@@ -1,0 +1,15 @@
+{
+    "name": "greenwood/system-registry-auth",
+    "description": "GREENWOOD_REGISTRY_AUTH_V1",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Greenwood\\SystemServices\\RegistryAuth\\": "src/",
+            "Greenwood\\": "greenwood-src/"
+        }
+    },
+    "require": {
+        "php": "^8.5"
+    },
+    "license": "Apache-2.0"
+}

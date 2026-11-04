@@ -1,0 +1,107 @@
+---
+- name: Require explicit destructive gateway cleanup authorization
+  ansible.builtin.assert:
+    that:
+      - greenwood_gateway_teardown_authorized | default(false) | bool
+    fail_msg: This task removes protocol identities and must never run during normal convergence
+
+# =============================================================================
+# Gateway Role (node-4)
+#
+# node-4 is the Greenwood LAN gateway/router ONLY:
+#   10.77.0.1   gateway/DNS/router address (permanent)
+#   10.77.0.103 management/legacy address (permanent)
+#   wlan0          10.77.1.126 (permanent)
+#
+# node-4 has NO Greenwood validator/provider/compute/contributor role. This role
+# enforces that Greenwood protocol processes and identity material can never
+# accidentally return, while explicitly PRESERVING the node's network
+# functionality (DHCP, DNS, routing, NAT/firewall, WireGuard, management).
+# =============================================================================
+
+- name: Verify inventory network identities before destructive cleanup
+  ansible.builtin.import_tasks: main.yml
+
+- name: Gateway | stop and mask any residual Greenwood validator service
+  ansible.builtin.systemd_service:
+    name: greenwoodd
+    state: stopped
+    enabled: false
+    masked: true
+  failed_when: false
+
+- name: Gateway | stop and mask any residual Greenwood provider service
+  ansible.builtin.systemd_service:
+    name: greenwood-provider
+    state: stopped
+    enabled: false
+    masked: true
+  failed_when: false
+
+- name: Gateway | remove residual unit files (never affect network services)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/systemd/system/greenwoodd.service
+    - /etc/systemd/system/greenwood-provider.service
+  changed_when: false
+
+- name: Gateway | remove residual Greenwood identity and genesis material
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/greenwood/validator.key
+    - /etc/greenwood/genesis.json
+    - /etc/greenwood/operator.token
+  changed_when: false
+
+- name: Gateway | reload systemd after cleanup
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  changed_when: false
+
+- name: Gateway | verify greenwoodd is inactive / not-found
+  ansible.builtin.command: systemctl is-active greenwoodd
+  register: gateway_greenwoodd_active
+  changed_when: false
+  failed_when: false
+
+- name: Gateway | verify greenwoodd is disabled / not-found
+  ansible.builtin.command: systemctl is-enabled greenwoodd
+  register: gateway_greenwoodd_enabled
+  changed_when: false
+  failed_when: false
+
+- name: Gateway | assert no Greenwood validator service can return
+  ansible.builtin.assert:
+    that:
+      - gateway_greenwoodd_active.stdout | trim in ['inactive', 'unknown']
+      - gateway_greenwoodd_active.rc in [0, 3, 4]
+      - gateway_greenwoodd_enabled.stdout | trim in ['disabled', 'masked', 'not-found', 'unknown']
+      - gateway_greenwoodd_enabled.rc in [0, 1, 3, 4]
+    fail_msg: "node-4 still has a Greenwood validator service present"
+    quiet: true
+
+- name: Gateway | verify no Greenwood provider runtime remains
+  ansible.builtin.command: systemctl is-active greenwood-provider
+  register: gateway_provider_active
+  changed_when: false
+  failed_when: false
+
+- name: Gateway | assert no Greenwood provider service can return
+  ansible.builtin.assert:
+    that:
+      - gateway_provider_active.stdout | trim in ['inactive', 'unknown', 'not-found']
+      - gateway_provider_active.rc in [0, 1, 3, 4]
+    fail_msg: "node-4 still has a Greenwood provider service present"
+    quiet: true
+
+- name: Gateway | display node-4 cleanup evidence
+  ansible.builtin.debug:
+    msg:
+      - "node={{ inventory_hostname }} (gateway)"
+      - "greenwoodd is-active={{ gateway_greenwoodd_active.stdout | trim }} is-enabled={{ gateway_greenwoodd_enabled.stdout | trim }}"
+      - "greenwood-provider is-active={{ gateway_provider_active.stdout | trim }}"
+      - "required_addresses={{ greenwood_gateway_required_addresses | join(' | ') }}"

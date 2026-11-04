@@ -1,0 +1,31 @@
+---
+# Validator role defaults
+# Extends common role
+
+validator_label: "{{ validator_label | default('unknown') }}"
+
+# Entrypoints the canonical release must provide on a validator node
+greenwood_release_entrypoints:
+  - "bin/greenwoodd"
+  - "vendor/autoload.php"
+
+# =============================================================================
+# Canonical release-tree convergence (see common/tasks/converge_release_tree.yml)
+# =============================================================================
+# The application runtime root is converged to the canonical node-1-built
+# release artifact. Deployment-managed runtime dependencies that intentionally
+# live inside that root are preserved by explicit exclusion; they are the ONLY
+# non-release entries allowed to remain.
+#
+# Never touched by release convergence (canonical state / configuration):
+#   Greenwood_DATA_DIR (/var/lib/greenwood)
+#   Greenwood_ETC_DIR  (/etc/greenwood)
+greenwood_preserved_runtime_entries:
+  - "wasmtime-{{ Greenwood_WASMTIME_VERSION }}"
+  - "wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux"
+  - "wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api"
+
+# Clean staging area and staged artifact (siblings of the runtime root, never
+# inside it, so staging can never be mistaken for deployed release content)
+greenwood_staging_dir: "/opt/greenwood-release-staging"
+greenwood_staged_artifact: "/tmp/greenwood-release.tar.gz"

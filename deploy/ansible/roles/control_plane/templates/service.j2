@@ -1,0 +1,34 @@
+{% set scripts = {'receiver': 'assignment-receiver.php', 'observer': 'provider-observer.php', 'edge': 'edge-admission.php'} %}
+{% set variables = {'receiver': 'GREENWOOD_ASSIGNMENT_CONFIG', 'observer': 'GREENWOOD_H8_OBSERVER_CONFIG', 'edge': 'GREENWOOD_EDGE_ADMISSION_CONFIG', 'controller': 'GREENWOOD_CONTROLLER_CONFIG'} %}
+[Unit]
+Description=Greenwood {{ item }}
+Wants=network-online.target
+After=network-online.target
+{% if item in ['observer','controller'] %}
+Requires=greenwood-provider.service
+After=greenwood-provider.service greenwood-receiver.service
+{% endif %}
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory={{ greenwood_hosting_release }}/system-services/deployment-controller
+Environment={{ variables[item] }}=/etc/greenwood/control-plane/{{ item }}.php
+{% if item == 'controller' %}
+ExecStart=/usr/bin/php -d display_errors=0 -S 127.0.0.1:19450 public/index.php
+{% else %}
+ExecStart=/usr/bin/php -d display_errors=0 deploy/{{ scripts[item] }}
+{% endif %}
+UMask=0077
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/greenwood-control-plane
+# PHP's built-in HTTP server may log signed request URLs.
+StandardOutput=null
+StandardError=null
+[Install]
+WantedBy=multi-user.target

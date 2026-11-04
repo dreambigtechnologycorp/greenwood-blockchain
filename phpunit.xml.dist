@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         bootstrap="vendor/autoload.php" cacheDirectory=".phpunit.cache">
+    <testsuites>
+        <testsuite name="source">
+            <directory>tests/Unit</directory>
+            <directory>tests/Integration</directory>
+            <directory>tests/Consensus</directory>
+            <directory>tests/Rpc</directory>
+            <directory>tests/Cli</directory>
+            <directory>tests/Operator</directory>
+            <directory>tests/Compute</directory>
+            <exclude>tests/Compute/Containerd/ChainIsolationTest.php</exclude>
+            <exclude>tests/Compute/Containerd/ColdImagePreparationTest.php</exclude>
+            <exclude>tests/Compute/Containerd/ExecutionStatusMatrixTest.php</exclude>
+            <exclude>tests/Compute/Containerd/NativeLifecycleTest.php</exclude>
+            <exclude>tests/Compute/Containerd/NativeOciLifecycleTest.php</exclude>
+            <exclude>tests/Compute/Containerd/OutputBoundingTest.php</exclude>
+            <exclude>tests/Compute/Containerd/ResourceEnforcementTest.php</exclude>
+            <exclude>tests/Compute/Containerd/RuntimeHardeningTest.php</exclude>
+            <exclude>tests/Compute/Containerd/VersionServiceTest.php</exclude>
+        </testsuite>
+        <testsuite name="contracts">
+            <directory>tests/Contracts</directory>
+        </testsuite>
+        <testsuite name="native">
+            <file>tests/Compute/Containerd/ChainIsolationTest.php</file>
+            <file>tests/Compute/Containerd/ColdImagePreparationTest.php</file>
+            <file>tests/Compute/Containerd/ExecutionStatusMatrixTest.php</file>
+            <file>tests/Compute/Containerd/NativeLifecycleTest.php</file>
+            <file>tests/Compute/Containerd/NativeOciLifecycleTest.php</file>
+            <file>tests/Compute/Containerd/OutputBoundingTest.php</file>
+            <file>tests/Compute/Containerd/ResourceEnforcementTest.php</file>
+            <file>tests/Compute/Containerd/RuntimeHardeningTest.php</file>
+            <file>tests/Compute/Containerd/VersionServiceTest.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>

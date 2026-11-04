@@ -1,0 +1,9 @@
+# Documentation-only addresses. Copy to a local .tfvars file and replace every value.
+ssh_user = "operator"
+node_addresses = {
+  node-1 = "10.77.0.100"
+  node-2 = "10.77.0.101"
+  node-3 = "10.77.0.102"
+  node-4 = "10.77.0.103"
+}
+gateway_address = "10.77.0.1"

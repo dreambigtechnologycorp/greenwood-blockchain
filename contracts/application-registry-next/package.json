@@ -1,0 +1,10 @@
+{
+    "name": "greenwood-registry-security-audit",
+    "private": true,
+    "version": "0.0.0",
+    "description": "Pinned local audit compiler; not a deployment package",
+    "devDependencies": {
+        "assemblyscript": "0.28.20"
+    },
+    "license": "Apache-2.0"
+}

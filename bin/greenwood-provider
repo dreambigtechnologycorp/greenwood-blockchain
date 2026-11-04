@@ -1,0 +1,149 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+require __DIR__ . '/../vendor/autoload.php';
+use Greenwood\Provider\{ProviderConfig, ProviderIdentity, ProviderJobRegistry, HttpChainClient, Supervisor};
+umask(0077);
+$options = getopt('', ['config:', 'once', 'status', 'drain', 'job:', 'active', 'recent:', 'operator-socket:', 'operator-token-file:', 'application-listen:', 'application-peer:', 'application-network-policy:']);
+try {
+    $config = ProviderConfig::fromFile($options['config'] ?? throw new InvalidArgumentException('--config is required'));
+    if (isset($options['status']) || isset($options['job']) || isset($options['active']) || isset($options['recent'])) {
+        $status = json_decode(file_get_contents($config->dataPath . '/status.json'), true, 32, JSON_THROW_ON_ERROR);
+        $status['healthy'] = posix_kill($status['pid'], 0) && time() - $status['observed_at'] <= 30;
+        $status['ready'] = $status['healthy'] && $status['ready'];
+        if (isset($options['job'])) $status['jobs'] = array_values(array_filter($status['jobs'], fn ($j) => $j['request_id'] . ':' . $j['generation'] === $options['job']));
+        if (isset($options['active'])) $status['jobs'] = array_values(array_filter($status['jobs'], fn ($j) => !in_array($j['state'], ['SETTLED', 'STALE', 'FAILED_LOCAL'], true)));
+        if (isset($options['recent'])) {
+            if (!ctype_digit($options['recent']) || (int)$options['recent'] > 100 || (int)$options['recent'] < 1) throw new InvalidArgumentException('--recent requires 1..100');
+            $status['jobs'] = array_slice(array_values(array_filter($status['jobs'], fn ($j) => in_array($j['state'], ['SETTLED', 'STALE', 'FAILED_LOCAL'], true))), -(int)$options['recent']);
+        }
+        echo json_encode($status, JSON_THROW_ON_ERROR) . "\n"; exit(0);
+    }
+    if (PHP_OS_FAMILY !== 'Linux' || posix_geteuid() !== 0) throw new RuntimeException('Provider requires Linux root supervisor with isolated worker UID');
+    $identity = ProviderIdentity::fromFile($config->keyFile, $config->expectedProviderId, $config->expectedPublicKey);
+    if (fileowner($config->keyFile) !== posix_geteuid()) throw new RuntimeException('Signing key must belong to supervisor UID');
+    $registry = new ProviderJobRegistry($config->dataPath, $config->chainId, $identity->providerId);
+    $registry->setDrain(isset($options['drain']));
+    $supervisor = new Supervisor($config, $identity, $registry, new HttpChainClient($config->rpcEndpoint, $config->chainId));
+    $operatorTransport = null;
+    $applicationTransport = null;
+    if (isset($options['application-network-policy']) && !isset($options['operator-socket'])) {
+        throw new InvalidArgumentException('--application-network-policy requires --operator-socket');
+    }
+    if (isset($options['application-listen'])) {
+        require_once __DIR__ . '/../src/Rpc/ProviderApplicationHttpApi.php';
+        if (!isset($options['operator-socket'], $options['application-peer'])) {
+            throw new InvalidArgumentException('--application-listen requires --operator-socket and --application-peer');
+        }
+        \Greenwood\Rpc\ProviderApplicationHttpApi::validateEndpoint($options['application-listen']);
+    }
+
+    if (isset($options['operator-socket'])) {
+        \Greenwood\Provider\ProviderApplicationDependencies::assertAvailable();
+        // Operator control plane on a private Unix socket.
+        // Capability mutations use canonical chain transactions; application
+        // lifecycle mutations remain provider-local and constrained.
+        $tokenPath = $options['operator-token-file'] ?? throw new InvalidArgumentException('--operator-token-file required with --operator-socket');
+        $adapter = new \Greenwood\Provider\ProviderOperator($config, $identity, $registry, new HttpChainClient($config->rpcEndpoint, $config->chainId));
+
+        $applicationRegistry =
+            new \Greenwood\Provider\ProviderApplicationRegistry(
+                $config->dataPath . '/applications'
+            );
+
+        $applicationClients =
+            (
+                new \Greenwood\Compute\Containerd\ContainerdClientSet(
+                    new \Greenwood\Compute\Containerd\ContainerdConnection(
+                        'greenwood',
+                        [],
+                        $config->containerdSocket
+                    )
+                )
+            )->setSnapshotter(
+                $config->snapshotter
+            );
+
+        $applicationNetworkPolicy = isset($options['application-network-policy'])
+            ? \Greenwood\Provider\ProviderApplicationNetworkPolicy::fromFile($options['application-network-policy'])
+            : null;
+        $applicationNetwork = $applicationNetworkPolicy?->createNetwork($config->dataPath . '/application-network');
+        if ($applicationNetworkPolicy !== null) {
+            $applicationNetworkPolicy->assertCoverage($applicationRegistry->active(), $applicationNetwork);
+        }
+
+        $applicationAdapter =
+            \Greenwood\Provider\ProviderApplicationOperator::fromClients(
+                $applicationClients,
+                $applicationRegistry,
+                $applicationNetwork,
+                $applicationNetworkPolicy === null ? null : $applicationNetworkPolicy->assertMutable(...)
+            );
+
+        $operator = new \Greenwood\Rpc\OperatorApi(
+            \Greenwood\Rpc\OperatorAuth::fromFile($tokenPath),
+            providerStatus: fn (): array => $adapter->status(),
+            providerJobs: fn (): array => $adapter->jobs(),
+            providerRuntime: fn (): array => $adapter->runtime(),
+            providerDrain: fn (): array => $adapter->drain(),
+            providerResume: fn (): array => $adapter->resume(),
+            providerCapability: fn (array $input): array => $adapter->capability($input),
+            providerApplicationReserve: $applicationAdapter->reserve(...),
+            providerApplicationStart:
+                fn (
+                    int $applicationId,
+                    string $service,
+                    string $imageRef,
+                    \Greenwood\Compute\Containerd\RegistryTransferAuth $registryAuth
+                ): array =>
+                    $applicationAdapter->start(
+                        $applicationId,
+                        $service,
+                        $imageRef,
+                        $registryAuth
+                    ),
+            providerApplicationInspect:
+                fn (
+                    int $applicationId,
+                    string $service
+                ): array =>
+                    $applicationAdapter->inspect(
+                        $applicationId,
+                        $service
+                    ),
+            providerApplicationStop:
+                fn (
+                    int $applicationId,
+                    string $service
+                ): array =>
+                    $applicationAdapter->stop(
+                        $applicationId,
+                        $service
+                    ),
+        );
+        $operatorTransport = new \Greenwood\Consensus\Network\Transport('unix://' . $options['operator-socket'],
+            fn ($method, $path, $body, $headers = []) => $operator->handle($method, $path, $body, $headers));
+        if (isset($options['application-listen'])) {
+            $applicationHttp = new \Greenwood\Rpc\ProviderApplicationHttpApi(
+                $operator, \Greenwood\Rpc\OperatorAuth::fromFile($tokenPath), $options['application-peer']
+            );
+            $applicationTransport = new \Greenwood\Consensus\Network\Transport(
+                $options['application-listen'],
+                fn ($method, $path, $body, $headers = [], $peer = '') =>
+                    $applicationHttp->handle($method, $path, $body, $headers, $peer)
+            );
+        }
+
+    }
+    $running = true; pcntl_async_signals(true);
+    pcntl_signal(SIGTERM, static function () use (&$running): void { $running = false; });
+    pcntl_signal(SIGINT, static function () use (&$running): void { $running = false; });
+    do {
+        $operatorTransport?->poll();
+        $applicationTransport?->poll();
+        try { $supervisor->tick(); }
+        catch (Throwable $error) { $supervisor->publish(get_class($error)); fwrite(STDERR, json_encode(['error_class' => get_class($error)]) . "\n"); }
+        if (isset($options['once'])) break;
+        usleep($config->pollIntervalMs * 1000);
+    } while ($running);
+} catch (Throwable $error) { fwrite(STDERR, $error->getMessage() . "\n"); exit(1); }

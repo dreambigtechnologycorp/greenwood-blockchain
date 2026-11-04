@@ -1,0 +1,24 @@
+[Unit]
+Description=Greenwood Deployment Controller (writes disabled pending acceptance)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/greenwood-h8/system-services/deployment-controller
+Environment=GREENWOOD_CONTROLLER_CONFIG=/etc/greenwood/control-plane/deployment-controller/config.php
+ExecStart=/usr/bin/php -d display_errors=0 -S 127.0.0.1:19450 public/index.php
+UMask=0077
+# The staging PHP server logs raw request URIs; do not retain its access output.
+StandardOutput=null
+StandardError=null
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/greenwood-deployment-controller
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

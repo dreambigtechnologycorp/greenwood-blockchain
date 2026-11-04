@@ -1,0 +1,11 @@
+---
+- name: Validate hosting Apache configuration
+  ansible.builtin.command: apache2ctl configtest
+  changed_when: false
+  listen: Validate and reload hosting Apache
+
+- name: Reload validated hosting Apache configuration
+  ansible.builtin.systemd_service:
+    name: apache2
+    state: reloaded
+  listen: Validate and reload hosting Apache

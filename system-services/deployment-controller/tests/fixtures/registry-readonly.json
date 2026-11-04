@@ -1,0 +1,194 @@
+{
+  "observed_at": "2026-10-12T18:16:08.379467+00:00",
+  "contract_id": "77e7bbde37f96369591a49fa63b5ce5b0d4e67c3bc98fd8c8fbabdff815d1715",
+  "before": {
+    "chain_id": "greenwood-physical-v1",
+    "api_version": "v1",
+    "role": "validator",
+    "height": 17379,
+    "finalized_height": 17379,
+    "block_hash": "2b731d3284a05635ba28434ab9e8966ea2f0ebfb9c86ef90f4c98d7273d8a101",
+    "state_root": "5f7e2d9cf49250c5b742a2901e3972c72e90079a1d123d0e885e814ea999f178",
+    "validator_count": 3,
+    "validator_ids": [
+      "A",
+      "B",
+      "C"
+    ],
+    "block_time_seconds": 60,
+    "supply": {
+      "hard_cap": 1000000000,
+      "total_supply": "1000000000",
+      "account_count": 9,
+      "emitted_rewards": 0,
+      "burned_fees": 0
+    },
+    "economy": {
+      "block_time_seconds": 60,
+      "supply": {
+        "hard_cap": 1000000000
+      },
+      "emission": {
+        "source": "security_infrastructure_reserve",
+        "releases_per_year": 525960,
+        "first_year_reserve_release": 5259600,
+        "epochs": [
+          {
+            "years_start": 0,
+            "years_end": 4,
+            "reward_per_block": 10
+          },
+          {
+            "years_start": 4,
+            "years_end": 8,
+            "reward_per_block": 7.5
+          },
+          {
+            "years_start": 8,
+            "years_end": 12,
+            "reward_per_block": 5
+          },
+          {
+            "years_start": 12,
+            "years_end": 16,
+            "reward_per_block": 2.5
+          },
+          {
+            "years_start": 16,
+            "years_end": null,
+            "reward_per_block": 1
+          }
+        ]
+      },
+      "fees": {
+        "burn_percent": 20,
+        "operator_percent": 80
+      }
+    },
+    "syncing": false
+  },
+  "metadata": {
+    "contract_id": "77e7bbde37f96369591a49fa63b5ce5b0d4e67c3bc98fd8c8fbabdff815d1715",
+    "abi_version": 1,
+    "wasm_hash": "77e7bbde37f96369591a49fa63b5ce5b0d4e67c3bc98fd8c8fbabdff815d1715",
+    "balance": "0",
+    "finalized_height": 17379
+  },
+  "queries": {
+    "qap": {
+      "contract_id": "77e7bbde37f96369591a49fa63b5ce5b0d4e67c3bc98fd8c8fbabdff815d1715",
+      "method": "qap",
+      "status": "SUCCESS",
+      "return_data": "00000002ec5824a69361ea9737a932d927cb55b05f59a00ecc705ec6e051e205b84e8ca20001000000000000000000000000000000000000000000000000000000000000000000010000000200000002",
+      "fuel_used": 174,
+      "finalized_height": 17379
+    },
+    "qau_controller": {
+      "contract_id": "77e7bbde37f96369591a49fa63b5ce5b0d4e67c3bc98fd8c8fbabdff815d1715",
+      "method": "qau",
+      "status": "SUCCESS",
+      "return_data": "000f",
+      "fuel_used": 825,
+      "finalized_height": 17379
+    },
+    "qau_unrelated": {
+      "contract_id": "77e7bbde37f96369591a49fa63b5ce5b0d4e67c3bc98fd8c8fbabdff815d1715",
+      "method": "qau",
+      "status": "SUCCESS",
+      "return_data": "0000",
+      "fuel_used": 886,
+      "finalized_height": 17379
+    },
+    "qre": {
+      "contract_id": "77e7bbde37f96369591a49fa63b5ce5b0d4e67c3bc98fd8c8fbabdff815d1715",
+      "method": "qre",
+      "status": "SUCCESS",
+      "return_data": "00000002ec5824a69361ea9737a932d927cb55b05f59a00ecc705ec6e051e205b84e8ca20001",
+      "fuel_used": 290,
+      "finalized_height": 17379
+    },
+    "qrs": {
+      "contract_id": "77e7bbde37f96369591a49fa63b5ce5b0d4e67c3bc98fd8c8fbabdff815d1715",
+      "method": "qrs",
+      "status": "SUCCESS",
+      "return_data": "7e1e1f95b3f6ce56633c6ea1c8952ad012319b4d0776b02a580a7b28d6afe3af",
+      "fuel_used": 440,
+      "finalized_height": 17379
+    },
+    "qac": {
+      "contract_id": "77e7bbde37f96369591a49fa63b5ce5b0d4e67c3bc98fd8c8fbabdff815d1715",
+      "method": "qac",
+      "status": "SUCCESS",
+      "return_data": "00000002",
+      "fuel_used": 251,
+      "finalized_height": 17379
+    }
+  },
+  "after": {
+    "chain_id": "greenwood-physical-v1",
+    "api_version": "v1",
+    "role": "validator",
+    "height": 17379,
+    "finalized_height": 17379,
+    "block_hash": "2b731d3284a05635ba28434ab9e8966ea2f0ebfb9c86ef90f4c98d7273d8a101",
+    "state_root": "5f7e2d9cf49250c5b742a2901e3972c72e90079a1d123d0e885e814ea999f178",
+    "validator_count": 3,
+    "validator_ids": [
+      "A",
+      "B",
+      "C"
+    ],
+    "block_time_seconds": 60,
+    "supply": {
+      "hard_cap": 1000000000,
+      "total_supply": "1000000000",
+      "account_count": 9,
+      "emitted_rewards": 0,
+      "burned_fees": 0
+    },
+    "economy": {
+      "block_time_seconds": 60,
+      "supply": {
+        "hard_cap": 1000000000
+      },
+      "emission": {
+        "source": "security_infrastructure_reserve",
+        "releases_per_year": 525960,
+        "first_year_reserve_release": 5259600,
+        "epochs": [
+          {
+            "years_start": 0,
+            "years_end": 4,
+            "reward_per_block": 10
+          },
+          {
+            "years_start": 4,
+            "years_end": 8,
+            "reward_per_block": 7.5
+          },
+          {
+            "years_start": 8,
+            "years_end": 12,
+            "reward_per_block": 5
+          },
+          {
+            "years_start": 12,
+            "years_end": 16,
+            "reward_per_block": 2.5
+          },
+          {
+            "years_start": 16,
+            "years_end": null,
+            "reward_per_block": 1
+          }
+        ]
+      },
+      "fees": {
+        "burn_percent": 20,
+        "operator_percent": 80
+      }
+    },
+    "syncing": false
+  },
+  "coherent": true
+}

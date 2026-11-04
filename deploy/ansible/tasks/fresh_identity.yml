@@ -1,0 +1,61 @@
+---
+- name: Create protected identity directory
+  ansible.builtin.file:
+    path: /etc/greenwood
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Copy approved genesis and chain configuration without replacing existing files
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/greenwood/{{ item.name }}"
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+  loop:
+    - {src: "{{ greenwood_genesis_src }}", name: genesis.json}
+    - {src: "{{ greenwood_chain_config_src }}", name: chain.json}
+  no_log: true
+  diff: false
+
+- name: Verify installed public configuration hashes
+  ansible.builtin.stat:
+    path: "/etc/greenwood/{{ item.name }}"
+    checksum_algorithm: sha256
+  loop:
+    - {name: genesis.json, sha256: "{{ greenwood_genesis_sha256 }}"}
+    - {name: chain.json, sha256: "{{ greenwood_chain_config_sha256 }}"}
+  register: fresh_configs
+
+- name: Refuse any configuration mismatch
+  ansible.builtin.assert:
+    that:
+      - item.stat.checksum == item.item.sha256
+      - not item.stat.islnk
+      - item.stat.uid == 0
+  loop: "{{ fresh_configs.results }}"
+
+- name: Copy approved per-node identities without replacing existing files
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/greenwood/{{ item.name }}"
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+  loop:
+    - {src: "{{ greenwood_validator_key_src }}", name: validator.key}
+    - {src: "{{ greenwood_provider_key_src }}", name: provider.key}
+    - {src: "{{ greenwood_operator_token_src }}", name: operator.token}
+  no_log: true
+  diff: false
+
+- name: Validate cryptographic identity against the approved genesis
+  ansible.builtin.script:
+    cmd: "{{ playbook_dir }}/../files/validate_cluster_identity.php /opt/greenwood {{ validator_label }} {{ provider_chain_id }} {{ greenwood_provider_public_key }}"
+    executable: /usr/bin/php
+  changed_when: false
+  no_log: true

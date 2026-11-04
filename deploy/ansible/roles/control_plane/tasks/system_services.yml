@@ -1,0 +1,77 @@
+---
+# Uses the existing containerd SystemServiceRuntime, never a local Mac registry.
+- name: Validate approved hosted system service definitions
+  ansible.builtin.assert:
+    that:
+      - item.id in ['greenwood-registry', 'greenwood-registry-auth']
+      - item.expectedDigest is match('^sha256:[a-f0-9]{64}$')
+      - item.imageRef.endswith('@' ~ item.expectedDigest)
+      - item.command | length > 0
+  loop: "{{ greenwood_system_services }}"
+  no_log: true
+
+- name: Reject unsafe hosted service destination ancestry
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/php
+      - -r
+      - >-
+        for($p=$argv[1];;$p=dirname($p)){
+        if(is_link($p))exit(1);
+        if(file_exists($p)&&(fileowner($p)!==0||(fileperms($p)&0022)!==0))exit(2);
+        if($p==='/')break;}
+      - "/etc/greenwood/system-services/{{ item.id }}.json"
+  loop: "{{ greenwood_system_services }}"
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Create protected hosted service configuration directory
+  ansible.builtin.file:
+    path: /etc/greenwood/system-services
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Stage approved hosted definitions without replacing existing state
+  ansible.builtin.copy:
+    content: "{{ item | to_nice_json }}\n"
+    dest: "/etc/greenwood/system-services/{{ item.id }}.json"
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+  loop: "{{ greenwood_system_services }}"
+  no_log: true
+  diff: false
+
+- name: Inspect hosted definitions
+  ansible.builtin.stat:
+    path: "/etc/greenwood/system-services/{{ item.id }}.json"
+    checksum_algorithm: sha256
+  loop: "{{ greenwood_system_services }}"
+  register: system_service_configs
+  no_log: true
+
+- name: Reject implicit hosted service replacement
+  ansible.builtin.assert:
+    that:
+      - system_service_configs.results[service_index].stat.mode == '0600'
+      - system_service_configs.results[service_index].stat.checksum == ((item | to_nice_json ~ '\n') | hash('sha256'))
+    fail_msg: Hosted service definition differs; reconcile runtime ownership before replacement
+  loop: "{{ greenwood_system_services }}"
+  loop_control:
+    index_var: service_index
+  no_log: true
+  when: not ansible_check_mode
+
+- name: Stage hosted units without starting tasks or pulling images
+  ansible.builtin.template:
+    src: system-service.j2
+    dest: "/etc/systemd/system/{{ item.id }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ greenwood_system_services }}"
+  notify: Reload control-plane units

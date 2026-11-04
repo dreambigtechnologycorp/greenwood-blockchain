@@ -1,0 +1,24 @@
+ListenAddress {{ greenwood_policy_sftp.address }}
+Port {{ greenwood_policy_sftp.port }}
+HostKey {{ greenwood_policy_sftp.host_key }}
+PidFile /run/greenwood-policy-sftp/sshd.pid
+AllowUsers {{ greenwood_policy_sftp.user }}
+PermitRootLogin no
+PubkeyAuthentication yes
+AuthenticationMethods publickey
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+UsePAM yes
+AuthorizedKeysFile /etc/ssh/greenwood-policy-sftp-authorized-keys
+StrictModes yes
+ChrootDirectory {{ greenwood_policy_environment.GREENWOOD_POLICY_PUBLIC_DIRECTORY }}
+ForceCommand internal-sftp -R -d / -p open,close,read,lstat,fstat,realpath,stat,limits
+Subsystem sftp internal-sftp
+DisableForwarding yes
+PermitTTY no
+PermitUserRC no
+PermitUserEnvironment no
+X11Forwarding no
+MaxAuthTries 3
+LoginGraceTime 15
+LogLevel ERROR

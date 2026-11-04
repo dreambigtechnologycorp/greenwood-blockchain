@@ -1,0 +1,8 @@
+---
+# Source/configuration staging only. Never imports gateway cleanup or provider bootstrap.
+- name: Stage protected Greenwood physical control plane
+  hosts: control_plane
+  become: true
+  gather_facts: false
+  roles:
+    - role: control_plane

@@ -1,0 +1,9 @@
+[Unit]
+Description=Greenwood signed policy freshness
+[Timer]
+OnBootSec=15
+OnUnitActiveSec=30
+AccuracySec=1
+Unit=greenwood-policy.service
+[Install]
+WantedBy=timers.target

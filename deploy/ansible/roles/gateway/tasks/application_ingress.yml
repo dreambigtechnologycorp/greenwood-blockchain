@@ -1,0 +1,43 @@
+---
+# Independent from gateway cleanup: never removes identities or stops services.
+- name: Validate explicitly approved application route inputs
+  ansible.builtin.assert:
+    that:
+      - greenwood_ingress_application_id | int > 0
+      - greenwood_ingress_hostname is match('^app-[1-9][0-9]*\.greenwoodblockchain\.com$')
+      - greenwood_ingress_hostname == 'app-' ~ (greenwood_ingress_application_id | string) ~ '.greenwoodblockchain.com'
+      - greenwood_ingress_backend is match('^[0-9.]+$')
+      - greenwood_ingress_source is match('^[0-9.]+$')
+      - greenwood_ingress_port | int >= 1024
+      - greenwood_ingress_port | int <= 65535
+      - greenwood_ingress_assignment_verified | default(false) | bool
+    fail_msg: Supply the independently verified assignment endpoint, not an inferred reservation
+
+- name: Install Apache reverse proxy dependencies
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+
+- name: Enable required proxy modules
+  ansible.builtin.command:
+    argv: [a2enmod, "{{ item }}"]
+    creates: "/etc/apache2/mods-enabled/{{ item }}.load"
+  loop: [proxy, proxy_http]
+  notify: Validate and reload hosting Apache
+
+- name: Install approved application virtual host
+  ansible.builtin.template:
+    src: application-ingress.conf.j2
+    dest: "/etc/apache2/sites-available/greenwood-app-{{ greenwood_ingress_application_id }}.conf"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: Validate and reload hosting Apache
+
+- name: Enable only the requested application virtual host
+  ansible.builtin.file:
+    src: "/etc/apache2/sites-available/greenwood-app-{{ greenwood_ingress_application_id }}.conf"
+    dest: "/etc/apache2/sites-enabled/greenwood-app-{{ greenwood_ingress_application_id }}.conf"
+    state: link
+  notify: Validate and reload hosting Apache

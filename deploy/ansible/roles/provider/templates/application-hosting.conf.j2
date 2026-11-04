@@ -1,0 +1,7 @@
+[Unit]
+Requires=containerd.service greenwood-application-forwarding.service
+After=containerd.service greenwood-application-forwarding.service
+
+[Service]
+ExecStart=
+ExecStart={{ greenwood_hosting_release }}/bin/greenwood-provider --config=/etc/greenwood/provider.json --operator-socket=/run/greenwood-provider/operator.sock --operator-token-file=/etc/greenwood/operator.token --application-listen=http://{{ greenwood_provider_address }}:8787 --application-peer={{ greenwood_edge_address }} --application-network-policy=/etc/greenwood/application-network.json

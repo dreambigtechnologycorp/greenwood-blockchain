@@ -1,0 +1,10 @@
+---
+# Validator Role Handlers
+#
+# Release staging artifact cleanup is owned by
+# common/tasks/converge_release_tree.yml, which removes both the staged
+# artifact and the staging directory in the same pass.
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true

@@ -1,0 +1,250 @@
+---
+# =============================================================================
+# Canonical release-tree convergence (shared by validator + provider roles)
+# =============================================================================
+#
+# Inputs (required, provided by the deploy playbook):
+#   greenwood_release_artifact    - canonical artifact on the Ansible controller
+#   greenwood_release_sha256      - expected SHA-256 of that artifact
+#   greenwood_release_entrypoints - role-required entrypoints inside the release
+#
+# The runtime root is converged to the staged canonical release. Entries in
+# greenwood_preserved_runtime_entries (deployment-managed runtime dependencies)
+# are excluded from both transfer and deletion; every other non-release entry
+# is removed, so historical source/deployment material cannot survive.
+#
+# This task file never reads or writes Greenwood_DATA_DIR (/var/lib/greenwood)
+# or Greenwood_ETC_DIR (/etc/greenwood).
+
+- name: Fail when release artifact facts are not supplied
+  ansible.builtin.fail:
+    msg: "greenwood_release_artifact and greenwood_release_sha256 are required; build on the controller first"
+  when: greenwood_release_artifact is not defined or greenwood_release_sha256 is not defined
+
+- name: Fail when role entrypoints are not supplied
+  ansible.builtin.fail:
+    msg: "greenwood_release_entrypoints must list the role-required release entrypoints"
+  when: greenwood_release_entrypoints is not defined or greenwood_release_entrypoints | length == 0
+
+- name: Assert deployment-managed runtime dependencies are explicitly preserved
+  ansible.builtin.assert:
+    that:
+      - greenwood_preserved_runtime_entries is defined
+      - greenwood_preserved_runtime_entries | length > 0
+      - greenwood_preserved_runtime_entries | select('search', 'wasmtime') | list | length > 0
+    fail_msg: >-
+      The Wasmtime runtime paths under {{ Greenwood_BASE_DIR }} are deployment-managed and
+      must be listed in greenwood_preserved_runtime_entries before converging the release tree
+    success_msg: "Deployment-managed runtime dependencies will be preserved under {{ Greenwood_BASE_DIR }}"
+  changed_when: false
+
+- name: Assert release staging lives outside the application runtime root
+  ansible.builtin.assert:
+    that:
+      - not greenwood_staging_dir.startswith(Greenwood_BASE_DIR ~ '/')
+      - not greenwood_staged_artifact.startswith(Greenwood_BASE_DIR ~ '/')
+    fail_msg: >-
+      Release staging ({{ greenwood_staging_dir }} / {{ greenwood_staged_artifact }}) must live
+      outside {{ Greenwood_BASE_DIR }} so staging can never be mistaken for deployed content
+    success_msg: "Release staging is outside {{ Greenwood_BASE_DIR }}"
+  changed_when: false
+
+- name: Assert rsync is available for release convergence
+  ansible.builtin.command: rsync --version
+  register: rsync_available
+  changed_when: false
+
+# -----------------------------------------------------------------------------
+# A. verify incoming artifact SHA
+# -----------------------------------------------------------------------------
+
+- name: Stage canonical release artifact on target node
+  ansible.builtin.copy:
+    src: "{{ greenwood_release_artifact }}"
+    dest: "{{ greenwood_staged_artifact }}"
+    mode: "0644"
+
+- name: Verify staged artifact SHA-256 (fatal)
+  ansible.builtin.command: sha256sum {{ greenwood_staged_artifact }}
+  register: staged_artifact_sha
+  changed_when: false
+  failed_when: staged_artifact_sha.stdout.split(' ')[0] != greenwood_release_sha256
+
+- name: Display artifact SHA-256 verification
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }}: artifact {{ greenwood_staged_artifact | basename }}
+      SHA-256 {{ staged_artifact_sha.stdout.split(' ')[0] }}
+      (expected {{ greenwood_release_sha256 }})
+
+# -----------------------------------------------------------------------------
+# B/C. clean staging directory + extract artifact into staging
+# -----------------------------------------------------------------------------
+
+- name: Reset clean release staging directory
+  ansible.builtin.file:
+    path: "{{ greenwood_staging_dir }}"
+    state: absent
+
+- name: Create clean release staging directory
+  ansible.builtin.file:
+    path: "{{ greenwood_staging_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Extract canonical release into staging
+  ansible.builtin.unarchive:
+    src: "{{ greenwood_staged_artifact }}"
+    dest: "{{ greenwood_staging_dir }}"
+    remote_src: true
+
+# -----------------------------------------------------------------------------
+# D. verify staging
+# -----------------------------------------------------------------------------
+
+- name: Verify staged release entrypoints (fatal)
+  ansible.builtin.stat:
+    path: "{{ greenwood_staging_dir }}/{{ item }}"
+  loop: "{{ greenwood_release_entrypoints }}"
+  register: staged_entrypoints
+  failed_when: not staged_entrypoints.stat.exists
+
+- name: Verify staged PHP autoloader executes (fatal)
+  ansible.builtin.command: >
+    php -r "require '{{ greenwood_staging_dir }}/vendor/autoload.php'; echo 'autoload:PASS'.PHP_EOL;"
+  register: staged_autoload
+  changed_when: false
+  failed_when: staged_autoload.rc != 0 or 'autoload:PASS' not in staged_autoload.stdout
+
+- name: Enumerate canonical release roots in staging
+  ansible.builtin.command: find {{ greenwood_staging_dir }} -mindepth 1 -maxdepth 1 -printf '%f\n'
+  register: staged_release_roots
+  changed_when: false
+
+# The release archive carries the build host's root-directory mode (0775). Left
+# as-is, rsync would re-apply it on every run while the deployment policy below
+# forces 0755, so the converged tree would never reach a stable fixed point.
+# Normalizing the staged root mode makes the deployment policy authoritative and
+# lets a converged node converge to zero drift. Only the staging ROOT is touched;
+# every entry inside the release keeps its canonical mode.
+- name: Normalize staged release root mode to the deployment runtime root policy
+  ansible.builtin.file:
+    path: "{{ greenwood_staging_dir }}"
+    state: directory
+    mode: "0755"
+
+# -----------------------------------------------------------------------------
+# E. converge runtime root to the staged release
+# -----------------------------------------------------------------------------
+
+- name: Ensure application runtime root exists
+  ansible.builtin.file:
+    path: "{{ Greenwood_BASE_DIR }}"
+    state: directory
+    mode: "0755"
+
+- name: Converge application runtime root to the canonical release tree
+  ansible.builtin.command: >-
+    rsync -a --delete --itemize-changes --chown=root:root --chmod=Dgo-w,Fgo-w
+    {% for entry in greenwood_preserved_runtime_entries %}--exclude=/{{ entry }} {% endfor %}
+    {{ greenwood_staging_dir }}/ {{ Greenwood_BASE_DIR }}/
+  register: release_converge
+  changed_when: release_converge.stdout | length > 0
+
+- name: Display release convergence changes (if any)
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }}: {{ release_converge.stdout_lines | length }} tree change(s):
+      {{ release_converge.stdout_lines[:12] | join(' | ') }}
+  when: release_converge.stdout | length > 0
+
+# -----------------------------------------------------------------------------
+# F. verify converged runtime tree
+# -----------------------------------------------------------------------------
+
+- name: Verify deployed release entrypoints (fatal)
+  ansible.builtin.stat:
+    path: "{{ Greenwood_BASE_DIR }}/{{ item }}"
+  loop: "{{ greenwood_release_entrypoints }}"
+  register: deployed_entrypoints
+  failed_when: not deployed_entrypoints.stat.exists
+
+- name: Verify deployed PHP autoloader executes (fatal)
+  ansible.builtin.command: >
+    php -r "require '{{ Greenwood_BASE_DIR }}/vendor/autoload.php'; echo 'autoload:PASS'.PHP_EOL;"
+  register: deployed_autoload
+  changed_when: false
+  failed_when: deployed_autoload.rc != 0 or 'autoload:PASS' not in deployed_autoload.stdout
+
+- name: Display deployed autoload verification
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }}: {{ Greenwood_BASE_DIR }} {{ deployed_autoload.stdout }}"
+
+- name: Enumerate top-level entries in deployed runtime root
+  ansible.builtin.command: find {{ Greenwood_BASE_DIR }} -mindepth 1 -maxdepth 1 -printf '%f\n'
+  register: deployed_roots
+  changed_when: false
+
+- name: Compute deployed application tree digest
+  ansible.builtin.shell: |
+    cd "{{ Greenwood_BASE_DIR }}"
+    find . -name 'wasmtime-*' -prune -o -type f -print0 \
+      | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}'
+  args:
+    executable: /bin/bash
+  register: deployed_tree_digest
+  changed_when: false
+
+- name: Display deployed application tree digest
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }}: application tree digest {{ deployed_tree_digest.stdout }}"
+
+- name: Assert deployed tree matches the canonical release tree digest
+  ansible.builtin.assert:
+    that:
+      - greenwood_release_tree_digest is defined
+      - greenwood_release_tree_digest | length == 64
+      - deployed_tree_digest.stdout.strip() == greenwood_release_tree_digest
+    fail_msg: >-
+      deployed tree digest {{ deployed_tree_digest.stdout }} does not match the
+      canonical release tree digest {{ greenwood_release_tree_digest | default('') }}
+      on {{ inventory_hostname }}
+    success_msg: "deployed tree matches canonical release on {{ inventory_hostname }}"
+  changed_when: false
+
+- name: Persist the canonical release tree digest for later gates
+  ansible.builtin.copy:
+    dest: "{{ Greenwood_ETC_DIR }}/tree.digest"
+    content: "{{ greenwood_release_tree_digest }}\n"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Compute non-canonical runtime entries (if any)
+  ansible.builtin.set_fact:
+    greenwood_non_canonical_entries: >-
+      {{ deployed_roots.stdout_lines
+         | difference(staged_release_roots.stdout_lines)
+         | difference(greenwood_preserved_runtime_entries) }}
+
+- name: Assert runtime tree holds only canonical release + preserved runtime dependencies
+  ansible.builtin.assert:
+    that:
+      - greenwood_non_canonical_entries | length == 0
+    fail_msg: "Non-canonical entries remain under {{ Greenwood_BASE_DIR }}: {{ greenwood_non_canonical_entries }}"
+    success_msg: >-
+      {{ Greenwood_BASE_DIR }} contains only canonical release contents plus explicitly
+      preserved deployment-managed runtime dependencies
+  changed_when: false
+
+- name: Remove release staging directory
+  ansible.builtin.file:
+    path: "{{ greenwood_staging_dir }}"
+    state: absent
+
+- name: Remove staged release artifact
+  ansible.builtin.file:
+    path: "{{ greenwood_staged_artifact }}"
+    state: absent

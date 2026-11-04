@@ -1,0 +1,16 @@
+[Unit]
+Description=Greenwood signed policy {{ greenwood_policy_mode }}
+After=network-online.target
+[Service]
+Type=oneshot
+User=root
+Group=root
+Environment=GREENWOOD_ASSIGNMENT_CONFIG=/etc/greenwood/control-plane/receiver.php
+{% for name, value in greenwood_policy_environment.items() %}
+Environment={{ name }}={{ value }}
+{% endfor %}
+ExecStart=/bin/sh {{ greenwood_hosting_release }}/system-services/deployment-controller/deploy/receiver-policy-{{ greenwood_policy_mode }}.sh
+UMask=0077
+NoNewPrivileges=true
+ProtectHome=true
+TimeoutStartSec=45

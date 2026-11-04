@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+# Never flush another service's rules or replace active per-application rules.
+if ! /usr/sbin/nft list table inet greenwood_app_ingress >/dev/null 2>&1; then
+    /usr/sbin/nft 'add table inet greenwood_app_ingress; add chain inet greenwood_app_ingress forward { type filter hook forward priority filter; policy drop; }'
+fi
+/usr/sbin/nft -j list chain inet greenwood_app_ingress forward | /usr/bin/php -r '
+$r=json_decode(stream_get_contents(STDIN),true,32,JSON_THROW_ON_ERROR);
+foreach($r["nftables"] as $entry){$c=$entry["chain"]??[];
+if(($c["family"]??null)==="inet"&&($c["table"]??null)==="greenwood_app_ingress"&&($c["name"]??null)==="forward"
+&&($c["type"]??null)==="filter"&&($c["hook"]??null)==="forward"&&($c["policy"]??null)==="drop")exit(0);}
+exit(1);'
+/usr/sbin/sysctl -w net.ipv4.ip_forward=1

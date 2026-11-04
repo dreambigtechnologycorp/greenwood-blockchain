@@ -1,0 +1,69 @@
+---
+# Controller owns export facts; every target binds the same verified values.
+# This entire play must succeed before entering the service-stop play.
+- name: Require controller export facts on every target
+  ansible.builtin.assert:
+    that:
+      - groups['controller'] | length == 1
+      - hostvars[groups['controller'][0]].greenwood_controller_release is defined
+    fail_msg: "Canonical controller artifact export is unavailable; services remain running"
+
+- name: Bind canonical controller artifact on this target
+  ansible.builtin.set_fact:
+    greenwood_release_artifact: "{{ hostvars[groups['controller'][0]].greenwood_controller_release.artifact }}"
+    greenwood_release_sha256: "{{ hostvars[groups['controller'][0]].greenwood_controller_release.sha256 }}"
+    greenwood_release_tree_digest: "{{ hostvars[groups['controller'][0]].greenwood_controller_release.tree_digest }}"
+    greenwood_release_source_sha: "{{ hostvars[groups['controller'][0]].greenwood_controller_release.source_sha }}"
+
+- name: Validate canonical release identity on every target
+  ansible.builtin.assert:
+    that:
+      - greenwood_release_artifact is string
+      - greenwood_release_artifact | length > 0
+      - greenwood_release_sha256 is match('^[0-9a-f]{64}$')
+      - greenwood_release_tree_digest is match('^[0-9a-f]{64}$')
+      - greenwood_release_source_sha == greenwood_source_sha
+      - greenwood_release_artifact == hostvars[groups['controller'][0]].greenwood_controller_release.artifact
+      - greenwood_release_sha256 == hostvars[groups['controller'][0]].greenwood_controller_release.sha256
+    fail_msg: "Invalid canonical release inputs; services remain running"
+
+- name: Verify local cached artifact exists and matches canonical SHA256
+  ansible.builtin.stat:
+    path: "{{ greenwood_release_artifact }}"
+    checksum_algorithm: sha256
+    get_checksum: true
+  delegate_to: localhost
+  become: false
+  register: runtime_release_cache
+
+- name: Require verified cache on every target before service stop
+  ansible.builtin.assert:
+    that:
+      - runtime_release_cache.stat.exists
+      - runtime_release_cache.stat.isreg | default(false)
+      - runtime_release_cache.stat.checksum | default('') == greenwood_release_sha256
+    fail_msg: "Canonical local artifact missing or corrupt; services remain running"
+
+- name: Read source identity embedded in the cached release
+  ansible.builtin.command:
+    argv: [tar, -xOf, "{{ greenwood_release_artifact }}", ./release-source.json]
+  delegate_to: localhost
+  become: false
+  check_mode: false
+  changed_when: false
+  register: runtime_release_source
+
+- name: Require cached artifact to contain the pinned runtime source
+  ansible.builtin.assert:
+    that:
+      - (runtime_release_source.stdout | from_json).source_sha == greenwood_source_sha
+    fail_msg: "Cached artifact source differs from the pin; services remain running"
+
+- name: Record successfully resolved release inputs
+  ansible.builtin.debug:
+    msg:
+      target: "{{ inventory_hostname }}"
+      export_host: "{{ groups['controller'][0] }}"
+      artifact: "{{ greenwood_release_artifact }}"
+      sha256: "{{ greenwood_release_sha256 }}"
+      source_sha: "{{ greenwood_release_source_sha }}"

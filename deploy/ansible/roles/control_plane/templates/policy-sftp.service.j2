@@ -1,0 +1,17 @@
+[Unit]
+Description=Greenwood read-only signed policy transport
+After=network-online.target
+[Service]
+Type=simple
+User=root
+Group=root
+RuntimeDirectory=greenwood-policy-sftp
+ExecStartPre=/usr/bin/install -d -o root -g root -m 0755 /run/sshd
+ExecStartPre=/usr/sbin/sshd -t -f /etc/greenwood/control-plane/policy-sftp.conf
+ExecStart=/usr/sbin/sshd -D -e -f /etc/greenwood/control-plane/policy-sftp.conf
+Restart=on-failure
+UMask=0077
+PrivateTmp=true
+ProtectHome=true
+[Install]
+WantedBy=multi-user.target

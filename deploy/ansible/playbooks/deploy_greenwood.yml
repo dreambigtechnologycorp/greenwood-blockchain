@@ -1,0 +1,149 @@
+---
+# Greenwood Role-Driven Deployment Playbook
+#
+# This playbook orchestrates deployment based on roles defined in Terraform topology.
+# No node-specific logic - only role-based convergence.
+#
+# Usage:
+#   ansible-playbook deploy_greenwood.yml -i deploy/ansible/inventory/generated.ini
+#
+# The playbook:
+# 1. Runs common role on validator and provider hosts (NEVER the gateway)
+# 2. Runs validator role on hosts in [validators] group
+# 3. Runs provider role on hosts in [providers] group
+#
+# node-4 (gateway/router only) is intentionally absent from every play: it has
+# no Greenwood protocol role. Its cleanup is handled by playbooks/gateway.yml.
+
+- name: Converge controller (node-1) with canonical source and release build
+  hosts: controller
+  become: true
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  roles:
+    - role: controller
+      tags: [controller]
+
+- name: Fetch canonical release artifact from controller
+  hosts: controller
+  become: true
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - "{{ playbook_dir }}/../roles/controller/defaults/main.yml"
+  tasks:
+    - name: Read recorded release facts
+      ansible.builtin.slurp:
+        src: "{{ greenwood_build_dir }}/artifacts/latest-release.json"
+      register: release_facts_raw
+
+    - name: Parse release facts
+      ansible.builtin.set_fact:
+        release_facts: "{{ release_facts_raw.content | b64decode | from_json }}"
+
+    - name: Require release facts to identify the pinned runtime source
+      ansible.builtin.assert:
+        that:
+          - release_facts.source_sha == greenwood_source_sha
+        fail_msg: "Controller release facts do not identify the pinned runtime source"
+
+    - name: Fetch artifact to Ansible controller cache
+      ansible.builtin.fetch:
+        src: "{{ release_facts.artifact }}"
+        dest: "{{ playbook_dir }}/../artifacts/"
+        flat: true
+        fail_on_missing: true
+        validate_checksum: true
+
+    - name: Export artifact for validator deployment
+      ansible.builtin.set_fact:
+        greenwood_release_artifact: "{{ playbook_dir }}/../artifacts/{{ release_facts.artifact | basename }}"
+        greenwood_release_sha256: "{{ release_facts.sha256 }}"
+        greenwood_release_tree_digest: "{{ release_facts.tree_digest | default('') }}"
+
+- name: Stop protocol services before replacing shared runtime files
+  hosts: "validators:providers"
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Inspect installed protocol service units
+      ansible.builtin.stat:
+        path: "/etc/systemd/system/{{ item }}.service"
+      loop:
+        - greenwoodd
+        - greenwood-provider
+      register: greenwood_existing_units
+
+    - name: Stop installed protocol services before runtime convergence
+      ansible.builtin.systemd_service:
+        name: "{{ item.item }}"
+        state: stopped
+      loop: "{{ greenwood_existing_units.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.stat.exists
+
+- name: Deploy common Greenwood infrastructure to validator and provider nodes
+  hosts: "validators:providers"
+  become: true
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  roles:
+    - role: common
+      tags: [common]
+
+- name: Deploy validator runtime to validator nodes
+  hosts: validators
+  become: true
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    # Canonical artifact built on the controller (node-1), fetched above
+    greenwood_release_artifact: "{{ hostvars[groups['controller'][0]].greenwood_release_artifact }}"
+    greenwood_release_sha256: "{{ hostvars[groups['controller'][0]].greenwood_release_sha256 }}"
+    greenwood_release_tree_digest: "{{ hostvars[groups['controller'][0]].greenwood_release_tree_digest }}"
+    # Inherit variables from common role (passed via role variables)
+    Greenwood_BASE_DIR: "/opt/greenwood"
+    Greenwood_DATA_DIR: "/var/lib/greenwood"
+    Greenwood_LOG_DIR: "/var/log/greenwood"
+    Greenwood_ETC_DIR: "/etc/greenwood"
+    Greenwood_RUN_DIR: "/run/greenwood"
+    Greenwood_SYSTEMD_DIR: "/etc/systemd/system"
+    Greenwood_WASMTIME_VERSION: "48.0.1"
+    Greenwood_WASMTIME_LIB_PATH: "/opt/greenwood/wasmtime-48.0.1/lib/libwasmtime.so"
+    PHP_VERSION: "8.5"
+
+  roles:
+    - role: validator
+      tags: [validator]
+
+- name: Deploy provider runtime to provider nodes
+  hosts: providers
+  become: true
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    # Provider A uses the SAME canonical artifact as the validators
+    greenwood_release_artifact: "{{ hostvars[groups['controller'][0]].greenwood_release_artifact }}"
+    greenwood_release_sha256: "{{ hostvars[groups['controller'][0]].greenwood_release_sha256 }}"
+    greenwood_release_tree_digest: "{{ hostvars[groups['controller'][0]].greenwood_release_tree_digest }}"
+    # Inherit variables from common role (passed via role variables)
+    Greenwood_BASE_DIR: "/opt/greenwood"
+    Greenwood_DATA_DIR: "/var/lib/greenwood"
+    Greenwood_LOG_DIR: "/var/log/greenwood"
+    Greenwood_ETC_DIR: "/etc/greenwood"
+    Greenwood_RUN_DIR: "/run/greenwood"
+    Greenwood_SYSTEMD_DIR: "/etc/systemd/system"
+    Greenwood_WASMTIME_VERSION: "48.0.1"
+    Greenwood_WASMTIME_LIB_PATH: "/opt/greenwood/wasmtime-48.0.1/lib/libwasmtime.so"
+    PHP_VERSION: "8.5"
+
+  roles:
+    - role: provider
+      tags: [provider]

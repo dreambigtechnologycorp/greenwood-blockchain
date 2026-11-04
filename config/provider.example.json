@@ -1,0 +1,19 @@
+{
+  "chainId": "replace-with-genesis-chain-id",
+  "rpcEndpoint": "http://127.0.0.1:8080",
+  "keyFile": "/etc/greenwood/provider.key",
+  "dataPath": "/var/lib/greenwood/provider",
+  "workerUid": 65534,
+  "workerGid": 65534,
+  "containerdSocket": "/run/containerd/containerd.sock",
+  "snapshotter": "erofs",
+  "trustClasses": [0],
+  "maxConcurrent": 5,
+  "maxCpuMillis": 5000,
+  "maxMemoryBytes": 4294967296,
+  "maxPids": 512,
+  "maxTimeoutMs": 3600000,
+  "maxOutputBytes": 1048576,
+  "controlTimeoutMs": 120000,
+  "pollIntervalMs": 1000
+}

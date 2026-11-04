@@ -1,0 +1,17 @@
+{
+  "distSpecVersion": "1.1.1",
+  "storage": {
+    "rootDirectory": "/var/lib/registry"
+  },
+  "http": {
+    "address": "0.0.0.0",
+    "port": "5000",
+    "auth": {
+      "bearer": {
+        "realm": "http://greenwood-registry-auth:8080/token",
+        "service": "greenwood-registry",
+        "cert": "/etc/greenwood/registry-auth/issuer-public.pem"
+      }
+    }
+  }
+}
