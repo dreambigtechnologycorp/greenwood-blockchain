@@ -8,10 +8,7 @@
 # =============================================================================
 # Gateway Role (node-4)
 #
-# node-4 is the Greenwood LAN gateway/router ONLY:
-#   10.77.0.1   gateway/DNS/router address (permanent)
-#   10.77.0.103 management/legacy address (permanent)
-#   wlan0          10.77.1.126 (permanent)
+# The gateway's addresses and interfaces come from the protected inventory.
 #
 # node-4 has NO Greenwood validator/provider/compute/contributor role. This role
 # enforces that Greenwood protocol processes and identity material can never

@@ -1,8 +1,8 @@
 ---
 # Greenwood Gateway Network Inspection
 #
-# node-4 is the gateway/router ONLY: 10.77.0.1 (gateway/DNS) + 10.77.0.103
-# (management/legacy) + wlan0 10.77.1.126. It carries NO Greenwood protocol role.
+# The inventory defines the gateway's interfaces and addresses.
+# The gateway carries no Greenwood protocol role.
 # Normal convergence never deletes identities or stops protocol services.
 # Destructive removal is isolated in gateway_teardown.yml.
 #
