@@ -13,7 +13,7 @@ final class DeveloperRoutes {
     public function handleRequest(string $method,string $path,string $body,array $headers):array {
         try {
             if($method==='GET'&&in_array($path,['/health','/v1/health'],true))return [['alive'=>true],200];
-            if($path==='/v1/developer/capabilities'&&$method==='GET')return [['schema_version'=>2,'version'=>'0.3.0-rc1','chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,
+            if($path==='/v1/developer/capabilities'&&$method==='GET')return [['schema_version'=>2,'version'=>'0.3.0-rc1','chain_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::chain(),'registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),
                 'deployment_enabled'=>$this->enabled,'features'=>array_fill_keys(['chain_account_auth','onchain_application_authority','signed_deployment_intent','finalized_release','provider_assignment','edge_reconciliation','readiness','idempotency'],$this->enabled)],200];
             if(!$this->enabled&&$method==='POST')return [['ready'=>false,'error'=>'WRITES_DISABLED'],503];
             if(strlen($body)>16384)throw new \InvalidArgumentException('REQUEST_TOO_LARGE');

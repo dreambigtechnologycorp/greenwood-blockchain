@@ -66,6 +66,7 @@ class StateSqlite
         $this->pdo->exec('CREATE TABLE IF NOT EXISTS contract_storage (contract_id BLOB NOT NULL, storage_key BLOB NOT NULL, value BLOB NOT NULL, PRIMARY KEY(contract_id, storage_key))');
         $this->pdo->exec('CREATE TABLE IF NOT EXISTS contract_balances (contract_id BLOB PRIMARY KEY, balance INTEGER NOT NULL)');
         $this->pdo->exec('CREATE TABLE IF NOT EXISTS contract_receipts (transaction_hash BLOB PRIMARY KEY, position INTEGER NOT NULL UNIQUE, receipt_json TEXT NOT NULL)');
+        $this->pdo->exec('CREATE TABLE IF NOT EXISTS economics_state (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL)');
         $this->pdo->exec('CREATE TABLE IF NOT EXISTS compute_records (namespace TEXT NOT NULL, request_id BLOB NOT NULL, value BLOB NOT NULL, PRIMARY KEY(namespace, request_id))');
         $this->pdo->exec('CREATE TABLE IF NOT EXISTS provider_eligibility (trust_class INTEGER NOT NULL, public_key BLOB NOT NULL, PRIMARY KEY(trust_class, public_key))');
         $this->pdo->exec('CREATE TABLE IF NOT EXISTS transactions (tx_hash BLOB PRIMARY KEY, height INTEGER NOT NULL, block_hash BLOB NOT NULL, position INTEGER NOT NULL)');
@@ -269,6 +270,8 @@ class StateSqlite
         }
         $state->setProviderEligibility(new \Greenwood\Compute\Verification\GenesisProviderEligibility($trusted, $sovereign));
         $records = $this->pdo->query('SELECT namespace, request_id, value FROM compute_records')->fetchAll(PDO::FETCH_NUM);
+        $economic=$this->pdo->query('SELECT value FROM economics_state WHERE id=1')->fetchColumn();
+        if($economic!==false)$state->restoreDerivedEconomics(json_decode($economic,true,32,JSON_THROW_ON_ERROR));
         $state->restoreDerivedComputeRecords($records)->setValidators($validators)->recomputeStateRoot();
         $expected = $this->getFinalizedStateRoot();
         if ($expected !== null && $expected !== $state->getStateRoot()) {
@@ -338,6 +341,8 @@ class StateSqlite
             if ($extendIndex) {
                 $this->extendTransactionIndex($block);
             }
+            $this->pdo->exec('DELETE FROM economics_state');
+            if($state->economicSummary()!==null){$q=$this->pdo->prepare('INSERT INTO economics_state VALUES (1,?)');$q->execute([\Greenwood\Economics\CanonicalJson::encode($state->economicSummary())]);}
             $this->pdo->exec('DELETE FROM compute_records');
             $q = $this->pdo->prepare('INSERT INTO compute_records VALUES (?,?,?)');
             foreach ($state->getComputeState()->logicalRecords() as $record) {

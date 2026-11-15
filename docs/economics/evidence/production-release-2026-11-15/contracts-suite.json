@@ -1,0 +1,12 @@
+{
+  "tests": "28",
+  "assertions": "1072",
+  "errors": "0",
+  "failures": "0",
+  "skipped": "0",
+  "time": "0.564550",
+  "skipped_tests": [],
+  "runtime": "PHP 8.5.12",
+  "source_snapshot": "/tmp/greenwood-production-review",
+  "native_containerd_executed": false
+}

@@ -18,6 +18,8 @@ use Greenwood\Crypto\MerkleTree;
 class State
 {
     private array $accounts = [];
+    private ?\Greenwood\Economics\Ledger $economics = null;
+    private ?int $economicTransferHeight = null;
     private array $contractCode = [];
     private array $contractStorage = [];
     private array $contractBalances = [];
@@ -72,6 +74,7 @@ class State
      */
     public function setAccountBalance(string $address, int $balance): self
     {
+        $this->economics?->validateAccountCredit($address,$balance);
         $account = $this->getAccount($address);
         $account->setBalance($balance);
         return $this;
@@ -228,18 +231,15 @@ class State
      */
     public function transfer(string $from, string $to, int $amount): bool
     {
-        $fromAccount = $this->getAccount($from);
-        if ($fromAccount->getBalance() < $amount) {
-            return false;
-        }
-        
-        $fromAccount->setBalance($fromAccount->getBalance() - $amount);
-        $toAccount = $this->getAccount($to);
-        $toAccount->setBalance($toAccount->getBalance() + $amount);
-        
-        return true;
+        if ($amount<1) throw new \InvalidArgumentException('Transfer must be positive');
+        $fromAccount=$this->getAccount($from);if ($fromAccount->getBalance()<$amount)return false;
+        $this->economics?->validateAccountCredit($to,$this->getAccount($to)->getBalance());
+        $this->economics?->recordRoutineDebit($from,$amount,$this->economicTransferHeight??throw new \InvalidArgumentException('Economic transaction context required'));
+        if ($from===$to)return true;
+        $next=\Greenwood\Economics\Amount::add($this->getAccount($to)->getBalance(),$amount);
+        $fromAccount->setBalance($fromAccount->getBalance()-$amount);$this->getAccount($to)->setBalance($next);return true;
     }
-    
+
     /**
      * Increment account nonce.
      * 
@@ -274,16 +274,37 @@ class State
      */
     public function applyTransaction(Envelope $tx, ?string $chainId = null, ?int $blockHeight = null): self
     {
+        if ($this->economics===null) {
+            if(in_array($tx->getType(),[Envelope::TYPE_TRANSFER_U64,Envelope::TYPE_TREASURY,Envelope::TYPE_SERVICE,Envelope::TYPE_PROVIDER_CAPABILITY_V2],true))throw new \InvalidArgumentException('Native economics is not enabled for this genesis');
+            return $this->applyTransactionBody($tx,$chainId,$blockHeight);
+        }
+        if($chainId===null || $blockHeight===null)throw new \InvalidArgumentException('Explicit economic chain/height required');
+        $tx->verify($chainId);$next=clone $this;
+        $next->economics->validateDebit($tx,$blockHeight);$next->economicTransferHeight=$blockHeight;
+        if(in_array($tx->getType(),[Envelope::TYPE_TREASURY,Envelope::TYPE_SERVICE],true)) {
+            $account=$next->getAccount($tx->getSender());
+            if($tx->getNonce()!==$account->getNonce() || $account->getNonce()===0xffffffff)throw new \InvalidArgumentException('Invalid treasury nonce');
+            if($tx->getType()===Envelope::TYPE_SERVICE)$next->economics->applyService($next,$tx,$blockHeight);
+            else $next->economics->apply($next,$tx,$blockHeight);$next->incrementNonce($tx->getSender());
+        } else $next->applyTransactionBody($tx,$chainId,$blockHeight);
+        $next->economics->chargeFee($next,$tx,$blockHeight);$next->economics->assertSupply($next);
+        $next->economicTransferHeight=null;$next->recomputeStateRoot();return $this->copyFrom($next);
+    }
+    private function applyTransactionBody(Envelope $tx, ?string $chainId = null, ?int $blockHeight = null): self
+    {
         if ($chainId === null) throw new \InvalidArgumentException('Expected chain required');
         $tx->verify($chainId);
         $sender = $tx->getSender();
         $account = $this->accounts[$sender] ?? new Account($sender, 0, 0);
         if ($tx->getNonce()!==$account->getNonce() || $account->getNonce()===0xffffffff) throw new \InvalidArgumentException('Invalid/exhausted nonce');
         if (in_array($tx->getType(), [Envelope::TYPE_COMPUTE_REQUEST, Envelope::TYPE_COMPUTE_ASSIGN,
-                Envelope::TYPE_COMPUTE_RECEIPT, Envelope::TYPE_PROVIDER_CAPABILITY], true)) {
+                Envelope::TYPE_COMPUTE_RECEIPT, Envelope::TYPE_PROVIDER_CAPABILITY,Envelope::TYPE_PROVIDER_CAPABILITY_V2], true)) {
             if ($blockHeight === null || $blockHeight < 1) throw new \InvalidArgumentException('Explicit candidate inclusion height required');
             $next = clone $this;
-            $next->compute = $this->compute->apply($tx, $blockHeight, $this->providerEligibility);
+            if($tx->getType()===Envelope::TYPE_COMPUTE_ASSIGN)$next->economics?->requireServiceFunding(\Greenwood\Compute\Protocol\ComputeAssign::decode($tx->getPayload()),$blockHeight);
+            if($tx->getType()===Envelope::TYPE_PROVIDER_CAPABILITY_V2)$next->economics?->validateResourceCapabilityUpdate($next,$tx,$blockHeight);
+            if($tx->getType()===Envelope::TYPE_PROVIDER_CAPABILITY)$next->economics?->validateBaseCapabilityUpdate($next,$tx,$blockHeight);
+            $next->compute = $this->compute->apply($tx, $blockHeight, $this->providerEligibility,$this->economicSummary()['genesis']??null);
             $next->incrementNonce($sender)->recomputeStateRoot();
             return $this->copyFrom($next);
         }
@@ -294,7 +315,9 @@ class State
             $next->indexContractReceipt($receipt);
             return $this->copyFrom($next);
         }
-        $result = \Greenwood\Transaction\Transfer::validate($tx, $sender, $account->getNonce(), $account->getBalance(), $chainId);
+        $result = $tx->getType()===Envelope::TYPE_TRANSFER_U64
+            ? \Greenwood\Transaction\TransferU64::validate($tx,$sender,$account->getNonce(),$account->getBalance(),$chainId)
+            : \Greenwood\Transaction\Transfer::validate($tx, $sender, $account->getNonce(), $account->getBalance(), $chainId);
         if (!$result['valid'] || $account->getNonce() === 0xffffffff) throw new \InvalidArgumentException($result['error'] ?? 'Nonce exhausted');
         $recipient = $result['recipient']; $amount = $result['amount'];
         $balance = ($this->accounts[$recipient] ?? new Account($recipient))->getBalance();
@@ -304,9 +327,39 @@ class State
         return $this->recomputeStateRoot();
     }
 
+    public function enableEconomics(array $policy,string $chain,string $genesis,array $operators): self
+    {
+        if($this->economics!==null)throw new \InvalidArgumentException('Economics already initialized');
+        $next=clone $this;$next->economics=new \Greenwood\Economics\Ledger($policy,$chain,$genesis,$operators);
+        $next->economics->bootstrap($next);$next->economics->assertSupply($next);$next->recomputeStateRoot();return $this->copyFrom($next);
+    }
+    public function restoreDerivedEconomics(array $snapshot): self
+    {
+        if($this->economics!==null)throw new \InvalidArgumentException('Economics already initialized');
+        $ledger=\Greenwood\Economics\Ledger::restore($snapshot);$ledger->assertSupply($this);$this->economics=$ledger;return $this;
+    }
+    public function resourceReservationTotals(): array {return $this->economics?->resourceTotals($this)??[];}
+    public function economicSummary(): ?array { return $this->economics?->snapshot(); }
+    public function creditEconomicAccount(string $address,int $balance): void
+    {
+        if($this->economics===null)throw new \InvalidArgumentException('Economics unavailable');
+        $this->economics->validateAccountCredit($address,$balance,true);$this->getAccount($address)->setBalance($balance);
+    }
+    public function debitEconomicAccount(string $address,int $balance): void
+    {
+        if($this->economics===null || $balance<0 || $balance>$this->getAccount($address)->getBalance())throw new \InvalidArgumentException('Invalid economic debit');
+        $this->getAccount($address)->setBalance($balance);
+    }
+    public function finalizeEconomicBlock(int $height): self
+    {
+        if($this->economics===null)return $this;
+        $next=clone $this;$next->economics->finalize($next,$height);$next->recomputeStateRoot();return $this->copyFrom($next);
+    }
+
     public function __clone()
     {
         foreach ($this->accounts as $address => $account) $this->accounts[$address] = clone $account;
+        if($this->economics!==null)$this->economics=clone $this->economics;
     }
 
     public function setValidators(array $validators): self { $this->validators = $validators; return $this; }
@@ -375,6 +428,7 @@ class State
     public function logicalRecords(): array
     {
         $records = [];
+        if($this->economics!==null)$records[]=['economics','native-v1',\Greenwood\Economics\CanonicalJson::encode($this->economics->snapshot())];
         $c = \Greenwood\Codec\Canonical::class;
         foreach ($this->accounts as $address => $account) {
             $records[] = ['accounts', $address, $c::encodeU64BE($account->getBalance()) . $c::encodeU32BE($account->getNonce())];
@@ -408,6 +462,8 @@ class State
     {
         $copy = clone $other;
         $this->accounts = $copy->accounts;
+        $this->economics=$copy->economics;
+        $this->economicTransferHeight=$copy->economicTransferHeight;
         $this->validators = $other->validators;
         $this->contractCode = $other->contractCode;
         $this->contractStorage = $other->contractStorage;

@@ -1,11 +1,12 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__) . '/autoload.php';
+require_once __DIR__.'/identity-fixture.php';
 use Greenwood\DeploymentController\Assignment\{AllocationApproval,AssignmentDocument};
 use Greenwood\DeploymentController\Auth\DeploymentIdentity;
-$d = ['chain_id'=>DeploymentIdentity::CHAIN,'registry_contract_id'=>DeploymentIdentity::REGISTRY,
+$d = ['chain_id'=>DeploymentIdentity::chain(),'registry_contract_id'=>DeploymentIdentity::registry(),
     'operation_id'=>str_repeat('c',32),'account_id'=>str_repeat('d',64),'version'=>1,'previous_generation'=>null,
-    'assignment'=>['chain_id'=>DeploymentIdentity::CHAIN,'registry_contract_id'=>DeploymentIdentity::REGISTRY,
+    'assignment'=>['chain_id'=>DeploymentIdentity::chain(),'registry_contract_id'=>DeploymentIdentity::registry(),
         'application_id'=>1,'service'=>'web','release_id'=>1,'provider_id'=>str_repeat('a',64),
         'provider_address'=>'10.77.0.100','ingress_port'=>21001,'instance_id'=>'app-1-web',
         'image_digest'=>'sha256:'.str_repeat('b',64),'provider_endpoint'=>'tcp://10.77.0.100:19443',

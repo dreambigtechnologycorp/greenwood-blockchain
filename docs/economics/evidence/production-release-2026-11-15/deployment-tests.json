@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "tests": 32,
+  "ansible_core": "2.19.3",
+  "target": "temporary local inventories only",
+  "cluster_contacted": false
+}

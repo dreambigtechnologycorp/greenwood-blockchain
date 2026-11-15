@@ -6,7 +6,7 @@ final class ChallengeService {
     public static function intent(array $input):array {
         DeploymentIdentity::validate($input);
         $keys=['action','chain_id','registry_contract_id','application_id','service','release_number','image_digest','idempotency_key'];$i=array_intersect_key($input,array_flip($keys));
-        if(count($i)!==8||$i['action']!=='deploy'||$i['chain_id']!=='greenwood-physical-v1'||!is_int($i['application_id'])||$i['application_id']<1||$i['application_id']>0xffffffff
+        if(count($i)!==8||$i['action']!=='deploy'||$i['chain_id']!==DeploymentIdentity::chain()||!is_int($i['application_id'])||$i['application_id']<1||$i['application_id']>0xffffffff
             ||!is_int($i['release_number'])||$i['release_number']<1||$i['release_number']>0xffffffff||!is_string($i['service'])||!preg_match('/^[a-z][a-z0-9-]{0,62}$/D',$i['service'])
             ||!is_string($i['image_digest'])||!preg_match('/^sha256:[a-f0-9]{64}$/D',$i['image_digest'])||!is_string($i['idempotency_key'])||!preg_match('/^[a-zA-Z0-9_-]{8,128}$/D',$i['idempotency_key']))throw new \InvalidArgumentException('INVALID_INTENT');
         return $i;

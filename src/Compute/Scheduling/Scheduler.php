@@ -29,7 +29,7 @@ final class Scheduler
      * @return string winning provider_id (32 bytes)
      */
     public static function schedule(ComputeRequest $request, string $requiredArchitecture,
-        array $candidates, ReservationLedger $ledger): string
+        array $candidates, ReservationLedger $ledger,array $resourceOffers=[]): string
     {
         if ($candidates === []) throw new SchedulingFailure(SchedulingFailure::NO_PROVIDER);
         $active = [];
@@ -50,7 +50,14 @@ final class Scheduler
         if ($arch === []) throw new SchedulingFailure(SchedulingFailure::NO_ARCH_MATCH);
         $fits = [];
         foreach ($arch as $p) {
-            if (self::hasCapacity($p, $request, $ledger)) $fits[] = $p;
+            if (!self::hasCapacity($p, $request, $ledger))continue;
+            if($resourceOffers!==[]){
+                $offer=$resourceOffers[bin2hex($p->providerId)]??null;if(!$offer)continue;
+                try{$manifest=\Greenwood\Resources\ResourceManifest::validate($offer['manifest'],$offer['catalog'],$offer['capability'],$offer['subsidy_percent']);
+                    if($offer['capability']['provider_id']!==bin2hex($p->providerId)||!$ledger->resourcesFit($p->providerId,$manifest,$offer['capability']))continue;
+                }catch(\InvalidArgumentException){continue;}
+            }
+            $fits[]=$p;
         }
         if ($fits === []) throw new SchedulingFailure(SchedulingFailure::NO_CAPACITY);
 

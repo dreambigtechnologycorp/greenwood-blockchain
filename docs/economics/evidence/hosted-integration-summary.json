@@ -1,0 +1,169 @@
+{
+  "test_status": "PASS",
+  "production_status": "HOLD",
+  "hosted_cpu_adapter_implemented_locally": true,
+  "full_certified_hosted_service_history_replay": true,
+  "certified_history_blocks": 24487,
+  "certified_history_allocation": "40/20/15/24/1",
+  "both_allocations_tested_for_hosted_transitions": true,
+  "actual_registry_wasm_tested": true,
+  "real_loopback_mtls_tested": true,
+  "physical_distributed_execution_tested": false,
+  "independent_measurement_qualified": false,
+  "runtime_cpu_budget_and_halt_watchdog_qualified": false,
+  "state_retention_implemented": false,
+  "lost_quorum_recovery_implemented": false,
+  "javascript_financial_sdk_completed": false,
+  "allocation_ratified": false,
+  "preferred_candidate": "10/25/30/34/1",
+  "block_target_seconds": 60,
+  "fee_burn_percent": 0,
+  "production_config_changed": false,
+  "deployed": false,
+  "permanent_genesis_generated": false,
+  "live_transactions": 0,
+  "test_results": [
+    {
+      "test": "core",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 64,
+        "seconds": 4.862,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0
+      }
+    },
+    {
+      "test": "core_proposed",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 64,
+        "seconds": 3.604,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0
+      }
+    },
+    {
+      "test": "compute_settlement",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 68,
+        "adapters": [
+          "compute_cpu_v1"
+        ],
+        "hosted_adapter_tested": false,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0,
+        "seconds": 6.336
+      }
+    },
+    {
+      "test": "compute_settlement_proposed",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 68,
+        "adapters": [
+          "compute_cpu_v1"
+        ],
+        "hosted_adapter_tested": false,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0,
+        "seconds": 6.83
+      }
+    },
+    {
+      "test": "hosted",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 32,
+        "actual_registry_wasm": true,
+        "distributed_execution_tested": false,
+        "independent_metering_qualified": false,
+        "mainnet_activation": false,
+        "seconds": 2.727
+      }
+    },
+    {
+      "test": "hosted_proposed",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 32,
+        "actual_registry_wasm": true,
+        "distributed_execution_tested": false,
+        "independent_metering_qualified": false,
+        "mainnet_activation": false,
+        "seconds": 2.736
+      }
+    },
+    {
+      "test": "hosted_boundaries",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 17,
+        "actual_receiver_sqlite": true,
+        "actual_operator_guard": true,
+        "container_execution_tested": false
+      }
+    },
+    {
+      "test": "certified_chain",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 25,
+        "validators": 3,
+        "certified_blocks": 3,
+        "replay": true,
+        "network_transport_tested": false,
+        "seconds": 0.445
+      }
+    },
+    {
+      "test": "certified_chain_proposed",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 25,
+        "validators": 3,
+        "certified_blocks": 3,
+        "replay": true,
+        "network_transport_tested": false,
+        "seconds": 0.443
+      }
+    },
+    {
+      "test": "deployment_identity",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 9,
+        "live_requests": 0
+      }
+    }
+  ],
+  "certified_history": {
+    "status": "PASS",
+    "checks": 8,
+    "certified_blocks": 24487,
+    "validator_signers": 3,
+    "full_service_history_replay": true,
+    "actual_registry_wasm": true,
+    "physical_network_tested": false,
+    "independent_measurement_tested": false,
+    "live_transactions": 0,
+    "seconds": 438.066
+  },
+  "deployment_regression_suites": 12,
+  "php_lint": {
+    "status": "PASS",
+    "php_files": 131,
+    "failures": []
+  }
+}

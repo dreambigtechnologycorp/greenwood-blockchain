@@ -24,7 +24,8 @@ final class ProviderApplicationOperator
         private readonly \Closure $startRuntime,
         private readonly ?\Closure $inspectRuntime = null,
         private readonly ?ProviderApplicationNetwork $network = null,
-        private readonly ?\Closure $mutationGuard = null
+        private readonly ?\Closure $mutationGuard = null,
+        private readonly ?\Closure $fundingGuard = null
     ) {
     }
 
@@ -32,7 +33,8 @@ final class ProviderApplicationOperator
         ContainerdClientSet $clients,
         ProviderApplicationRegistry $registry,
         ?ProviderApplicationNetwork $network = null,
-        ?\Closure $mutationGuard = null
+        ?\Closure $mutationGuard = null,
+        ?\Closure $fundingGuard = null
     ): self {
         $preparation =
             new ImagePreparationService(
@@ -106,7 +108,8 @@ final class ProviderApplicationOperator
                         $record
                     ),
             network: $network,
-            mutationGuard: $mutationGuard
+            mutationGuard: $mutationGuard,
+            fundingGuard: $fundingGuard
         );
     }
 
@@ -137,7 +140,9 @@ final class ProviderApplicationOperator
     {
         return $this->registry->exclusive($applicationId, $service, function () use ($applicationId, $service, $imageRef, $registryAuth): array {
             ($this->mutationGuard)?->__invoke($applicationId, $service);
+            ($this->fundingGuard)?->__invoke($applicationId,$service,$imageRef);
             $record = $this->startRuntimeOnly($applicationId, $service, $imageRef, $registryAuth);
+            ($this->fundingGuard)?->__invoke($applicationId,$service,$imageRef);
             if ($this->network !== null) {
                 if ($this->inspectRuntime === null) throw new \LogicException('Networking requires a runtime inspector');
                 $this->network->reserve($applicationId, $service, ($this->resolveRuntimeConfig)($imageRef));
@@ -280,6 +285,7 @@ final class ProviderApplicationOperator
                             ->workingDirectory
                 );
 
+            ($this->fundingGuard)?->__invoke($applicationId,$service,$imageRef);
             $handle =
                 ($this->startRuntime)(
                     $definition

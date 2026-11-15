@@ -48,7 +48,7 @@ final class RegistryAuthService
             );
         }
 
-        if ($chainId !== DeploymentIdentity::CHAIN || $applicationRegistryContract !== DeploymentIdentity::REGISTRY) {
+        if ($chainId !== DeploymentIdentity::chain() || $applicationRegistryContract !== DeploymentIdentity::registry()) {
             throw new \InvalidArgumentException('Unapproved registry authority');
         }
 
@@ -504,11 +504,11 @@ final class RegistryAuthService
             $started = time();
             $rpc = $this->authorityRpc ?? ReadOnlyRpc::connect($this->rpcEndpoint, $this->chainId);
             $before = $rpc->getChainStatus();
-            if ($before['chain_id'] !== $this->chainId || $before['syncing'] !== false
+            if (($before['genesis_hash']??null)!==DeploymentIdentity::genesis() || $before['chain_id'] !== $this->chainId || $before['syncing'] !== false
                 || $before['height'] !== $before['finalized_height']) return 0;
             $meta = $rpc->getContract($this->applicationRegistryContract);
             if (($meta['contract_id'] ?? null) !== $this->applicationRegistryContract
-                || ($meta['wasm_hash'] ?? null) !== $this->applicationRegistryContract
+                || ($meta['wasm_hash'] ?? null) !== DeploymentIdentity::code()
                 || ($meta['abi_version'] ?? null) !== 1
                 || ($meta['finalized_height'] ?? null) !== $before['finalized_height']) return 0;
             $registry = new ApplicationRegistryV1Client($rpc, $this->applicationRegistryContract);
@@ -516,7 +516,7 @@ final class RegistryAuthService
             $registry->application($applicationId);
             $capabilities = $registry->authority($applicationId, $accountId);
             $after = $rpc->getChainStatus();
-            foreach (['chain_id', 'height', 'finalized_height', 'block_hash', 'state_root', 'syncing'] as $field) {
+            foreach (['chain_id', 'genesis_hash', 'height', 'finalized_height', 'block_hash', 'state_root', 'syncing'] as $field) {
                 if (!array_key_exists($field, $before) || !array_key_exists($field, $after)
                     || $before[$field] !== $after[$field]) return 0;
             }
@@ -614,7 +614,7 @@ final class RegistryAuthService
             [
                 self::CHALLENGE_PREFIX,
                 'chain_id=' . $chainId,
-                'registry_contract_id=' . DeploymentIdentity::REGISTRY,
+                'registry_contract_id=' . DeploymentIdentity::registry(),
                 'registry_service='
                     . self::REGISTRY_SERVICE,
                 'application_id='
@@ -636,7 +636,7 @@ final class RegistryAuthService
         string $service
     ): string {
         return
-            'chains/' . DeploymentIdentity::CHAIN . '/registries/' . DeploymentIdentity::REGISTRY . '/apps/'
+            'chains/' . DeploymentIdentity::chain() . '/registries/' . DeploymentIdentity::registry() . '/apps/'
             . $applicationId
             . '/'
             . $service;
@@ -701,8 +701,8 @@ final class RegistryAuthService
     ): array {
         if (
             !preg_match(
-                '~^repository:(chains/' . preg_quote(DeploymentIdentity::CHAIN, '~') . '/registries/'
-                . DeploymentIdentity::REGISTRY . '/apps/([1-9][0-9]{0,9})/[a-z0-9][a-z0-9._-]{0,62}):(pull|push)(,(pull|push))*$~D',
+                '~^repository:(chains/' . preg_quote(DeploymentIdentity::chain(), '~') . '/registries/'
+                . DeploymentIdentity::registry() . '/apps/([1-9][0-9]{0,9})/[a-z0-9][a-z0-9._-]{0,62}):(pull|push)(,(pull|push))*$~D',
                 $scope, $matches
             )
             || (int)$matches[2] > 0xffffffff

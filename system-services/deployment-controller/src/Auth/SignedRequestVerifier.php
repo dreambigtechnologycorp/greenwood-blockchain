@@ -11,7 +11,7 @@ final class SignedRequestVerifier {
     public function verify(string $method,string $path,string $body,array $headers):string {
         $h=array_change_key_case($headers,CASE_LOWER);$nonce=$h['x-greenwood-nonce']??'';$issued=$h['x-greenwood-timestamp']??'';
         if(!preg_match('/^[a-f0-9]{64}$/D',$nonce)||!preg_match('/^[0-9]{10}$/D',$issued)||abs(time()-(int)$issued)>30)throw new \RuntimeException('UNAUTHENTICATED');
-        $bytes=implode("\n",['GREENWOOD-REQUEST-AUTH-V1','chain_id=greenwood-physical-v1','audience='.$this->audience,'method='.$method,'path='.$path,'body_sha256='.hash('sha256',$body),'nonce='.$nonce,'issued_at='.$issued]);
+        $bytes=implode("\n",['GREENWOOD-REQUEST-AUTH-V1','chain_id='.DeploymentIdentity::chain(),'audience='.$this->audience,'method='.$method,'path='.$path,'body_sha256='.hash('sha256',$body),'nonce='.$nonce,'issued_at='.$issued]);
         $account=self::signature($h['x-greenwood-public-key']??'',$h['x-greenwood-signature']??'',$bytes);
         $q=$this->db->prepare('INSERT OR IGNORE INTO auth_nonce VALUES(?,?)');$q->execute([$account.':'.$nonce,time()+60]);if($q->rowCount()!==1)throw new \RuntimeException('REPLAY');return $account;
     }

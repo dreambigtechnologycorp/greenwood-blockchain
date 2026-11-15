@@ -8,7 +8,7 @@ final class ApprovedDeploymentStore
 {
     public function __construct(private readonly string $directory, private readonly ?string $chainId=null, private readonly ?string $registryId=null)
     {
-        if (($chainId===null)!==($registryId===null)||($registryId!==null&&(!preg_match('/^[a-f0-9]{64}$/D',$registryId)||$chainId!== 'greenwood-physical-v1'))) throw new \InvalidArgumentException('Invalid assignment scope');
+        if (($chainId===null)!==($registryId===null)||($registryId!==null&&(!preg_match('/^[a-f0-9]{64}$/D',$registryId)||!preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/D',$chainId)))) throw new \InvalidArgumentException('Invalid assignment scope');
         if (is_link($directory) || !is_dir($directory) || (fileperms($directory) & 0022) !== 0) throw new \InvalidArgumentException('Assignment directory must be controller-owned and protected');
     }
     public function get(int $applicationId, string $service, int $releaseId): array

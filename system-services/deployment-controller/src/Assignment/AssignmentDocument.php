@@ -9,7 +9,7 @@ final class AssignmentDocument {
     }
     public static function validate(array $d):array {
         $keys=['chain_id','registry_contract_id','operation_id','account_id','version','previous_generation','assignment'];
-        if(array_diff(array_keys($d),$keys)||array_diff($keys,array_keys($d))||$d['chain_id']!=='greenwood-physical-v1'
+        if(array_diff(array_keys($d),$keys)||array_diff($keys,array_keys($d))||$d['chain_id']!==DeploymentIdentity::chain()
             ||!is_string($d['operation_id'])||!preg_match('/^[a-f0-9]{32}$/D',$d['operation_id'])||!is_string($d['account_id'])||!preg_match('/^[a-f0-9]{64}$/D',$d['account_id'])
             ||!is_int($d['version'])||$d['version']<1||$d['version']>0xffffffff
             ||($d['version']===1?$d['previous_generation']!==null:!is_string($d['previous_generation'])||!preg_match('/^[a-f0-9]{64}$/D',$d['previous_generation'])))throw new \InvalidArgumentException('INVALID_ASSIGNMENT_DOCUMENT');

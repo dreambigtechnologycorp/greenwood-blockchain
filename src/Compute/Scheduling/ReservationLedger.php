@@ -17,7 +17,25 @@ final class ReservationLedger
 {
     /** @var array<string, array{cpu: int, memory: int, pids: int, jobs: int}> providerId (binary) => totals */
     private array $reserved = [];
+    private array $resources = [];
 
+    public function resourceTotals(string $providerId): array { return $this->resources[$providerId]??[]; }
+    public function injectResourceTotals(string $providerId,array $totals): void {
+        if(strlen($providerId)!==32||count($totals)>128)throw new \InvalidArgumentException('Invalid finalized resource totals');
+        foreach($totals as $key=>$value)if(!is_string($key)||!preg_match('/^[a-f0-9]{64}:(millicore|millidevice|MiB|kbps|address|node)$/D',$key)||!is_int($value)||$value<0)throw new \InvalidArgumentException('Invalid resource reservation');
+        ksort($totals,SORT_STRING);$this->resources[$providerId]=$totals;
+    }
+    public function resourcesFit(string $providerId,array $manifest,array $capability): bool {
+        $d=\Greenwood\Resources\ResourceManifest::demands($manifest,$capability);$capacity=\Greenwood\Resources\ProviderCapabilityV2::groupCapacities($capability);$used=$this->resourceTotals($providerId);
+        foreach($d as $key=>$amount)if($amount>($capacity[$key]??0)-($used[$key]??0))return false;return true;
+    }
+    public function reserveResources(string $providerId,array $manifest,array $capability): void {
+        if(!$this->resourcesFit($providerId,$manifest,$capability))throw new \InvalidArgumentException('Typed resource capacity exhausted');$used=$this->resourceTotals($providerId);
+        foreach(\Greenwood\Resources\ResourceManifest::demands($manifest,$capability) as $key=>$amount)$used[$key]=\Greenwood\Economics\Amount::add($used[$key]??0,$amount);$this->resources[$providerId]=$used;
+    }
+    public function releaseResources(string $providerId,array $manifest,array $capability): void {
+        $used=$this->resourceTotals($providerId);foreach(\Greenwood\Resources\ResourceManifest::demands($manifest,$capability) as $key=>$amount){if(($used[$key]??0)<$amount)throw new \UnderflowException('Typed resource release without finalized allocation');$used[$key]-=$amount;}$this->resources[$providerId]=$used;
+    }
     private static function totals(): array
     {
         return ['cpu' => 0, 'memory' => 0, 'pids' => 0, 'jobs' => 0];

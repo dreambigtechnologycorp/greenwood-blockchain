@@ -1,0 +1,9 @@
+{
+  "enabled": false,
+  "allowed_operations": [],
+  "chain_id": "REPLACE_APPROVED_CHAIN",
+  "genesis_hash": "REPLACE_APPROVED_GENESIS_HASH",
+  "finalized_height": null,
+  "finalized_hash": "REPLACE_VERIFIED_BLOCK_HASH",
+  "state_root": "REPLACE_REPLAYED_STATE_ROOT"
+}

@@ -22,12 +22,15 @@ final class MutualTlsChannel
         if ((fileperms($privateKeyFile) & 0077) !== 0 || !in_array(fileowner($privateKeyFile), [0, posix_geteuid()], true)) {
             throw new \InvalidArgumentException('Control-plane private key must have private ownership and permissions');
         }
+        $namespace=null;
         foreach ($peerIdentities as $fingerprint => $identity) {
             if (!preg_match('/^[a-f0-9]{64}$/D', $fingerprint) || !is_string($identity) || $identity === ''
                 || !isset($peerUris[$fingerprint])
-                || !preg_match('~^spiffe://greenwood-physical-v1/control-plane/(deployment-controller|edge-controller|edge-admission|assignment/node-[14]|provider/node-[123])$~D', $peerUris[$fingerprint])) {
+                || !preg_match('~^spiffe://([A-Za-z0-9][A-Za-z0-9._-]{0,127})/control-plane/(deployment-controller|edge-controller|edge-admission|assignment/node-[14]|provider/node-[123])$~D', $peerUris[$fingerprint],$uriMatch)) {
                 throw new \InvalidArgumentException('Invalid pinned service identity');
             }
+            if($namespace!==null&&$namespace!==$uriMatch[1])throw new \InvalidArgumentException('Mixed control-plane chain namespaces');
+            $namespace=$uriMatch[1];
         }
     }
 

@@ -12,7 +12,7 @@ try {
     $config=getenv('GREENWOOD_CONTROLLER_CONFIG');
     if(!$config){
         if($method==='GET'&&$path==='/v1/developer/capabilities'){
-            echo json_encode(['schema_version'=>2,'version'=>'0.3.0-rc1','chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,'deployment_enabled'=>false,
+            echo json_encode(['schema_version'=>2,'version'=>'0.3.0-rc1','chain_id'=>null,'registry_contract_id'=>null,'deployment_enabled'=>false,
                 'features'=>array_fill_keys(['chain_account_auth','onchain_application_authority','signed_deployment_intent','finalized_release','provider_assignment','edge_reconciliation','readiness','idempotency'],false)]);return;
         }
         throw new RuntimeException('UNCONFIGURED');

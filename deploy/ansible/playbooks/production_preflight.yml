@@ -1,0 +1,87 @@
+---
+# Read-only infrastructure audit. Never stops services, reads private keys, or resets state.
+- name: Inspect the exact proposed production destination
+  hosts: production_rebuild
+  gather_facts: false
+  become: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require four explicitly identified machines and recovery access
+      ansible.builtin.assert:
+        that:
+          - groups['production_rebuild'] | length == 4
+          - greenwood_expected_machine_id is match('^[a-f0-9]{32}$')
+          - greenwood_expected_architecture in ['aarch64', 'x86_64']
+          - greenwood_recovery_access_confirmed | default(false) | bool
+          - greenwood_expected_address == ansible_host
+        fail_msg: Confirm exact machines and recovery access before any installation plan
+
+    - name: Read immutable machine identity
+      ansible.builtin.command: cat /etc/machine-id
+      register: production_machine_id
+      changed_when: false
+      check_mode: false
+
+    - name: Read actual architecture
+      ansible.builtin.command: uname -m
+      register: production_architecture
+      changed_when: false
+      check_mode: false
+
+    - name: Reject address reuse or unexpected hardware
+      ansible.builtin.assert:
+        that:
+          - production_machine_id.stdout | trim == greenwood_expected_machine_id
+          - production_architecture.stdout | trim == greenwood_expected_architecture
+
+    - name: Inspect storage and mount availability
+      ansible.builtin.command: df -B1 / /var/lib /etc
+      register: production_storage
+      changed_when: false
+      check_mode: false
+
+    - name: Inspect IP addresses
+      ansible.builtin.command: ip -json address show
+      register: production_addresses
+      changed_when: false
+      check_mode: false
+
+    - name: Inspect routes without changing gateway configuration
+      ansible.builtin.command: ip -json route show
+      register: production_routes
+      changed_when: false
+      check_mode: false
+
+    - name: Inspect cgroup controllers
+      ansible.builtin.command: cat /sys/fs/cgroup/cgroup.controllers
+      register: production_controllers
+      changed_when: false
+      check_mode: false
+
+    - name: Inspect containerd availability
+      ansible.builtin.command: containerd --version
+      register: production_containerd
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Inspect PHP runtime availability
+      ansible.builtin.command: php -v
+      register: production_php
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Report infrastructure facts without claiming acceptance
+      ansible.builtin.debug:
+        msg:
+          machine_id: "{{ production_machine_id.stdout | trim }}"
+          architecture: "{{ production_architecture.stdout | trim }}"
+          storage: "{{ production_storage.stdout }}"
+          addresses: "{{ production_addresses.stdout | from_json }}"
+          routes: "{{ production_routes.stdout | from_json }}"
+          controllers: "{{ production_controllers.stdout }}"
+          containerd: "{{ production_containerd.stdout | default('unavailable') }}"
+          php: "{{ production_php.stdout | default('unavailable') }}"
+          destructive_installation_authorized: false
+          physical_acceptance_complete: false

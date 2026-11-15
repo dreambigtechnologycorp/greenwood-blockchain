@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "profile": "production",
+  "service_trust_policy": "explicit_profiles_v1",
+  "block_seconds": 60,
+  "decimals": 6,
+  "burn_percent": 0,
+  "operator_percent": 100,
+  "signers": [],
+  "guardians": [],
+  "pause_blocks": null,
+  "allocations": {
+    "security_emissions": "150000000000000",
+    "grants": "250000000000000",
+    "subsidies": "300000000000000",
+    "institute_treasury": "250000000000000",
+    "working_operations": "50000000000000"
+  },
+  "limits": {
+    "grants": null,
+    "subsidies": null,
+    "institute_treasury": null,
+    "working_operations": null
+  },
+  "large_threshold": "100000000000",
+  "operations_balance": "100000000000",
+  "operations_payment": "5000000000",
+  "operations_window": "100000000000",
+  "bootstrap_units": null,
+  "operations_account": null,
+  "clock": "finalized_height",
+  "window_blocks": 43200,
+  "emission_distribution": "equal_genesis_validators",
+  "exhaustion": "partial_then_stop",
+  "failed_transaction_fee": "reject_without_charge",
+  "fees": {
+    "transfer": null,
+    "governance": null,
+    "contract": null,
+    "compute": null
+  },
+  "recipients": {}
+}

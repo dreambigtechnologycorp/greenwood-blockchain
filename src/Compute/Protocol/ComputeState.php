@@ -13,13 +13,13 @@ final class ComputeState
 {
     /** @var array<string,array<string,string>> canonical namespace/key/value records */
     private array $records = ['compute_requests' => [], 'compute_assignments' => [], 'compute_receipts' => [],
-        'provider_capabilities' => []];
+        'provider_capabilities' => [],'provider_resource_capabilities'=>[]];
 
     private static function record(string $bytes, int $height): string { return C::encodeBytes($bytes) . C::encodeU64BE($height); }
     private static function unpack(string $value): array
     {
-        $r = new Reader($value, 2048);
-        $bytes = $r->bytes(1100); $height = $r->u64(); $r->end();
+        $r = new Reader($value, 65536);
+        $bytes = $r->bytes(32768); $height = $r->u64(); $r->end();
         if ($height < 1) throw new \InvalidArgumentException('Invalid compute inclusion height');
         return [$bytes, $height];
     }
@@ -32,6 +32,11 @@ final class ComputeState
     {
         $value = $this->records['compute_assignments'][$id] ?? null;
         return $value === null ? null : ComputeAssign::decode(self::unpack($value)[0]);
+    }
+    public function receipt(string $id): ?\Greenwood\Compute\Protocol\ComputeReceiptV2
+    {
+        $value=$this->records['compute_receipts'][$id]??null;
+        return $value===null?null:ComputeReceiptV2Codec::decode(self::unpack($value)[0]);
     }
     public function terminal(string $id): bool { return isset($this->records['compute_receipts'][$id]); }
     /** @return array<string, ProviderCapability> finalized capabilities keyed by provider_id */
@@ -86,7 +91,7 @@ final class ComputeState
     }
 
     /** Caller State authenticates the envelope and nonce before dispatching. */
-    public function apply(Envelope $tx, int $height, ProviderEligibility $eligibility): self
+    public function apply(Envelope $tx, int $height, ProviderEligibility $eligibility,?string $genesis=null): self
     {
         if ($height < 1) throw new \InvalidArgumentException('Candidate inclusion height required');
         $next = clone $this;
@@ -118,6 +123,13 @@ final class ComputeState
                 ComputeReceiptVerifier::verifyV2($this->request($id), $this->assignment($id), $receipt, $tx->getSender(), $height, $this->terminal($id));
                 $next->records['compute_receipts'][$id] = self::record($receipt->toSignedBytes(), $height);
                 break;
+            case Envelope::TYPE_PROVIDER_CAPABILITY_V2:
+                $c=\Greenwood\Resources\ProviderCapabilityV2::validate(\Greenwood\Economics\CanonicalJson::decode($tx->getPayload()));
+                $id=hex2bin($c['provider_id']);$base=$this->capabilities()[$id]??null;$previous=$this->resourceCapabilities()[$c['provider_id']]??null;
+                if($genesis===null || $c['genesis']!==$genesis || $c['provider_key']!==bin2hex($tx->getSenderPublicKey()) || !$base || $c['base_nonce']!==$base->nonce
+                    || $c['nonce']!==($previous===null?1:ProviderCapability::nextNonce($previous['nonce'])))throw new \InvalidArgumentException('Resource capability base/nonce/genesis mismatch');
+                \Greenwood\Resources\ProviderCapabilityV2::validateBase($c,$base);
+                $next->records['provider_resource_capabilities'][$id]=self::record($tx->getPayload(),$height);break;
             case Envelope::TYPE_PROVIDER_CAPABILITY:
                 $capability = ProviderCapability::decode($tx->getPayload());
                 $id = $capability->providerId;
@@ -136,6 +148,12 @@ final class ComputeState
         return $next;
     }
 
+    public function assignedRequests(): array {
+        $out=[];foreach($this->records['compute_assignments'] as $id=>$value)if(!$this->terminal($id))$out[]=['id'=>bin2hex($id),'request'=>$this->request($id),'assignment'=>$this->assignment($id)];return $out;
+    }
+    public function resourceCapabilities(): array {
+        $out=[];foreach($this->records['provider_resource_capabilities'] as $id=>$value)$out[bin2hex($id)]=\Greenwood\Resources\ProviderCapabilityV2::validate(\Greenwood\Economics\CanonicalJson::decode(self::unpack($value)[0]));ksort($out,SORT_STRING);return $out;
+    }
     public function logicalRecords(): array
     {
         $result = [];
@@ -174,6 +192,7 @@ final class ComputeState
             if ($capability->providerId !== $id) throw new \InvalidArgumentException('Derived capability key mismatch');
             $state->assertCapacityCoversReservations($capability);
         }
+        foreach($state->resourceCapabilities() as $id=>$c)if($c['provider_id']!==$id || !isset($state->capabilities()[hex2bin($id)]))throw new \InvalidArgumentException('Derived resource provider mismatch');
         // Even derived receipt hydration goes through the settlement verifier.
         foreach ($state->records['compute_receipts'] as $id => $value) {
             [$bytes, $height] = self::unpack($value);

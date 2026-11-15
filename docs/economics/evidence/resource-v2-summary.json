@@ -1,0 +1,231 @@
+{
+  "test_status": "PASS",
+  "production_status": "HOLD",
+  "resource_definitions": 36,
+  "default_payable_resources_enabled": 0,
+  "versioned_provider_capability_type": 14,
+  "legacy_wire_formats_changed": false,
+  "composite_compute_and_hosted_implemented_locally": true,
+  "capability_nonce_and_hash_bound_to_quote": true,
+  "full_certified_resource_history_replay": {
+    "status": "PASS",
+    "checks": 8,
+    "resource_v2": true,
+    "allocation": "10/25/30/34/1",
+    "certified_blocks": 24487,
+    "validator_signers": 3,
+    "full_service_history_replay": true,
+    "actual_registry_wasm": true,
+    "physical_network_tested": false,
+    "independent_measurement_tested": false,
+    "live_transactions": 0,
+    "seconds": 447.733
+  },
+  "tests": [
+    {
+      "test": "resource_definitions_and_pricing",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 75,
+        "resource_definitions": 36,
+        "physical_qualification": false,
+        "local_fixture_only": true
+      }
+    },
+    {
+      "test": "meter_journal",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 11,
+        "independent_measurement_qualified": false,
+        "container_execution_tested": false
+      }
+    },
+    {
+      "test": "resource_settlement",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 21,
+        "actual_registry_wasm": true,
+        "adapters": [
+          "compute_resources_v2",
+          "hosted_resources_v2"
+        ],
+        "independent_physical_qualification": false,
+        "production_activation": false,
+        "seconds": 8.08
+      }
+    },
+    {
+      "test": "resource_settlement_proposed",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 21,
+        "actual_registry_wasm": true,
+        "adapters": [
+          "compute_resources_v2",
+          "hosted_resources_v2"
+        ],
+        "independent_physical_qualification": false,
+        "production_activation": false,
+        "seconds": 2.877
+      }
+    },
+    {
+      "test": "core",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 64,
+        "seconds": 1.441,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0
+      }
+    },
+    {
+      "test": "core_proposed",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 64,
+        "seconds": 1.555,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0
+      }
+    },
+    {
+      "test": "compute_v1",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 68,
+        "adapters": [
+          "compute_cpu_v1"
+        ],
+        "hosted_adapter_tested": false,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0,
+        "seconds": 6.873
+      }
+    },
+    {
+      "test": "compute_v1_proposed",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 68,
+        "adapters": [
+          "compute_cpu_v1"
+        ],
+        "hosted_adapter_tested": false,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0,
+        "seconds": 6.84
+      }
+    },
+    {
+      "test": "hosted_v1",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 32,
+        "actual_registry_wasm": true,
+        "distributed_execution_tested": false,
+        "independent_metering_qualified": false,
+        "mainnet_activation": false,
+        "seconds": 2.745
+      }
+    },
+    {
+      "test": "hosted_v1_proposed",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 32,
+        "actual_registry_wasm": true,
+        "distributed_execution_tested": false,
+        "independent_metering_qualified": false,
+        "mainnet_activation": false,
+        "seconds": 2.719
+      }
+    },
+    {
+      "test": "hosted_boundaries",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 17,
+        "actual_receiver_sqlite": true,
+        "actual_operator_guard": true,
+        "container_execution_tested": false
+      }
+    },
+    {
+      "test": "certified_chain",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 25,
+        "validators": 3,
+        "certified_blocks": 3,
+        "replay": true,
+        "network_transport_tested": false,
+        "seconds": 0.428
+      }
+    },
+    {
+      "test": "certified_chain_proposed",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 25,
+        "validators": 3,
+        "certified_blocks": 3,
+        "replay": true,
+        "network_transport_tested": false,
+        "seconds": 0.435
+      }
+    },
+    {
+      "test": "deployment_identity",
+      "exit": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 9,
+        "live_requests": 0
+      }
+    }
+  ],
+  "deployment_regression_suites": 12,
+  "lint": {
+    "status": "PASS",
+    "php_files": 160,
+    "failures": []
+  },
+  "local_observation": {
+    "status": "OBSERVED",
+    "verification_level": "C",
+    "io_available": false,
+    "subsidy_qualified": false
+  },
+  "qualification_inventory_populated": false,
+  "independent_metering_hosts_provisioned": false,
+  "operating_cluster_contacted_or_modified": false,
+  "physical_independence_qualified": false,
+  "gpu_npu_vendor_collectors_qualified": false,
+  "nas_object_network_collectors_qualified": false,
+  "runtime_resource_cutoffs_qualified": false,
+  "native_retention_completed": false,
+  "lost_quorum_recovery_ratified": false,
+  "allocation_ratified": false,
+  "preferred_candidate": "10/25/30/34/1",
+  "block_target_seconds": 60,
+  "fee_burn_percent": 0,
+  "deployed": false,
+  "permanent_genesis_generated": false,
+  "live_transactions": 0
+}

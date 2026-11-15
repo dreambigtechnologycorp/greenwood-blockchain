@@ -1,0 +1,58 @@
+---
+# Deliberately stages disabled configuration and a manual one-shot unit; never starts tasks.
+- name: Reject activation or seed allowlist bypass through governed staging
+  ansible.builtin.assert:
+    that:
+      - greenwood_governed_service_agent_config.enabled == false
+      - greenwood_governed_service_agent_config.mode in ['verified_snapshot', 'pinned_node', 'qualification_snapshot', 'qualification_node']
+    fail_msg: Governed installation requires separate operator consent and a verified policy view
+
+- name: Reject unsafe governed agent configuration ancestry
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/php
+      - -r
+      - >-
+        for($p=$argv[1];;$p=dirname($p)){
+        if(is_link($p))exit(1);
+        if(file_exists($p)&&(fileowner($p)!==0||(fileperms($p)&0022)!==0))exit(2);
+        if($p==='/')break;}
+      - /etc/greenwood/system-services/governed-agent.json
+  changed_when: false
+  check_mode: false
+
+- name: Stage disabled governed agent consent without replacing existing state
+  ansible.builtin.copy:
+    content: "{{ greenwood_governed_service_agent_config | to_nice_json }}\n"
+    dest: /etc/greenwood/system-services/governed-agent.json
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+  no_log: true
+  diff: false
+
+- name: Inspect governed agent consent
+  ansible.builtin.stat:
+    path: /etc/greenwood/system-services/governed-agent.json
+    checksum_algorithm: sha256
+  register: governed_agent_config_stat
+  no_log: true
+
+- name: Reject implicit governed consent replacement
+  ansible.builtin.assert:
+    that:
+      - governed_agent_config_stat.stat.mode == '0600'
+      - governed_agent_config_stat.stat.checksum == ((greenwood_governed_service_agent_config | to_nice_json ~ '\n') | hash('sha256'))
+    fail_msg: Existing operator consent differs; explicit local reconciliation is required
+  no_log: true
+  when: not ansible_check_mode
+
+- name: Stage governed agent unit without enabling or starting
+  ansible.builtin.template:
+    src: governed-service-agent.j2
+    dest: /etc/systemd/system/greenwood-governed-service-agent.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload control-plane units

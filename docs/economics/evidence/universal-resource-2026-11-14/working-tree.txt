@@ -1,0 +1,79 @@
+ M bin/greenwood-application-recovery
+ M bin/greenwood-cli
+ M bin/greenwood-provider
+ M deploy/application-recovery/README.md
+ M deploy/application-recovery/greenwood-application-recovery.service
+ m runtime/containerd/proto/containerd-repo
+ M src/Compute/Containerd/CgroupAccounting.php
+ M src/Compute/Protocol/ComputeState.php
+ M src/Compute/Scheduling/ReservationLedger.php
+ M src/Compute/Scheduling/Scheduler.php
+ M src/Consensus/Runtime/ConsensusDriver.php
+ M src/ControlPlane/MutualTlsChannel.php
+ M src/ControlPlane/SignedPolicySnapshot.php
+ M src/Edge/ApprovedDeploymentStore.php
+ M src/Genesis/Genesis.php
+ M src/Node/Chain.php
+ M src/Node/ChainConfig.php
+ M src/Node/Configuration.php
+ M src/Persistence/StateSqlite.php
+ M src/Provider/ProviderApplicationOperator.php
+ M src/Provider/ProviderApplicationRestorer.php
+ M src/Rpc/HttpApi.php
+ M src/State/State.php
+ M src/Transaction/Envelope.php
+ M system-services/deployment-controller/README.md
+ M system-services/deployment-controller/autoload.php
+ M system-services/deployment-controller/deploy/assignment-config.example.php
+ M system-services/deployment-controller/deploy/edge-route-observation.php
+ M system-services/deployment-controller/deploy/provider-observer.php
+ M system-services/deployment-controller/deploy/receiver-policy-publisher.php
+ M system-services/deployment-controller/public/index.php
+ M system-services/deployment-controller/src/Api/DeveloperRoutes.php
+ M system-services/deployment-controller/src/Assignment/AssignmentDocument.php
+ M system-services/deployment-controller/src/Assignment/PhysicalAssignmentServices.php
+ M system-services/deployment-controller/src/Assignment/PolicyInstaller.php
+ M system-services/deployment-controller/src/Auth/ChallengeService.php
+ M system-services/deployment-controller/src/Auth/DeploymentIdentity.php
+ M system-services/deployment-controller/src/Auth/FinalizedAuthority.php
+ M system-services/deployment-controller/src/Auth/SignedRequestVerifier.php
+ M system-services/deployment-controller/src/Bootstrap.php
+ M system-services/deployment-controller/src/Deployment/DeploymentCoordinator.php
+ M system-services/deployment-controller/src/Deployment/WriteEnablement.php
+ M system-services/deployment-controller/tests/allocation_approval.php
+ M system-services/deployment-controller/tests/distribution.php
+ M system-services/deployment-controller/tests/distribution_mtls.php
+ M system-services/deployment-controller/tests/edge_admission.php
+ M system-services/deployment-controller/tests/orchestration.php
+ M system-services/deployment-controller/tests/policy_install.php
+ M system-services/deployment-controller/tests/registry_authority.php
+ M system-services/deployment-controller/tests/registry_identity.php
+ M system-services/deployment-controller/tests/release_content.php
+ M system-services/deployment-controller/tests/signed_policy.php
+ M system-services/registry-auth/src/RegistryAuthService.php
+ M system-services/registry-auth/src/bootstrap.php
+ M system-services/registry-auth/tests/authority.php
+ M system-services/registry-auth/tests/database.php
+?? deploy/ansible/inventory/metering.ini
+?? deploy/ansible/inventory/qualification.ini
+?? deploy/application-recovery/hosted-funding.template.json
+?? docs/economics/
+?? scripts/compare-economic-designs.py
+?? scripts/economics-bootstrap.php
+?? scripts/economics-cli.php
+?? scripts/resource-operations.php
+?? scripts/simulate-institute-economics.py
+?? src/Compute/Containerd/GovernedServiceDefinition.php
+?? src/Economics/
+?? src/Network/
+?? src/Provider/FinalizedHeadWatchdog.php
+?? src/Provider/HostedAssignmentJournal.php
+?? src/Provider/HostedRuntimeFunding.php
+?? src/Provider/HostedServiceMonitor.php
+?? src/Provider/MeteringService.php
+?? src/Provider/SettlementOutbox.php
+?? src/Resources/
+?? src/Transaction/TransferU64.php
+?? system-services/deployment-controller/tests/identity-fixture.php
+?? system-services/metering/
+?? tests/Economics/

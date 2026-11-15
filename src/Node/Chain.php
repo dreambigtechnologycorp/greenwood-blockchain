@@ -36,6 +36,7 @@ final class Chain
         $tree = new MerkleTree('GREENWOOD_TX_LEAF_V1','GREENWOOD_TX_NODE_V1','GREENWOOD_TX_EMPTY_V1');
         $candidateHeight = $this->tip->getHeight() + 1;
         foreach ($transactions as $tx) { $state->applyTransaction($tx,$this->genesis->getChainId(),$candidateHeight); $tree->addLeaf($tx->getHash()); }
+        $state->finalizeEconomicBlock($candidateHeight);
         $block = new Block(new Header(1,$this->genesis->getChainId(),$this->tip->getHeight()+1,$round,$this->tip->getHash(),$this->state->getStateRoot(),$tree->getRoot(),$state->getStateRoot(),$proposer,$this->genesis->getGenesisHash(),0),$transactions);
         if (strlen($block->toBytes())>1048576) throw new \InvalidArgumentException('Block too large');
         return $block;
@@ -52,6 +53,7 @@ final class Chain
         if ($h->getProposer() !== ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$v['publicKey'])) throw new \InvalidArgumentException('Wrong block proposer');
         $state = clone $this->state;
         foreach ($block->getTransactions() as $tx) $state->applyTransaction($tx,$this->genesis->getChainId(),$h->getHeight());
+        $state->finalizeEconomicBlock($h->getHeight());
         if ($state->getStateRoot() !== $h->getStateRoot()) throw new \InvalidArgumentException('Invalid state root');
         return $state;
     }

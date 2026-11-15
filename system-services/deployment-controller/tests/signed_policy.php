@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__) . '/autoload.php';
+require_once __DIR__.'/identity-fixture.php';
 use Greenwood\ControlPlane\SignedPolicySnapshot;
 use Greenwood\DeploymentController\Assignment\AllocationPolicy;
 use Greenwood\DeploymentController\Assignment\AssignmentDocument;
@@ -25,13 +26,13 @@ $write = static function (array $p, ?string $signer = null) use ($key, $path): v
 };
 try {
     $write($payload);
-    $reader = new SignedPolicySnapshot($path, $root.'/ledger.sqlite', 'revocations', $public, 300);
+    $reader = new SignedPolicySnapshot($path, $root.'/ledger.sqlite', 'revocations', $public, 300,'greenwood-physical-v1');
     check($reader->read()['revision'] === 1, 'Valid policy rejected');
     check($reader->read()['revision'] === 1, 'Identical revision rejected');
     $next = $payload; $next['revision'] = 2; $next['revoked_sha256'] = [str_repeat('a',64)]; $write($next);
     check($reader->read()['revision'] === 2, 'New revision rejected');
     unset($reader);
-    $reader = new SignedPolicySnapshot($path, $root.'/ledger.sqlite', 'revocations', $public, 300);
+    $reader = new SignedPolicySnapshot($path, $root.'/ledger.sqlite', 'revocations', $public, 300,'greenwood-physical-v1');
     $write($payload); denied($reader->read(...), 'Rollback survived restart');
     $conflict = $next; $conflict['revoked_sha256'] = []; $write($conflict);
     denied($reader->read(...), 'Same-revision equivocation accepted');
@@ -50,9 +51,9 @@ try {
     $record = json_decode(file_get_contents($path), true); $record['payload']['revision'] = 9;
     file_put_contents($path, json_encode($record)); denied($reader->read(...), 'Tampered signature accepted');
     unlink($path); denied($reader->read(...), 'Missing policy accepted');
-    $document = ['chain_id'=>DeploymentIdentity::CHAIN,'registry_contract_id'=>DeploymentIdentity::REGISTRY,
+    $document = ['chain_id'=>DeploymentIdentity::chain(),'registry_contract_id'=>DeploymentIdentity::registry(),
         'operation_id'=>str_repeat('a',32),'account_id'=>str_repeat('b',64),'version'=>1,'previous_generation'=>null,
-        'assignment'=>['chain_id'=>DeploymentIdentity::CHAIN,'registry_contract_id'=>DeploymentIdentity::REGISTRY,
+        'assignment'=>['chain_id'=>DeploymentIdentity::chain(),'registry_contract_id'=>DeploymentIdentity::registry(),
             'application_id'=>9,'release_id'=>1,'service'=>'web','provider_id'=>str_repeat('c',64),
             'provider_address'=>'10.77.0.100','ingress_port'=>21009,'instance_id'=>'app-9-web',
             'image_digest'=>'sha256:'.str_repeat('d',64),'provider_endpoint'=>'tcp://10.77.0.100:19443',
@@ -61,7 +62,7 @@ try {
     $allocation = ['schema_version'=>1,'purpose'=>'allocations','chain_id'=>'greenwood-physical-v1',
         'revision'=>1,'issued_at'=>time(),'valid_until'=>time()+120,'approved_generations'=>[$generation]];
     $write($allocation);
-    $allocReader = new SignedPolicySnapshot($path, $root.'/ledger.sqlite', 'allocations', $public, 300);
+    $allocReader = new SignedPolicySnapshot($path, $root.'/ledger.sqlite', 'allocations', $public, 300,'greenwood-physical-v1');
     check($allocReader->read()['approved_generations'] === [$generation], 'Signed allocation rejected');
     $policy = new AllocationPolicy($path, $allocReader);
     check($policy->approved($document), 'Exact generation denied');

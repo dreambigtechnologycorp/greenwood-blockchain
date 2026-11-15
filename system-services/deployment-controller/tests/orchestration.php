@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/autoload.php';
+require_once __DIR__.'/identity-fixture.php';
 use Greenwood\DeploymentController\State\SqliteOperationStore;
 use Greenwood\DeploymentController\Auth\{ChallengeService,SignedRequestVerifier};
 use Greenwood\DeploymentController\Deployment\DeploymentCoordinator;
@@ -12,16 +13,16 @@ function check(bool $v,string $m):void{if(!$v)throw new RuntimeException($m);}
 $dir=sys_get_temp_dir().'/gw-controller-'.bin2hex(random_bytes(8));mkdir($dir,0700);
 $key=sodium_crypto_sign_seed_keypair(str_repeat('a',32));$public=sodium_crypto_sign_publickey($key);$secret=sodium_crypto_sign_secretkey($key);$account=bin2hex(ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$public));
 $wrongImageScope=false;$allowed=true;$finality=true;$running=false;$startCalls=0;$timeout=false;$edgeReady=true;$stale=false;$wrongGeneration=false;$mirrorFail=false;$admitCalls=0;
-$intent=['action'=>'deploy','chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,'application_id'=>3,'service'=>'web','release_number'=>1,'image_digest'=>'sha256:'.str_repeat('a',64),'idempotency_key'=>'test-operation-001'];
+$intent=['action'=>'deploy','chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'application_id'=>3,'service'=>'web','release_number'=>1,'image_digest'=>'sha256:'.str_repeat('a',64),'idempotency_key'=>'test-operation-001'];
 $store=new SqliteOperationStore($dir.'/operations.sqlite');
-$authorize=function($who,$i)use(&$allowed,&$finality,$account){return ['authorized'=>$allowed&&$who===$account,'account_id'=>$who,'application_id'=>$i['application_id'],'service'=>$i['service'],'release_id'=>$i['release_number'],'image_digest'=>$i['image_digest'],'authority_epoch'=>1,'observed_at'=>time(),'chain_id'=>$i['chain_id'],'registry_contract'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,'controller'=>$account,'effective_authority'=>15,'finalized_height'=>$finality?100:null,'block_hash'=>str_repeat('2',64),'state_root'=>str_repeat('3',64)];};
+$authorize=function($who,$i)use(&$allowed,&$finality,$account){return ['authorized'=>$allowed&&$who===$account,'account_id'=>$who,'application_id'=>$i['application_id'],'service'=>$i['service'],'release_id'=>$i['release_number'],'image_digest'=>$i['image_digest'],'authority_epoch'=>1,'observed_at'=>time(),'chain_id'=>$i['chain_id'],'registry_contract'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'controller'=>$account,'effective_authority'=>15,'finalized_height'=>$finality?100:null,'block_hash'=>str_repeat('2',64),'state_root'=>str_repeat('3',64)];};
 $plan=static fn($id,$i,$proof)=>['chain_id'=>$i['chain_id'],'registry_contract_id'=>$i['registry_contract_id'],'application_id'=>$i['application_id'],'service'=>$i['service'],'release_id'=>$i['release_number'],'image_digest'=>$i['image_digest'],'provider_id'=>str_repeat('b',64),'provider_address'=>'10.77.0.100','provider_endpoint'=>'tcp://10.77.0.100:19443','provider_tls_name'=>'provider','image_ref'=>'registry/apps/3/web@'.$i['image_digest']];
 $inspect=function($p)use(&$running,&$wrongImageScope){return !$running?['absent'=>true]:['record'=>['image_ref'=>$wrongImageScope?'legacy/apps/'.$p['application_id'].'/web@'.$p['image_digest']:$p['image_ref'],'application_id'=>$p['application_id'],'service'=>$p['service'],'image_digest'=>$p['image_digest'],'container_id'=>'app-3-web','state'=>'RUNNING'],'runtime'=>['runtime_state'=>'RUNNING'],'network'=>['ready'=>true,'ingress_port'=>21001]];};
 $start=function($id,$p)use(&$running,&$startCalls,&$timeout){$startCalls++;$running=true;if($timeout)throw new RuntimeException('timeout after provider commit');};
 $admit=function()use(&$mirrorFail,&$admitCalls){$admitCalls++;if($mirrorFail)throw new RuntimeException('mirror uncertain');};
 $observe=function($a)use(&$stale){return $a+['nonce'=>str_repeat('c',64),'address'=>$a['provider_address'],'port'=>$a['ingress_port'],'state'=>'RUNNING','lifecycle_state'=>'RUNNING','network_state'=>'HEALTHY','pid'=>20,'network_pid'=>20,'namespace_identity'=>'netns','ready'=>true,'observed_at'=>time()-($stale?60:0)];};
 $edge=function()use(&$edgeReady){return ['confirmed'=>$edgeReady,'generation'=>str_repeat('d',64),'body_sha256'=>str_repeat('e',64)];};
-$ready=function($a,$nonce)use(&$wrongGeneration,$authorize,$account){$url='https://gw-'.$a['application_id'].'-web.greenwoodblockchain.com/';return $a+['nonce'=>$nonce,'ready'=>true,'provider_mtls_verified'=>true,'observed_at'=>time(),'expires_at'=>time()+15,'edge_generation'=>str_repeat($wrongGeneration?'f':'d',64),'pid'=>20,'namespace_identity'=>'netns','backend'=>['address'=>$a['provider_address'],'port'=>$a['ingress_port']],'provider_observed_at'=>time(),'authority'=>$authorize($account,['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,'application_id'=>$a['application_id'],'service'=>$a['service'],'release_number'=>$a['release_id'],'image_digest'=>$a['image_digest']]),'canonical_url'=>$url,'public_https'=>['url'=>$url,'verified'=>true,'status'=>200,'body_sha256'=>str_repeat('e',64)]];};
+$ready=function($a,$nonce)use(&$wrongGeneration,$authorize,$account){$url='https://gw-'.$a['application_id'].'-web.greenwoodblockchain.com/';return $a+['nonce'=>$nonce,'ready'=>true,'provider_mtls_verified'=>true,'observed_at'=>time(),'expires_at'=>time()+15,'edge_generation'=>str_repeat($wrongGeneration?'f':'d',64),'pid'=>20,'namespace_identity'=>'netns','backend'=>['address'=>$a['provider_address'],'port'=>$a['ingress_port']],'provider_observed_at'=>time(),'authority'=>$authorize($account,['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'application_id'=>$a['application_id'],'service'=>$a['service'],'release_number'=>$a['release_id'],'image_digest'=>$a['image_digest']]),'canonical_url'=>$url,'public_https'=>['url'=>$url,'verified'=>true,'status'=>200,'body_sha256'=>str_repeat('e',64)]];};
 $preflightFault=null;
 $preflight=static function($id,$p,$proof)use(&$preflightFault):array{
     $a=$p;unset($a['image_ref']);$a['ingress_port']=21001;$a['instance_id']='app-3-web';
@@ -126,5 +127,14 @@ try{
     [, $code]=$resumeApi->handleRequest('POST',$resume,'',$resumeHeaders);check($code===403,'Resume signature replay accepted');
     [$result]=$resumeApi->handleRequest('POST',$resume,'',$headersFor('POST',$resume,$key));
     check($result['ready']&&$startCalls===$before+1,'Resume duplicated start');
+    // Financial gate: export reservation, wait without side effects, resume once, deny expired readiness.
+    $funded=false;$fundChecks=0;$funding=function($document)use(&$funded,&$fundChecks){$fundChecks++;if(!$funded)throw new RuntimeException('Unfunded service interval');return ['commitment_id'=>str_repeat('1',64),'financial_status'=>'funded','payment_finalized'=>false];};
+    $financialCoordinator=new DeploymentCoordinator($store,$authorize,$plan,$inspect,$start,$admit,$observe,$edge,$ready,true,$preflight,null,null,$funding);
+    $test['idempotency_key']='funding-wait';$op=$store->accept($account,$test);$before=$startCalls;$beforeAdmit=$admitCalls;
+    check($financialCoordinator->run($op['id'])['state']==='RESERVED'&&$startCalls===$before&&$admitCalls===$beforeAdmit,'Unfunded hosted assignment caused runtime/admission side effects');
+    check(isset(json_decode($store->get($op['id'])['evidence'],true)['assignment_document']),'Unfunded assignment cannot be exported for quote acceptance');
+    $funded=true;check($financialCoordinator->run($op['id'])['ready']&&$startCalls===$before+1,'Funded hosted interval could not start');
+    $financialCoordinator->run($op['id']);check($startCalls===$before+1&&$fundChecks>=3,'Financial recovery replayed provider start');
+    $funded=false;check(!$financialCoordinator->run($op['id'])['ready']&&$startCalls===$before+1,'Expired hosted interval reported deployment readiness');
     echo "Orchestration integration: durable reservation export, owner-signed resume/replay/isolation, pre-start ACK/plan gate, runtime binding, idempotency, restart, revocation and readiness checks passed\n";
 }finally{foreach(glob($dir.'/*')as$p)unlink($p);rmdir($dir);}

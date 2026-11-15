@@ -13,8 +13,9 @@ final class SignedPolicySnapshot
         private readonly string $purpose,
         private readonly string $issuerPublicKey,
         private readonly int $maxAge,
+        private readonly string $chainId,
     ) {
-        if (!in_array($purpose, ['revocations', 'allocations'], true)
+        if (!preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/D',$chainId) || !in_array($purpose, ['revocations', 'allocations'], true)
             || !preg_match('/^[a-f0-9]{64}$/D', $issuerPublicKey) || $maxAge < 1 || $maxAge > 86400) {
             throw new \InvalidArgumentException('INVALID_POLICY_TRUST_CONFIGURATION');
         }
@@ -53,7 +54,7 @@ final class SignedPolicySnapshot
         $keys = ['schema_version', 'purpose', 'chain_id', 'revision', 'issued_at', 'valid_until', $list];
         if (count($p) !== count($keys) || array_diff(array_keys($p), $keys)
             || ($p['schema_version'] ?? null) !== 1 || ($p['purpose'] ?? null) !== $this->purpose
-            || ($p['chain_id'] ?? null) !== 'greenwood-physical-v1'
+            || ($p['chain_id'] ?? null) !== $this->chainId
             || !is_int($p['revision'] ?? null) || $p['revision'] < 1
             || !is_int($p['issued_at'] ?? null) || !is_int($p['valid_until'] ?? null)
             || $p['issued_at'] > time() + 2 || $p['issued_at'] < time() - $this->maxAge

@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "chain": "greenwood-hosted-fresh-qualification",
+  "real_loopback_mtls": true,
+  "physical_network_tested": false,
+  "stdout": "Real mTLS assignment distribution: dedicated receiver identities, both ACKs, unregistered client, wrong receiver, revoked controller, expired and tampered signed policy passed\n",
+  "stderr": ""
+}

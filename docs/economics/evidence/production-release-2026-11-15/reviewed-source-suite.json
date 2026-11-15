@@ -1,0 +1,18 @@
+{
+  "tests": "607",
+  "assertions": "6129",
+  "errors": "0",
+  "failures": "0",
+  "skipped": "2",
+  "time": "64.455803",
+  "runtime": "PHP 8.5.12",
+  "suites": [
+    "source",
+    "contracts"
+  ],
+  "native_containerd_executed": false,
+  "skipped_tests": [
+    "testRuntimeDiagnosticsAcceptStandardSbinMkfsExt4Path",
+    "testGetPreservesRpcFailureSubtypeAndCode"
+  ]
+}

@@ -1,16 +1,18 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/autoload.php';
+require_once dirname(__DIR__,2).'/deployment-controller/tests/identity-fixture.php';
 use Greenwood\SystemServices\RegistryAuth\{RegistryAuthService,Database};
 use Greenwood\DeploymentController\Auth\DeploymentIdentity;
 use Greenwood\DeploymentController\Registry\GreenwoodRpc;
 
 function check(bool $value,string $label):void {if(!$value)throw new RuntimeException($label);}
 $f=json_decode(file_get_contents(dirname(__DIR__,2).'/deployment-controller/tests/fixtures/registry-readonly.json'),true);
-$f['metadata']['contract_id']=$f['metadata']['wasm_hash']=DeploymentIdentity::REGISTRY;
-foreach($f['queries']as&$q)$q['contract_id']=DeploymentIdentity::REGISTRY;unset($q);
+$f['before']['genesis_hash']=$f['after']['genesis_hash']=str_repeat('a',64);
+$f['metadata']['contract_id']=$f['metadata']['wasm_hash']=DeploymentIdentity::registry();
+foreach($f['queries']as&$q)$q['contract_id']=DeploymentIdentity::registry();unset($q);
 $mode='valid';$capabilities=15;$queries=0;
-$rpc=new GreenwoodRpc('http://127.0.0.1',DeploymentIdentity::CHAIN,static function($method,$path,$body)use($f,&$mode,&$capabilities,&$queries):array{
+$rpc=new GreenwoodRpc('http://127.0.0.1',DeploymentIdentity::chain(),static function($method,$path,$body)use($f,&$mode,&$capabilities,&$queries):array{
     if($path==='/v1/chain/status'){
         $r=$f['before'];if($mode==='syncing')$r['syncing']=true;
         if($mode==='moving'&&$queries>0)$r['state_root']=str_repeat('e',64);
@@ -27,18 +29,18 @@ $rpc=new GreenwoodRpc('http://127.0.0.1',DeploymentIdentity::CHAIN,static functi
 });
 umask(0077);$root=sys_get_temp_dir().'/gw-registry-auth-'.bin2hex(random_bytes(8));mkdir($root,0700);
 $db=Database::open($root.'/auth.sqlite');$key=sodium_crypto_sign_keypair();$developer=sodium_crypto_sign_keypair();
-$service=new RegistryAuthService($db,DeploymentIdentity::CHAIN,'http://127.0.0.1',DeploymentIdentity::REGISTRY,$key,$rpc);
+$service=new RegistryAuthService($db,DeploymentIdentity::chain(),'http://127.0.0.1',DeploymentIdentity::registry(),$key,$rpc);
 $authorize=static function(array $actions)use($service,$developer):array{
     $challenge=$service->challenge(1,'web',$actions);
     return $service->authorize($challenge['id'],sodium_crypto_sign_publickey($developer),
         sodium_crypto_sign_detached($challenge['canonical_bytes'],sodium_crypto_sign_secretkey($developer)));
 };
 try{
-    $repository='chains/'.DeploymentIdentity::CHAIN.'/registries/'.DeploymentIdentity::REGISTRY.'/apps/1/web';
+    $repository='chains/'.DeploymentIdentity::chain().'/registries/'.DeploymentIdentity::registry().'/apps/1/web';
     $scope='repository:'.$repository.':';
     $challenge=$service->challenge(1,'web',['pull']);
-    check($challenge['registry_contract_id']===DeploymentIdentity::REGISTRY,'Missing registry binding');
-    check(str_starts_with($challenge['canonical_bytes'],"GREENWOOD-REGISTRY-AUTH-V2\nchain_id=".DeploymentIdentity::CHAIN."\nregistry_contract_id=".DeploymentIdentity::REGISTRY."\n"),'Canonical registry binding missing');
+    check($challenge['registry_contract_id']===DeploymentIdentity::registry(),'Missing registry binding');
+    check(str_starts_with($challenge['canonical_bytes'],"GREENWOOD-REGISTRY-AUTH-V2\nchain_id=".DeploymentIdentity::chain()."\nregistry_contract_id=".DeploymentIdentity::registry()."\n"),'Canonical registry binding missing');
     $session=$authorize(['push','pull']);check($session['success'],'Authorized session rejected');
     $token=$service->token($session['credential'],'greenwood-registry',$scope.'pull,push');
     check(isset($token['token']),'Authorized token rejected');
@@ -63,7 +65,7 @@ try{
     check(sodium_crypto_sign_verify_detached(base64_decode(strtr($signature,'-_','+/')),$header.'.'.$payload,sodium_crypto_sign_publickey($key)),'Issuer signature invalid');
     check(isset($service->token($session['credential'],'greenwood-registry',str_replace('/apps/1/','/apps/2/',$scope).'pull')['error']),'Cross-app token accepted');
     check(isset($service->token('invalid','greenwood-registry',$scope.'pull')['error']),'Invalid session accepted');
-    foreach(['repository:apps/1/web:pull',str_replace(DeploymentIdentity::REGISTRY,str_repeat('0',64),$scope).'pull']as$bad){
+    foreach(['repository:apps/1/web:pull',str_replace(DeploymentIdentity::registry(),str_repeat('0',64),$scope).'pull']as$bad){
         $rejected=false;try{$service->token($session['credential'],'greenwood-registry',$bad);}catch(InvalidArgumentException){$rejected=true;}
         check($rejected,'Legacy or cross-registry scope accepted');
     }

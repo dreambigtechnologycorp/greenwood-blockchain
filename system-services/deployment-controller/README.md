@@ -101,3 +101,28 @@ no physical deployment or chain transaction is performed. Registry execution tes
 in the CLI repository additionally exercise native signed Python envelopes in the
 actual PHP/WASM VM. See [testing overview](../../docs/testing/overview.md)
 for the separation between source tests and physical acceptance.
+
+
+### Fresh-chain economic integration (November 14, 2026)
+
+Protected controller configuration now requires `deployment_identity` with explicit
+`chain_id`, `genesis_hash`, `registry_contract_id`, and `registry_wasm_hash`. There
+are no historical chain defaults. Restart the process to change these pins; the
+example configuration deliberately contains invalid placeholders. Signed control
+policies and SPIFFE identities must use the configured chain. Registry-auth also
+requires `GREENWOOD_GENESIS_HASH` and `GREENWOOD_APP_REGISTRY_WASM_HASH`, alongside
+its explicit chain and registry ID.
+
+Hosted starts on native-economic chains deliberately fail with
+`HOSTED_SERVICE_SETTLEMENT_NOT_QUALIFIED`: recurring service intervals and a
+finalized funding guard are not yet integrated. Do not remove that gate to launch.
+The finite-compute adapter and remaining production requirements are described in
+`../../docs/economics/GRU_SETTLEMENT_REPORT.md`.
+
+
+The local hosted CPU candidate adapter is now implemented. Production remains on
+HOLD. `hosted_settlement_candidate_enabled` defaults false; the disposable-cluster
+composition uses a configured provider key and actual funded-interval reads before
+assignment distribution, controller start/resume, provider start/recovery and expiry
+reconciliation. See [the hosted report](../../docs/economics/HOSTED_SETTLEMENT_REPORT.md)
+for exact configuration and the independent-metering/physical acceptance boundary.

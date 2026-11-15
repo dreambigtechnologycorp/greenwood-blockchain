@@ -9,6 +9,7 @@
       - item.command | length > 0
   loop: "{{ greenwood_system_services }}"
   no_log: true
+  # These are seed services only. Governed classes use the finalized-policy agent below.
 
 - name: Reject unsafe hosted service destination ancestry
   ansible.builtin.command:
@@ -75,3 +76,7 @@
     mode: '0644'
   loop: "{{ greenwood_system_services }}"
   notify: Reload control-plane units
+
+- name: Stage governed system service agent only through explicit local opt-in
+  ansible.builtin.import_tasks: governed_system_services.yml
+  when: greenwood_governed_service_agent_stage | bool

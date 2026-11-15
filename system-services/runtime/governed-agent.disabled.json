@@ -1,0 +1,13 @@
+{
+  "enabled": false,
+  "mode": "verified_snapshot",
+  "chain_id": "REPLACE_APPROVED_CHAIN",
+  "genesis_hash": "REPLACE_GENESIS_HASH",
+  "genesis_file": "/etc/greenwood/genesis.json",
+  "block_directory": "/var/lib/greenwood/verified-history/blocks",
+  "data_directory": "/var/lib/greenwood/service-agent",
+  "containerd_namespace": "REPLACE_GENESIS_SCOPED_NAMESPACE",
+  "containerd_socket": "/run/containerd/containerd.sock",
+  "snapshotter": "erofs",
+  "consents": []
+}

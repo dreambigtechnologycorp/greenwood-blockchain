@@ -1,0 +1,11 @@
+{
+  "tests": "652",
+  "assertions": "6176",
+  "errors": "27",
+  "failures": "5",
+  "skipped": "3",
+  "time": "114.363563",
+  "status": "UNQUALIFIED_NATIVE_RUNTIME",
+  "reason": "All-suite invocation included unavailable native gRPC/containerd/cgroup tests; applicable source and contracts rerun separately.",
+  "physical_acceptance": false
+}

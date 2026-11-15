@@ -1,0 +1,42 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+require dirname(__DIR__).'/system-services/runtime/bootstrap.php';
+use Greenwood\Node\{Configuration,Chain};
+use Greenwood\Persistence\{BlockFilesystem,StateSqlite};
+use Greenwood\Consensus\Messages\Certificate;
+use Greenwood\Compute\Containerd\{ContainerdConnection,ContainerdClientSet};
+use Greenwood\Provider\{SystemServiceInstallJournal,GovernedSystemServiceAgent};
+umask(0077);
+try{
+ if($argc!==2||PHP_OS_FAMILY!=='Linux'||posix_geteuid()!==0)throw new RuntimeException('Linux root and explicit protected configuration required');
+ $protected=static function(string $path):void{
+  if(!str_starts_with($path,'/')||realpath($path)!==$path)throw new RuntimeException('Canonical existing path required');
+  for($part=$path;;$part=dirname($part)){if(is_link($part)||fileowner($part)!==0||(fileperms($part)&0022)!==0)throw new RuntimeException('Protected configuration ancestry required');if($part==='/')break;}
+ };
+ $protected($argv[1]);if(!is_file($argv[1])||(fileperms($argv[1])&0077)!==0||filesize($argv[1])>32768)throw new RuntimeException('Private bounded agent configuration required');
+ $c=json_decode(file_get_contents($argv[1]),true,24,JSON_THROW_ON_ERROR);
+ if(($c['enabled']??false)===false){echo "{\"state\":\"DISABLED\",\"production_activation\":false}\n";exit(0);}
+ if(($c['enabled']??null)!==true||!in_array($c['mode']??null,['verified_snapshot','pinned_node','qualification_snapshot','qualification_node'],true))throw new RuntimeException('Explicit verified snapshot or pinned node mode required');
+ if(!is_dir(dirname(__DIR__).'/vendor')||!is_file(dirname(__DIR__).'/vendor/autoload.php'))throw new RuntimeException('Existing installed containerd dependencies required; no installation attempted');
+ require dirname(__DIR__).'/vendor/autoload.php';
+ if(in_array($c['mode'],['pinned_node','qualification_node'],true)){
+  \Greenwood\Provider\GovernedServiceWatcher::run($c,static function()use($protected,$argv):array{$protected($argv[1]);if(!is_file($argv[1])||(fileperms($argv[1])&0077)!==0||filesize($argv[1])>32768)throw new RuntimeException('Protected watcher consent required');return json_decode(file_get_contents($argv[1]),true,24,JSON_THROW_ON_ERROR);});exit(0);
+ }
+ foreach(['genesis_file','block_directory'] as $key)$protected($c[$key]??'');
+ if(!is_dir($c['block_directory'])||!is_file($c['block_directory'].'/0000000000000000-block.bin'))throw new RuntimeException('Existing immutable offline finalized block snapshot required');
+ [$g]=Configuration::load($c['genesis_file']);if($g->getChainId()!==$c['chain_id']||bin2hex($g->getGenesisHash())!==$c['genesis_hash'])throw new RuntimeException('Agent genesis pin mismatch');
+ $journal=new SystemServiceInstallJournal($c['data_directory'],$c['chain_id'],$c['genesis_hash']);
+ $files=new BlockFilesystem($c['block_directory']);$height=$files->getHighestHeight();$hash=$files->loadBlock($height)?->getHash();
+ $verify=static function($block,?string $bytes)use($g):void{if($bytes===null)throw new RuntimeException('Finality certificate required');Certificate::decode($bytes)->verify($g->getValidators(),$g->getChainId(),$g->getGenesisHash(),'precommit',$block->getHeight(),$block->getHash());};
+ $index=new StateSqlite($c['data_directory'].'/verified-policy-index.sqlite');$chain=new Chain($g,$files,$index,$verify);
+ if($files->getHighestHeight()!==$height||$files->loadBlock($height)?->getHash()!==$hash||$height<1)throw new RuntimeException('Policy snapshot changed during verified replay');
+ $namespace=$c['containerd_namespace']??'';if(!preg_match('/^gw-services-[a-f0-9]{24}$/D',$namespace)||$namespace!=='gw-services-'.substr($c['genesis_hash'],0,24))throw new RuntimeException('Separately provisioned genesis-scoped containerd namespace required');
+ $clients=(new ContainerdClientSet(new ContainerdConnection($namespace,[],$c['containerd_socket'])))->setSnapshotter($c['snapshotter']);$agent=new GovernedSystemServiceAgent($clients,$journal);
+ if(!is_array($c['consents']??null)||!array_is_list($c['consents'])||count($c['consents'])>16)throw new RuntimeException('Bounded explicit service consents required');
+ $results=[];foreach($c['consents'] as $consent){$result=$agent->reconcile($chain,$c['chain_id'],$c['genesis_hash'],$consent['service_policy_id'],$consent);$results[]=$result;
+  if($result['state']==='READY'&&isset($consent['cutover_from']))$agent->drain($consent['cutover_from'],$result['policy_hash'],$height);
+ }
+ foreach($journal->all() as $r)if($r['state']==='DRAINING'&&$height>=$r['drain_after'])$agent->stopOwned($r['policy_hash'],$height);
+ $index->close();echo json_encode(['state'=>'RECONCILED_LOCAL_SNAPSHOT','results'=>$results,'finalized_height'=>$height,'production_activation'=>false],JSON_THROW_ON_ERROR)."\n";
+}catch(Throwable $e){fwrite(STDERR,$e->getMessage()."\n");exit(1);}

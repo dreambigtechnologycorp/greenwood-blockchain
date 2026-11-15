@@ -1,0 +1,129 @@
+{
+  "status": "offline_scenarios_not_genesis_authorization",
+  "year_seconds": 31557600,
+  "confirmed_target_block_seconds": 60,
+  "confirmed_60_second_baseline": {
+    "block_seconds_assumption": 60,
+    "releases_per_epoch_year": 525960,
+    "first_four_epochs_scheduled_demand_base_units": "52596000000000",
+    "remaining_after_first_four_epochs_base_units": "97404000000000",
+    "exhaustion_block": 105819360,
+    "exhaustion_calendar_years_assuming_continuous_cadence": "201.192790",
+    "first_four_epochs_calendar_years": "16.000000"
+  },
+  "counterfactual_cadence_sensitivity_not_policy_options": [
+    {
+      "block_seconds_assumption": 60,
+      "releases_per_epoch_year": 525960,
+      "first_four_epochs_scheduled_demand_base_units": "52596000000000",
+      "remaining_after_first_four_epochs_base_units": "97404000000000",
+      "exhaustion_block": 105819360,
+      "exhaustion_calendar_years_assuming_continuous_cadence": "201.192790",
+      "first_four_epochs_calendar_years": "16.000000"
+    },
+    {
+      "block_seconds_assumption": 10,
+      "releases_per_epoch_year": 3155760,
+      "first_four_epochs_scheduled_demand_base_units": "315576000000000",
+      "remaining_after_first_four_epochs_base_units": "0",
+      "exhaustion_block": 15792320,
+      "exhaustion_calendar_years_assuming_continuous_cadence": "5.004284",
+      "first_four_epochs_calendar_years": "16.000000"
+    },
+    {
+      "block_seconds_assumption": 6,
+      "releases_per_epoch_year": 5259600,
+      "first_four_epochs_scheduled_demand_base_units": "525960000000000",
+      "remaining_after_first_four_epochs_base_units": "0",
+      "exhaustion_block": 15000000,
+      "exhaustion_calendar_years_assuming_continuous_cadence": "2.851928",
+      "first_four_epochs_calendar_years": "16.000000"
+    }
+  ],
+  "unchanged_current_height_epochs_at_different_actual_cadences": [
+    {
+      "block_seconds_assumption": 60,
+      "releases_per_epoch_year": 525960,
+      "first_four_epochs_scheduled_demand_base_units": "52596000000000",
+      "remaining_after_first_four_epochs_base_units": "97404000000000",
+      "exhaustion_block": 105819360,
+      "exhaustion_calendar_years_assuming_continuous_cadence": "201.192790",
+      "first_four_epochs_calendar_years": "16.000000"
+    },
+    {
+      "block_seconds_assumption": 10,
+      "releases_per_epoch_year": 525960,
+      "first_four_epochs_scheduled_demand_base_units": "52596000000000",
+      "remaining_after_first_four_epochs_base_units": "97404000000000",
+      "exhaustion_block": 105819360,
+      "exhaustion_calendar_years_assuming_continuous_cadence": "33.532132",
+      "first_four_epochs_calendar_years": "2.666667"
+    },
+    {
+      "block_seconds_assumption": 6,
+      "releases_per_epoch_year": 525960,
+      "first_four_epochs_scheduled_demand_base_units": "52596000000000",
+      "remaining_after_first_four_epochs_base_units": "97404000000000",
+      "exhaustion_block": 105819360,
+      "exhaustion_calendar_years_assuming_continuous_cadence": "20.119279",
+      "first_four_epochs_calendar_years": "1.600000"
+    }
+  ],
+  "allocation_divided_by_release_ceiling_window_equivalents": {},
+  "gwd_quote_examples": [
+    {
+      "gru": "1000",
+      "hypothetical_usd_per_gwd": "0.005",
+      "provider_base_units": "2000000000",
+      "subsidy_base_units": "0",
+      "user_base_units": "2000000000",
+      "subsidy_percent": 0
+    },
+    {
+      "gru": "1000",
+      "hypothetical_usd_per_gwd": "0.01",
+      "provider_base_units": "1000000000",
+      "subsidy_base_units": "0",
+      "user_base_units": "1000000000",
+      "subsidy_percent": 0
+    },
+    {
+      "gru": "1000",
+      "hypothetical_usd_per_gwd": "0.05",
+      "provider_base_units": "200000000",
+      "subsidy_base_units": "0",
+      "user_base_units": "200000000",
+      "subsidy_percent": 0
+    },
+    {
+      "gru": "1000",
+      "hypothetical_usd_per_gwd": "0.10",
+      "provider_base_units": "100000000",
+      "subsidy_base_units": "0",
+      "user_base_units": "100000000",
+      "subsidy_percent": 0
+    },
+    {
+      "gru": "1000",
+      "hypothetical_usd_per_gwd": "1.00",
+      "provider_base_units": "10000000",
+      "subsidy_base_units": "0",
+      "user_base_units": "10000000",
+      "subsidy_percent": 0
+    }
+  ],
+  "subsidy_example": {
+    "gru": "5000",
+    "hypothetical_usd_per_gwd": "0.01",
+    "provider_base_units": "5000000000",
+    "subsidy_base_units": "4000000000",
+    "user_base_units": "1000000000",
+    "subsidy_percent": 80
+  },
+  "warnings": [
+    "Prices and resource rates are hypothetical, not market values or provider-cost validation.",
+    "Quote examples have no signatures, verification proof or spending authorization.",
+    "The target block interval is fixed at 60 seconds; reward eligibility/distribution and idle-chain clock semantics remain unresolved.",
+    "No live chain configuration, balances, quotes, keys or genesis files are written."
+  ]
+}

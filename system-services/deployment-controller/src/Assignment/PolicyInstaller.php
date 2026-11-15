@@ -30,7 +30,7 @@ final class PolicyInstaller
                 // Advance the real ledger before publication. A crash can deny the old
                 // snapshot, but can never silently roll the receiver back.
                 $policy = new SignedPolicySnapshot($stage, $config['policy_ledger'], $purpose, $pin,
-                    $config[$revocation ? 'revocation_max_age' : 'allocation_max_age']);
+                    $config[$revocation ? 'revocation_max_age' : 'allocation_max_age'],\Greenwood\DeploymentController\Auth\DeploymentIdentity::chain());
                 $payload = $policy->read();
                 $result[$purpose] = ['revision' => $payload['revision'], 'valid_until' => $payload['valid_until'],
                     'digest' => hash('sha256', SignedPolicySnapshot::signingBytes($payload))];

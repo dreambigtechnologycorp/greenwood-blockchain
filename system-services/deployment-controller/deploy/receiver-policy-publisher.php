@@ -65,7 +65,7 @@ foreach (['revocations','allocations'] as $purpose) {
         if(!sodium_crypto_sign_verify_detached(hex2bin($old['signature']),SignedPolicySnapshot::signingBytes($old['payload']),sodium_crypto_sign_publickey($key)))throw new RuntimeException('Prior policy signature failed');
         $revision=$old['payload']['revision'];
         $entries=$old['payload'][$purpose==='revocations'?'revoked_sha256':'approved_generations'];
-        if (($old['payload']['purpose']??null)!==$purpose || ($old['payload']['chain_id']??null)!=='greenwood-physical-v1'
+        if (($old['payload']['purpose']??null)!==$purpose || ($old['payload']['chain_id']??null)!==\Greenwood\DeploymentController\Auth\DeploymentIdentity::chain()
             || !is_int($revision) || $revision<1 || $revision===PHP_INT_MAX || !is_array($entries) || !array_is_list($entries)) throw new RuntimeException('Invalid prior policy');
         foreach($entries as $entry) if(!is_string($entry)||!preg_match('/^[a-f0-9]{64}$/D',$entry)) throw new RuntimeException('Invalid prior entry');
     }
@@ -75,7 +75,7 @@ foreach (['revocations','allocations'] as $purpose) {
         $entries[] = AssignmentDocument::generation($approval);
         $entries = array_values(array_unique($entries)); sort($entries);
     }
-    $payload=['schema_version'=>1,'purpose'=>$purpose,'chain_id'=>'greenwood-physical-v1','revision'=>$revision+1,
+    $payload=['schema_version'=>1,'purpose'=>$purpose,'chain_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::chain(),'revision'=>$revision+1,
         'issued_at'=>time(),'valid_until'=>time()+$lifetime,($purpose==='revocations'?'revoked_sha256':'approved_generations')=>$entries];
     $record=['payload'=>$payload,'signature'=>bin2hex(sodium_crypto_sign_detached(SignedPolicySnapshot::signingBytes($payload),sodium_crypto_sign_secretkey($key)))];
     atomic($path,json_encode($record,JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES));

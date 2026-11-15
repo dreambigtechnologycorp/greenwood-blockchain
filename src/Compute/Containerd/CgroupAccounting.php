@@ -17,7 +17,7 @@ final readonly class CgroupAccounting
     /** Deterministic containerd cgroupfs path; survives instant task exit (unlike /proc/<pid>). */
     public static function forTask(string $namespace, string $containerId): self
     {
-        if (!preg_match('~^[A-Za-z0-9_.-]+$~D', $namespace) || !preg_match('~^[A-Za-z0-9_.-]+$~D', $containerId)) throw new \RuntimeException('Task cgroup unavailable for accounting');
+        if (in_array($namespace,['.','..'],true)||in_array($containerId,['.','..'],true)||!preg_match('~^[A-Za-z0-9_.-]+$~D', $namespace) || !preg_match('~^[A-Za-z0-9_.-]+$~D', $containerId)) throw new \RuntimeException('Task cgroup unavailable for accounting');
         $path = '/sys/fs/cgroup/' . $namespace . '/' . $containerId;
         if (!is_dir($path)) throw new \RuntimeException('Task cgroup unavailable for accounting');
         return new self($path);
@@ -29,6 +29,32 @@ final readonly class CgroupAccounting
         if ($cpu === false || $peak === false || !preg_match('/^usage_usec ([0-9]+)$/m', $cpu, $m)) throw new \RuntimeException('Task resource counters unavailable');
         $micros = self::counter($m[1]); $memory = self::counter(trim($peak));
         return new ResourceUsage(memoryPeakBytes: $memory, cpuTimeMs: self::cpuMillis((string)$micros));
+    }
+    /** Provider-side observation only. Optional controllers remain explicitly unavailable. */
+    public function observe(): array
+    {
+        clearstatcache(true,$this->path);$before=@stat($this->path);$boot=@file_get_contents('/proc/sys/kernel/random/boot_id');
+        if($before===false||$boot===false)throw new \RuntimeException('Cgroup runtime identity unavailable');
+        $cpu=@file_get_contents($this->path.'/cpu.stat');if($cpu===false||!preg_match('/^usage_usec ([0-9]+)$/m',$cpu,$match))throw new \RuntimeException('CPU observation unavailable');$cpuMs=self::cpuMillis($match[1]);$peak=@file_get_contents($this->path.'/memory.peak');$current=@file_get_contents($this->path.'/memory.current');$io=@file_get_contents($this->path.'/io.stat');
+        $memoryMax=@file_get_contents($this->path.'/memory.max');
+        $monotonicMs=intdiv(hrtime(true),1000000);
+        clearstatcache(true,$this->path);$after=@stat($this->path);
+        if($after===false||$before['ino']!==$after['ino']||$before['dev']!==$after['dev'])throw new \RuntimeException('Cgroup incarnation changed while sampling');
+        return ['version'=>1,'verification_level'=>'C','source'=>'local_cgroup_v2','runtime_identity'=>hash('sha256',trim($boot).':'.$before['dev'].':'.$before['ino'].':'.$this->path),
+            'monotonic_ms'=>(string)$monotonicMs,
+            'memory_limit_bytes'=>$memoryMax===false||trim($memoryMax)==='max'?null:(string)self::counter(trim($memoryMax)),
+            'cpu_ms'=>(string)$cpuMs,'memory_peak_bytes'=>$peak===false?null:(string)self::counter(trim($peak)),
+            'memory_current_bytes'=>$current===false?null:(string)self::counter(trim($current)),
+            'io_devices'=>$io===false?null:self::parseIoStat($io),'io_attribution'=>'cgroup_block_device_counters_not_tenant_storage_proof'];
+    }
+    public static function parseIoStat(string $raw): array
+    {
+        if(strlen($raw)>65536)throw new \RuntimeException('I/O observation too large');$out=[];
+        foreach(explode("\n",trim($raw)) as $line){if($line==='')continue;$parts=preg_split('/ +/',$line);$id=array_shift($parts);
+            if(!preg_match('/^[0-9]+:[0-9]+$/D',$id)||isset($out[$id]))throw new \RuntimeException('Invalid/duplicate block device');$row=[];
+            foreach($parts as $part){if(!preg_match('/^([a-z_]+)=([0-9]+)$/D',$part,$match)||isset($row[$match[1]]))throw new \RuntimeException('Invalid block I/O counter');$row[$match[1]]=(string)self::counter($match[2]);}
+            foreach(['rbytes','wbytes','rios','wios'] as $required)if(!isset($row[$required]))throw new \RuntimeException('Missing block I/O measurement');ksort($row,SORT_STRING);$out[$id]=$row;
+        }ksort($out,SORT_STRING);return $out;
     }
     private static function counter(string $value): int
     {

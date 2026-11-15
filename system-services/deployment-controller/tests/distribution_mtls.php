@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/autoload.php';
+require_once __DIR__.'/identity-fixture.php';
+define('CONTROL_TEST_CHAIN',getenv('GWD_CONTROL_PLANE_TEST_CHAIN')?:'greenwood-physical-v1');
 use Greenwood\ControlPlane\MutualTlsChannel;
 use Greenwood\ControlPlane\SignedPolicySnapshot;
 use Greenwood\DeploymentController\Assignment\{AssignmentReceiver,AssignmentDistributor,AssignmentEndpoint};
@@ -14,7 +16,7 @@ $ca=openssl_csr_sign($csr,null,$caKey,1,$options+['x509_extensions'=>'v3_ca'],1)
 $pins=[];$roles=['controller'=>'deployment-controller','node-1'=>'assignment/node-1','node-4'=>'assignment/node-4','stranger'=>'deployment-controller'];
 try {
     foreach($roles as$name=>$role){
-        file_put_contents($config,$base.'subjectAltName=DNS:'.$name.'.test,URI:spiffe://greenwood-physical-v1/control-plane/'.$role."\n");
+        file_put_contents($config,$base.'subjectAltName=DNS:'.$name.'.test,URI:spiffe://'.CONTROL_TEST_CHAIN.'/control-plane/'.$role."\n");
         $key=openssl_pkey_new($options);$csr=openssl_csr_new(['commonName'=>$name],$key,$options);
         $cert=openssl_csr_sign($csr,$ca,$caKey,1,$options+['x509_extensions'=>'leaf'],count($pins)+2);
         openssl_x509_export_to_file($cert,$root.'/'.$name.'.pem');openssl_pkey_export_to_file($key,$root.'/'.$name.'.key',null,$options);chmod($root.'/'.$name.'.key',0600);
@@ -22,7 +24,7 @@ try {
     }
     $revocations=$root.'/revocations.json';$policyKey=sodium_crypto_sign_keypair();$revision=0;
     $publish=static function(array $revoked=[],bool $expired=false,bool $tampered=false)use($policyKey,$revocations,&$revision):void{
-        $payload=['schema_version'=>1,'purpose'=>'revocations','chain_id'=>'greenwood-physical-v1','revision'=>++$revision,
+        $payload=['schema_version'=>1,'purpose'=>'revocations','chain_id'=>CONTROL_TEST_CHAIN,'revision'=>++$revision,
             'issued_at'=>time()-1,'valid_until'=>$expired?time()-1:time()+120,'revoked_sha256'=>$revoked];
         $signature=bin2hex(sodium_crypto_sign_detached(SignedPolicySnapshot::signingBytes($payload),sodium_crypto_sign_secretkey($policyKey)));
         if($tampered)$payload['revision']++;
@@ -30,8 +32,8 @@ try {
     };
     $publish();
     foreach(['node-1','node-4']as$n){mkdir($root.'/'.$n,0700);mkdir($root.'/'.$n.'/assignments',0700);}
-    $channel=static function($name,$peers)use($root,$roles,$pins,$revocations,$policyKey){$identities=[];$uris=[];foreach($peers as$peer=>$identity){$identities[$pins[$peer]]=$identity;$uris[$pins[$peer]]='spiffe://greenwood-physical-v1/control-plane/'.$roles[$peer];}return new MutualTlsChannel($root.'/ca.pem',$root.'/'.$name.'.pem',$root.'/'.$name.'.key',$identities,$uris,$revocations,
-        new SignedPolicySnapshot($revocations,$root.'/'.$name.'-policies.sqlite','revocations',bin2hex(sodium_crypto_sign_publickey($policyKey)),300));};
+    $channel=static function($name,$peers)use($root,$roles,$pins,$revocations,$policyKey){$identities=[];$uris=[];foreach($peers as$peer=>$identity){$identities[$pins[$peer]]=$identity;$uris[$pins[$peer]]='spiffe://'.CONTROL_TEST_CHAIN.'/control-plane/'.$roles[$peer];}return new MutualTlsChannel($root.'/ca.pem',$root.'/'.$name.'.pem',$root.'/'.$name.'.key',$identities,$uris,$revocations,
+        new SignedPolicySnapshot($revocations,$root.'/'.$name.'-policies.sqlite','revocations',bin2hex(sodium_crypto_sign_publickey($policyKey)),300,CONTROL_TEST_CHAIN));};
     $clientName='controller';$wrongIdentity=false;
     $send=static function($node,$request)use($channel,$root,&$clientName,&$wrongIdentity):array {
         $server=$channel($node,['controller'=>'deployment-controller']);$listener=$server->listen('tcp://127.0.0.1:0');$address='tcp://'.stream_socket_get_name($listener,false);
@@ -44,8 +46,8 @@ try {
         try{return AssignmentDistributor::mtls($channel($clientName,[$node=>$node]),[$node=>['endpoint'=>$address,'tls_name'=>$node.'.test','identity'=>$wrongIdentity?'other-node':$node]])($node,$request);}
         finally{pcntl_waitpid($pid,$status);}
     };
-    $a=['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,'application_id'=>1,'service'=>'web','release_id'=>1,'provider_id'=>str_repeat('a',64),'provider_address'=>'10.77.0.100','ingress_port'=>21001,'instance_id'=>'app-1-web','image_digest'=>'sha256:'.str_repeat('b',64),'provider_endpoint'=>'tcp://10.77.0.100:19443','provider_tls_name'=>'provider.test'];
-    $d=['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,'operation_id'=>str_repeat('c',32),'account_id'=>str_repeat('d',64),'version'=>1,'previous_generation'=>null,'assignment'=>$a];
+    $a=['chain_id'=>CONTROL_TEST_CHAIN,'registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'application_id'=>1,'service'=>'web','release_id'=>1,'provider_id'=>str_repeat('a',64),'provider_address'=>'10.77.0.100','ingress_port'=>21001,'instance_id'=>'app-1-web','image_digest'=>'sha256:'.str_repeat('b',64),'provider_endpoint'=>'tcp://10.77.0.100:19443','provider_tls_name'=>'provider.test'];
+    $d=['chain_id'=>CONTROL_TEST_CHAIN,'registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'operation_id'=>str_repeat('c',32),'account_id'=>str_repeat('d',64),'version'=>1,'previous_generation'=>null,'assignment'=>$a];
     $db=new PDO('sqlite:'.$root.'/distribution.sqlite');$distributor=new AssignmentDistributor($db,['node-1','node-4'],static fn()=>true,$send);
     $ack=$distributor->distribute($d);check($ack['acknowledged']&&count($ack['nodes'])===2,'TLS distribution failed');
     foreach(['unregistered','wrong-identity','revoked','expired-policy','tampered-policy']as$case){

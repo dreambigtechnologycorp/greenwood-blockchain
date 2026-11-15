@@ -8,10 +8,12 @@ use Greenwood\Crypto\Ed25519KeyPair;
 
 try {
     [$genesis] = Configuration::load('/etc/greenwood/genesis.json');
+    \Greenwood\Economics\Policy::validateProduction($genesis->initialState()->economicSummary()['policy'] ?? []);
     $data = json_decode(file_get_contents('/etc/greenwood/genesis.json'), true, 32, JSON_THROW_ON_ERROR);
     if ($data['chain_id'] !== $argv[3]) throw new RuntimeException('Chain mismatch');
     $validators = array_keys($data['validators']); sort($validators);
     if ($validators !== ['A', 'B', 'C']) throw new RuntimeException('Validator set mismatch');
+    if (in_array($argv[4], array_column($data['validators'], 'public_key'), true)) throw new RuntimeException('Provider must have a separately provisioned identity');
     foreach (['validator.key', 'provider.key'] as $name) {
         $path = '/etc/greenwood/' . $name;
         if (is_link($path) || fileowner($path) !== 0 || (fileperms($path) & 0777) !== 0600) {

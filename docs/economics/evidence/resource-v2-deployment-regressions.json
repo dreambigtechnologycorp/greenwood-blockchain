@@ -1,0 +1,62 @@
+[
+  {
+    "test": "deployment-controller/distribution",
+    "exit": 0,
+    "output": "Assignment distribution: matching atomic installs, two-node ACK gate, partial delivery, restart-after-fsync, retry, conflict, revocation, allocation, wrong ACK, expiry, replay, principal and monotonic generation checks passed\n"
+  },
+  {
+    "test": "deployment-controller/registry_authority",
+    "exit": 0,
+    "output": "Registry authority: synthetic ABI response parity; stale query height, wrong contract/method/digest/code, syncing, incoherent state and unauthorized account rejected\n"
+  },
+  {
+    "test": "deployment-controller/registry_identity",
+    "exit": 0,
+    "output": "Registry identity: fresh app 1, signed registry domain, legacy/wrong/missing registry and chain rejection, isolated durable operations passed\n"
+  },
+  {
+    "test": "deployment-controller/signed_policy",
+    "exit": 0,
+    "output": "Signed policy: valid, repeat, restart rollback, equivocation, signer, tamper, expiry, future, lifetime, purpose, chain, missing and malformed checks passed\n"
+  },
+  {
+    "test": "deployment-controller/allocation_approval",
+    "exit": 0,
+    "output": "PASS: exact export/generation binding, finalized denial/unavailability, tamper rejection, initial-version restriction\n"
+  },
+  {
+    "test": "deployment-controller/policy_install",
+    "exit": 0,
+    "output": "PASS: install, idempotency, advancement, rollback, equivocation, expiry, chain, signature, issuer, preservation, recovery\n"
+  },
+  {
+    "test": "deployment-controller/orchestration",
+    "exit": 0,
+    "output": "Orchestration integration: durable reservation export, owner-signed resume/replay/isolation, pre-start ACK/plan gate, runtime binding, idempotency, restart, revocation and readiness checks passed\n"
+  },
+  {
+    "test": "deployment-controller/http_gate",
+    "exit": 0,
+    "output": "HTTP entry point: backend liveness, closed readiness, disabled capabilities/writes and hidden metrics passed\n"
+  },
+  {
+    "test": "deployment-controller/edge_admission",
+    "exit": 0,
+    "output": "Edge admission: principal, identity, allocation, partial ACK, protected install, idempotency and status-only verification passed\n"
+  },
+  {
+    "test": "deployment-controller/release_content",
+    "exit": 0,
+    "output": "Release content: timestamp-only variation, HTML/asset tampering, shape, redirect and raw compatibility PASS\n"
+  },
+  {
+    "test": "registry-auth/authority",
+    "exit": 0,
+    "output": "Registry issuer: signed scoped token, cross-app denial, invalid session, unauthorized pull, revoked permissions and incoherent finalized authority checks passed\n"
+  },
+  {
+    "test": "registry-auth/database",
+    "exit": 0,
+    "output": "Registry database: private creation, symlink and permission rejection PASS\n"
+  }
+]

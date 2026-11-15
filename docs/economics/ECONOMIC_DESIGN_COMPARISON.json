@@ -1,0 +1,356 @@
+{
+  "status": "selected_allocation_pending_formal_ratification",
+  "fixed_assumptions": {
+    "block_seconds": 60,
+    "nominal_year_seconds": 31557600,
+    "blocks_per_nominal_year": 525960,
+    "continuous_finalization_assumed_for_reward_math": true,
+    "gwd_decimals": 6,
+    "inflation": false,
+    "burn": false,
+    "fees_to_operators_percent": 100,
+    "service_demand_prices_and_cost_inputs_identical_between_designs": true,
+    "pilot": {
+      "developers": 100,
+      "gru_per_developer_per_window": 1000,
+      "subsidy_percent": 80
+    },
+    "prices_are_hypothetical_not_forecasts": true,
+    "external_provider_price_claims_not_validated": true
+  },
+  "designs": {
+    "original_40_20_15_24_1": {
+      "allocations_gwd": [
+        400000000,
+        200000000,
+        150000000,
+        240000000,
+        10000000
+      ],
+      "rolling_window_release_caps_gwd": [
+        1000000,
+        750000,
+        1200000,
+        100000
+      ],
+      "total_discretionary_ceiling_per_window_gwd": 3050000,
+      "security_runway": {
+        "block_seconds_assumption": 60,
+        "releases_per_epoch_year": 525960,
+        "first_four_epochs_scheduled_demand_base_units": "52596000000000",
+        "remaining_after_first_four_epochs_base_units": "347404000000000",
+        "exhaustion_block": 355819360,
+        "exhaustion_calendar_years_assuming_continuous_cadence": "676.514108",
+        "first_four_epochs_calendar_years": "16.000000"
+      },
+      "zero_commercial_adoption": {
+        "customer_revenue_assumed": "0",
+        "fee_transactions_per_day": 0,
+        "annual_network_rewards_gwd_at_continuous_target": 5259600,
+        "operating_cost_budget_usd": null,
+        "affordability_established": false,
+        "reason": "Actual obligations, cash resources and realized GWD purchasing power are not supplied."
+      },
+      "low_purchasing_power": [
+        {
+          "hypothetical_usd_per_gwd": "0.001",
+          "gwd_per_validator_per_month": "146100.000000",
+          "hypothetical_usd_per_validator_per_month": "146.10",
+          "market_liquidity_or_realizable_value_established": false
+        },
+        {
+          "hypothetical_usd_per_gwd": "0.005",
+          "gwd_per_validator_per_month": "146100.000000",
+          "hypothetical_usd_per_validator_per_month": "730.50",
+          "market_liquidity_or_realizable_value_established": false
+        },
+        {
+          "hypothetical_usd_per_gwd": "0.01",
+          "gwd_per_validator_per_month": "146100.000000",
+          "hypothetical_usd_per_validator_per_month": "1461.00",
+          "market_liquidity_or_realizable_value_established": false
+        },
+        {
+          "hypothetical_usd_per_gwd": "0.05",
+          "gwd_per_validator_per_month": "146100.000000",
+          "hypothetical_usd_per_validator_per_month": "7305.00",
+          "market_liquidity_or_realizable_value_established": false
+        }
+      ],
+      "rapid_application_growth": {
+        "pilot_gru_ceiling": 100000,
+        "price_sensitivity": [
+          {
+            "developers": 100,
+            "gru_per_developer": 1000,
+            "total_gru": 100000,
+            "provider_accepted_gwd_per_gru": 1,
+            "provider_gwd": 100000,
+            "customer_gwd": 20000,
+            "subsidy_gwd": 80000,
+            "within_gwd_cap": true,
+            "within_pilot_gru_cap": true,
+            "protocol_payout_enabled": false
+          },
+          {
+            "developers": 100,
+            "gru_per_developer": 1000,
+            "total_gru": 100000,
+            "provider_accepted_gwd_per_gru": 5,
+            "provider_gwd": 500000,
+            "customer_gwd": 100000,
+            "subsidy_gwd": 400000,
+            "within_gwd_cap": true,
+            "within_pilot_gru_cap": true,
+            "protocol_payout_enabled": false
+          },
+          {
+            "developers": 100,
+            "gru_per_developer": 1000,
+            "total_gru": 100000,
+            "provider_accepted_gwd_per_gru": 10,
+            "provider_gwd": 1000000,
+            "customer_gwd": 200000,
+            "subsidy_gwd": 800000,
+            "within_gwd_cap": false,
+            "within_pilot_gru_cap": true,
+            "protocol_payout_enabled": false
+          }
+        ],
+        "expanded_demand": {
+          "developers": 1000,
+          "gru_per_developer": 1000,
+          "requested_gru": 1000000,
+          "within_pilot_gru_cap": false,
+          "protocol_payout_enabled": false
+        },
+        "capacity_escrow_and_usage_verification_established": false
+      },
+      "validator_expansion": [
+        {
+          "hypothetical_validator_count": 3,
+          "annual_gwd_per_validator": "1753200.000000",
+          "membership_change_implemented": false
+        },
+        {
+          "hypothetical_validator_count": 4,
+          "annual_gwd_per_validator": "1314900.000000",
+          "membership_change_implemented": false
+        },
+        {
+          "hypothetical_validator_count": 10,
+          "annual_gwd_per_validator": "525960.000000",
+          "membership_change_implemented": false
+        },
+        {
+          "hypothetical_validator_count": 25,
+          "annual_gwd_per_validator": "210384.000000",
+          "membership_change_implemented": false
+        }
+      ],
+      "treasury_stress": {
+        "signer_loss": [
+          {
+            "lost_keys": 1,
+            "available_keys": 4,
+            "ordinary_threshold_available": true,
+            "rotation_threshold_available": true
+          },
+          {
+            "lost_keys": 2,
+            "available_keys": 3,
+            "ordinary_threshold_available": true,
+            "rotation_threshold_available": false
+          },
+          {
+            "lost_keys": 3,
+            "available_keys": 2,
+            "ordinary_threshold_available": false,
+            "rotation_threshold_available": false
+          }
+        ],
+        "lost_quorum_recovery_implemented": false,
+        "guard_pause_spending_authority": false,
+        "related_beneficiary_group_registry_required": true
+      }
+    },
+    "proposed_10_25_30_34_1": {
+      "allocations_gwd": [
+        100000000,
+        250000000,
+        300000000,
+        340000000,
+        10000000
+      ],
+      "rolling_window_release_caps_gwd": [
+        250000,
+        300000,
+        340000,
+        100000
+      ],
+      "total_discretionary_ceiling_per_window_gwd": 990000,
+      "security_runway": {
+        "block_seconds_assumption": 60,
+        "releases_per_epoch_year": 525960,
+        "first_four_epochs_scheduled_demand_base_units": "52596000000000",
+        "remaining_after_first_four_epochs_base_units": "47404000000000",
+        "exhaustion_block": 55819360,
+        "exhaustion_calendar_years_assuming_continuous_cadence": "106.128527",
+        "first_four_epochs_calendar_years": "16.000000"
+      },
+      "zero_commercial_adoption": {
+        "customer_revenue_assumed": "0",
+        "fee_transactions_per_day": 0,
+        "annual_network_rewards_gwd_at_continuous_target": 5259600,
+        "operating_cost_budget_usd": null,
+        "affordability_established": false,
+        "reason": "Actual obligations, cash resources and realized GWD purchasing power are not supplied."
+      },
+      "low_purchasing_power": [
+        {
+          "hypothetical_usd_per_gwd": "0.001",
+          "gwd_per_validator_per_month": "146100.000000",
+          "hypothetical_usd_per_validator_per_month": "146.10",
+          "market_liquidity_or_realizable_value_established": false
+        },
+        {
+          "hypothetical_usd_per_gwd": "0.005",
+          "gwd_per_validator_per_month": "146100.000000",
+          "hypothetical_usd_per_validator_per_month": "730.50",
+          "market_liquidity_or_realizable_value_established": false
+        },
+        {
+          "hypothetical_usd_per_gwd": "0.01",
+          "gwd_per_validator_per_month": "146100.000000",
+          "hypothetical_usd_per_validator_per_month": "1461.00",
+          "market_liquidity_or_realizable_value_established": false
+        },
+        {
+          "hypothetical_usd_per_gwd": "0.05",
+          "gwd_per_validator_per_month": "146100.000000",
+          "hypothetical_usd_per_validator_per_month": "7305.00",
+          "market_liquidity_or_realizable_value_established": false
+        }
+      ],
+      "rapid_application_growth": {
+        "pilot_gru_ceiling": 100000,
+        "price_sensitivity": [
+          {
+            "developers": 100,
+            "gru_per_developer": 1000,
+            "total_gru": 100000,
+            "provider_accepted_gwd_per_gru": 1,
+            "provider_gwd": 100000,
+            "customer_gwd": 20000,
+            "subsidy_gwd": 80000,
+            "within_gwd_cap": true,
+            "within_pilot_gru_cap": true,
+            "protocol_payout_enabled": false
+          },
+          {
+            "developers": 100,
+            "gru_per_developer": 1000,
+            "total_gru": 100000,
+            "provider_accepted_gwd_per_gru": 5,
+            "provider_gwd": 500000,
+            "customer_gwd": 100000,
+            "subsidy_gwd": 400000,
+            "within_gwd_cap": false,
+            "within_pilot_gru_cap": true,
+            "protocol_payout_enabled": false
+          },
+          {
+            "developers": 100,
+            "gru_per_developer": 1000,
+            "total_gru": 100000,
+            "provider_accepted_gwd_per_gru": 10,
+            "provider_gwd": 1000000,
+            "customer_gwd": 200000,
+            "subsidy_gwd": 800000,
+            "within_gwd_cap": false,
+            "within_pilot_gru_cap": true,
+            "protocol_payout_enabled": false
+          }
+        ],
+        "expanded_demand": {
+          "developers": 1000,
+          "gru_per_developer": 1000,
+          "requested_gru": 1000000,
+          "within_pilot_gru_cap": false,
+          "protocol_payout_enabled": false
+        },
+        "capacity_escrow_and_usage_verification_established": false
+      },
+      "validator_expansion": [
+        {
+          "hypothetical_validator_count": 3,
+          "annual_gwd_per_validator": "1753200.000000",
+          "membership_change_implemented": false
+        },
+        {
+          "hypothetical_validator_count": 4,
+          "annual_gwd_per_validator": "1314900.000000",
+          "membership_change_implemented": false
+        },
+        {
+          "hypothetical_validator_count": 10,
+          "annual_gwd_per_validator": "525960.000000",
+          "membership_change_implemented": false
+        },
+        {
+          "hypothetical_validator_count": 25,
+          "annual_gwd_per_validator": "210384.000000",
+          "membership_change_implemented": false
+        }
+      ],
+      "treasury_stress": {
+        "signer_loss": [
+          {
+            "lost_keys": 1,
+            "available_keys": 4,
+            "ordinary_threshold_available": true,
+            "rotation_threshold_available": true
+          },
+          {
+            "lost_keys": 2,
+            "available_keys": 3,
+            "ordinary_threshold_available": true,
+            "rotation_threshold_available": false
+          },
+          {
+            "lost_keys": 3,
+            "available_keys": 2,
+            "ordinary_threshold_available": false,
+            "rotation_threshold_available": false
+          }
+        ],
+        "lost_quorum_recovery_implemented": false,
+        "guard_pause_spending_authority": false,
+        "related_beneficiary_group_registry_required": true
+      }
+    },
+    "selected_15_25_30_25_5": {
+      "allocations_gwd": [
+        150000000,
+        250000000,
+        300000000,
+        250000000,
+        50000000
+      ],
+      "security_runway": {
+        "block_seconds_assumption": 60,
+        "releases_per_epoch_year": 525960,
+        "first_four_epochs_scheduled_demand_base_units": "52596000000000",
+        "remaining_after_first_four_epochs_base_units": "97404000000000",
+        "exhaustion_block": 105819360,
+        "exhaustion_calendar_years_assuming_continuous_cadence": "201.192790",
+        "first_four_epochs_calendar_years": "16.000000"
+      },
+      "rolling_window_release_caps_gwd": null,
+      "formal_ratification_required": true,
+      "spending_authority": false,
+      "recovery_policy_authorized": false
+    }
+  },
+  "governance_resolution": "15/25/30/25/5 selected for fresh production; formal ratification, budgets and recovery remain unresolved."
+}

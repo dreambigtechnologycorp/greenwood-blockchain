@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/autoload.php';
+require_once __DIR__.'/identity-fixture.php';
 use Greenwood\DeploymentController\Assignment\{AssignmentDocument,AssignmentDistributor};
 use Greenwood\DeploymentController\Provider\{TimerEdgeAdmission,EdgeAdmissionEndpoint};
 function check(bool $v,string $m):void{if(!$v)throw new RuntimeException($m);}
@@ -8,7 +9,7 @@ function denied(Closure $f,string $m):void{try{$f();}catch(Throwable){return;}th
 umask(0077);$root=sys_get_temp_dir().'/gw-edge-admission-'.bin2hex(random_bytes(8));mkdir($root,0700);
 foreach(['assignments','content','apply','admissions']as$n)mkdir($root.'/'.$n,0700);
 $allowed=true;$partial=false;$actions=[];
-$a=['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,
+$a=['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),
     'application_id'=>1,'service'=>'web','release_id'=>1,'provider_id'=>str_repeat('a',64),'provider_address'=>'10.77.0.100',
     'ingress_port'=>21001,'instance_id'=>'app-1-web','image_digest'=>'sha256:'.str_repeat('b',64),
     'provider_endpoint'=>'tcp://10.77.0.100:19443','provider_tls_name'=>'provider.test'];

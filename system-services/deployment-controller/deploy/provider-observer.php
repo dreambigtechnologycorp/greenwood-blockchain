@@ -10,7 +10,7 @@ umask(0077);
 $path=getenv('GREENWOOD_H8_OBSERVER_CONFIG');
 if(!$path)throw new RuntimeException('OBSERVER_CONFIGURATION_REQUIRED');
 $c=PhysicalAssignmentServices::config($path);$s=PhysicalAssignmentServices::build($c);
-$store=new ApprovedDeploymentStore($c['assignments_directory'],DeploymentIdentity::CHAIN,DeploymentIdentity::REGISTRY);
+$store=new ApprovedDeploymentStore($c['assignments_directory'],DeploymentIdentity::chain(),DeploymentIdentity::registry());
 $operator=new ProviderOperatorClient($c['provider_http'],$c['operator_token_file']);
 $service=new ProviderObservationService($c['provider_id'],$c['provider_address'],['deployment-controller','edge-admission'],$store,$operator->inspectApplication(...));
 $listener=$s['channel']->listen($c['listen']);

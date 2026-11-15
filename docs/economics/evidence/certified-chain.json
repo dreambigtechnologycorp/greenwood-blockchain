@@ -1,0 +1,9 @@
+{
+    "status": "PASS",
+    "checks": 25,
+    "validators": 3,
+    "certified_blocks": 3,
+    "replay": true,
+    "network_transport_tested": false,
+    "seconds": 0.318
+}
