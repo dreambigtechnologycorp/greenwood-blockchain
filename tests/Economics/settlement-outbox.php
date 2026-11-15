@@ -1,0 +1,39 @@
+<?php
+declare(strict_types=1);
+require __DIR__.'/resource-fixtures.php';
+use Greenwood\Provider\SettlementOutbox;
+use Greenwood\Node\Chain;
+use Greenwood\Persistence\{BlockFilesystem,StateSqlite};
+use Greenwood\Consensus\Messages\{Certificate,Message};
+use Greenwood\Compute\Protocol\ProviderCapability;
+use Greenwood\Crypto\Ed25519KeyPair;
+use Greenwood\Economics\CanonicalJson;
+$f=fixture();$g=$f['g'];$chain=$g->getChainId();$provider=Ed25519KeyPair::generate();$genesis=bin2hex($g->getGenesisHash());$cap=resourceCapability($provider,$genesis);
+$dir=sys_get_temp_dir().'/greenwood-outbox-'.bin2hex(random_bytes(8));mkdir($dir,0700);
+$verify=static function($block,$bytes)use($g){if($bytes===null)throw new InvalidArgumentException('Certificate required');Certificate::decode($bytes)->verify($g->getValidators(),$g->getChainId(),$g->getGenesisHash(),'precommit',$block->getHeight(),$block->getHash());};
+try{
+ $node=new Chain($g,new BlockFilesystem($dir.'/blocks'),new StateSqlite($dir.'/state.sqlite'),$verify);
+ $finalize=static function(array $txs)use($node,$f,$g):void{$height=$node->tip->getHeight()+1;$block=$node->build($txs,0,addr(array_values($f['validators'])[$height%3]));$votes=[];foreach($f['validators'] as $id=>$key){$m=new Message('precommit',$g->getChainId(),$g->getGenesisHash(),$height,0,$id,$block->getHash());$votes[]=$m->signed($key->sign($m->digest()));}$node->finalize($block,(new Certificate($votes))->bytes());};
+ $base=new ProviderCapability(hex2bin($cap['provider_id']),$provider->getPublicKey(),0,1,['linux/amd64'],4000,8192*1048576,100,10);$finalize([resourceTx($node->state,$provider,10,$base->toBytes(),$chain)]);
+ $tx=resourceTx($node->state,$provider,14,CanonicalJson::encode($cap),$chain);$outbox=new SettlementOutbox($dir.'/journal',$chain,$genesis);$id=$outbox->enqueue($tx);check($outbox->enqueue($tx)===$id,'Exact signed envelope enqueue is idempotent');
+ check($outbox->due(0,1)===[$id],'Coordinator obtains a bounded pending page');
+ rejects(fn()=>\Greenwood\Provider\SettlementCoordinator::forHttp($outbox,'http://remote.invalid:80',$chain),'Relay rejects remote cleartext origin');
+ $different=$cap;$different['region']='changed';$replacement=resourceTx($node->state,$provider,14,CanonicalJson::encode($different),$chain);rejects(fn()=>$outbox->enqueue($replacement),'No second signed payload at an uncertain nonce');
+ rejects(fn()=>$outbox->submit($id,100,fn()=>throw new RuntimeException('Disconnected after remote acceptance')),'Transport failure remains uncertain');
+ check($outbox->status($id)['state']==='UNCERTAIN','Uncertainty is committed before network call');unset($outbox);
+ $outbox=new SettlementOutbox($dir.'/journal',$chain,$genesis);check((int)$outbox->status($id)['attempts']===1,'Crash/reopen retains attempts and exact envelope');
+ rejects(fn()=>$outbox->submit($id,101,fn()=>null),'Bounded retry backoff enforced');
+ $sent=null;$outbox->submit($id,102,static function($bytes)use(&$sent){$sent=$bytes;});check($sent===$tx->getCanonicalBytes()&&$outbox->status($id)['state']==='UNCERTAIN','Retry preserves signature/hash and RPC acknowledgement is not finality');
+ $finalize([$tx]);$result=$outbox->reconcile($id,$node,1);check($result['state']==='UNCERTAIN','Bounded history scan cannot prematurely claim finality');
+ $result=$outbox->reconcile($id,$node,1);check($result['state']==='FINALIZED','Actual certificate-verified inclusion completes outbox');
+ rejects(fn()=>$outbox->submit($id,1000,fn()=>null),'Finalized envelope cannot be resubmitted');
+ rejects(fn()=>new SettlementOutbox($dir.'/journal','wrong-chain',$genesis),'Journal cannot be repinned to another chain');
+ $cap['nonce']=2;$pending=resourceTx($node->state,$provider,14,CanonicalJson::encode($cap),$chain);$conflict=$outbox->enqueue($pending);$cap['region']='other-valid-action';$finalize([resourceTx($node->state,$provider,14,CanonicalJson::encode($cap),$chain)]);
+ check($outbox->reconcile($conflict,$node)['state']==='NONCE_CONFLICT','Different finalized payload at nonce requires operator reconciliation, never re-signing');
+ $cap['nonce']=3;$relayTx=resourceTx($node->state,$provider,14,CanonicalJson::encode($cap),$chain);$relayId=$outbox->enqueue($relayTx);$broadcasts=[];
+ $coordinator=new \Greenwood\Provider\SettlementCoordinator($outbox,static function(string $bytes)use(&$broadcasts){$broadcasts[]=$bytes;});
+ $coordinator->tick($node,2000);check($broadcasts===[$relayTx->getCanonicalBytes()]&&$outbox->status($relayId)['state']==='UNCERTAIN','Coordinator relays exact existing signature after actual history reconciliation');
+ $coordinator->tick($node,2001);check(count($broadcasts)===1,'Coordinator respects durable backoff without signing another nonce');
+ $node->index->close();unset($node);$restart=new Chain($g,new BlockFilesystem($dir.'/blocks'),new StateSqlite($dir.'/state.sqlite'),$verify);check($restart->tip->getHeight()===3,'Outbox journey uses actual native capability history and certified replay');
+ echo json_encode(['status'=>'PASS','checks'=>$checks,'certified_blocks'=>3,'live_broadcasts'=>0,'permanent_keys'=>0],JSON_PRETTY_PRINT)."\n";
+}finally{if(isset($node))$node->index->close();if(isset($restart))$restart->index->close();unset($outbox);$it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);foreach($it as $file){if($file->isDir())rmdir($file->getPathname());else unlink($file->getPathname());}rmdir($dir);}

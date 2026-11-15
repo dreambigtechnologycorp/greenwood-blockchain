@@ -41,6 +41,7 @@ final class MutualTlsChannelTest extends TestCase
         }
         $revocations=self::$dir.'/revocations.json';
         if(!is_file($revocations)) file_put_contents($revocations,json_encode(['valid_until'=>time()+3600,'revoked_sha256'=>[]]));
+        chmod($revocations,0600);
         return new MutualTlsChannel(self::$dir.'/ca.pem',self::$dir.'/'.$name.'.pem',self::$dir.'/'.$name.'.key',$peers,$uris,$revocations);
     }
     private function exchange(string $client='edge',string $serverIdentity='provider-a',string $peerName='provider-a.gw.test',bool $wrongServerPin=false,bool $registerClient=false): array

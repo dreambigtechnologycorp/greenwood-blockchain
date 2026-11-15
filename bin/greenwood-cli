@@ -28,7 +28,10 @@ try {
     } elseif ($command==='transfer-sign') {
         [$unused,$cmd,$genesis,$keyPath,$recipient,$amount,$nonce]=$argv;
         [$g]=Configuration::load($genesis); $key=Ed25519KeyPair::fromBytes(file_get_contents($keyPath));
-        $tx=(new Transfer(Configuration::hex($recipient,32),(int)$amount))->createEnvelope($g->getChainId(),ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$key->getPublicKey()),(int)$nonce,$key);
+        if($g->initialState()->economicSummary()!==null){
+            $payload=(new \Greenwood\Transaction\TransferU64(Configuration::hex($recipient,32),\Greenwood\Economics\Amount::integer($amount)))->serialize();
+            $tx=new \Greenwood\Transaction\Envelope(1,$g->getChainId(),ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$key->getPublicKey()),\Greenwood\Economics\Amount::integer($nonce),\Greenwood\Transaction\Envelope::TYPE_TRANSFER_U64,$payload,'',$key->getPublicKey());$tx->setSignature($key->sign($tx->getSigningDigest()));
+        }else $tx=(new Transfer(Configuration::hex($recipient,32),(int)$amount))->createEnvelope($g->getChainId(),ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$key->getPublicKey()),(int)$nonce,$key);
         echo json_encode(['type'=>'transaction','payload'=>base64_encode($tx->getCanonicalBytes())],JSON_THROW_ON_ERROR)."\n";
     } elseif ($command==='contract-deploy-sign') {
         [$unused,$cmd,$genesis,$keyPath,$wasmPath,$initData,$attachedValue,$gasLimit,$nonce]=$argv;

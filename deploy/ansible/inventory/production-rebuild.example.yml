@@ -1,0 +1,28 @@
+---
+# Existing four-node destination. These addresses are historical topology, not
+# verified machine identity or installation authorization. Complete from preflight.
+all:
+  children:
+    production_rebuild:
+      hosts:
+        node-1:
+          ansible_host: 192.168.72.100
+          greenwood_expected_address: 192.168.72.100
+          greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+        node-2:
+          ansible_host: 192.168.72.101
+          greenwood_expected_address: 192.168.72.101
+          greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+        node-3:
+          ansible_host: 192.168.72.102
+          greenwood_expected_address: 192.168.72.102
+          greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+        node-4:
+          ansible_host: 192.168.72.103
+          greenwood_expected_address: 192.168.72.103
+          greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+      vars:
+        greenwood_expected_architecture: aarch64
+        greenwood_recovery_access_confirmed: false
+        greenwood_destructive_installation_authorized: false
+        ansible_ssh_common_args: -o StrictHostKeyChecking=yes

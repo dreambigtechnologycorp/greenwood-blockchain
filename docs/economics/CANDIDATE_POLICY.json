@@ -1,0 +1,141 @@
+{
+  "format": "greenwood.economic-simulation.v1",
+  "status": "selected_15_25_30_25_5_pending_formal_ratification",
+  "production_authorized": false,
+  "asset": {
+    "symbol": "GWD",
+    "candidate_decimals": 6,
+    "units_per_gwd": "1000000",
+    "genesis_gwd": "1000000000",
+    "genesis_base_units": "1000000000000000",
+    "post_genesis_minting": false
+  },
+  "reserves": {
+    "security_emissions": {
+      "allocation_gwd": "150000000",
+      "allocation_base_units": "150000000000000",
+      "release_ceiling_per_window_gwd": null,
+      "authority": "protocol_only",
+      "allocation_status": "selected_pending_formal_ratification"
+    },
+    "grants": {
+      "allocation_gwd": "250000000",
+      "allocation_base_units": "250000000000000",
+      "release_ceiling_per_window_gwd": null,
+      "authority": "institute_policy",
+      "allocation_status": "selected_pending_formal_ratification"
+    },
+    "subsidies": {
+      "allocation_gwd": "300000000",
+      "allocation_base_units": "300000000000000",
+      "release_ceiling_per_window_gwd": null,
+      "authority": "institute_policy",
+      "allocation_status": "selected_pending_formal_ratification"
+    },
+    "institute_treasury": {
+      "allocation_gwd": "250000000",
+      "allocation_base_units": "250000000000000",
+      "release_ceiling_per_window_gwd": null,
+      "authority": "institute_policy",
+      "allocation_status": "selected_pending_formal_ratification"
+    },
+    "working_operations": {
+      "allocation_gwd": "50000000",
+      "allocation_base_units": "50000000000000",
+      "release_ceiling_per_window_gwd": null,
+      "authority": "institute_policy",
+      "allocation_status": "selected_pending_formal_ratification"
+    }
+  },
+  "unfunded_optional_reserves": [
+    "contributor_vesting",
+    "liquidity"
+  ],
+  "governance": {
+    "required_signers": 5,
+    "signer_public_keys": [],
+    "ordinary_approvals": 3,
+    "large_approvals": 4,
+    "policy_change_approvals": 4,
+    "large_payment_threshold_gwd": "100000",
+    "delays_nominal_hours": {
+      "ordinary": 72,
+      "large": 168,
+      "policy_change": 336
+    },
+    "clock_parameters": null,
+    "budget_window_nominal_days": 30,
+    "budget_clock_parameters": null,
+    "guardian_parameters": null
+  },
+  "operations": {
+    "protected_account_required": true,
+    "balance_ceiling_gwd": "100000",
+    "routine_payment_ceiling_gwd": "5000",
+    "spending_ceiling_per_window_gwd": "100000",
+    "replenishment_ceiling_per_window_gwd": "100000",
+    "initial_hot_wallet_funding_gwd": null
+  },
+  "emissions": {
+    "reserve": "security_emissions",
+    "current_declared_releases_per_year": 525960,
+    "target_block_seconds": 60,
+    "rewards_gwd": [
+      "10",
+      "7.5",
+      "5",
+      "2.5",
+      "1"
+    ],
+    "epoch_lengths_nominal_years": [
+      4,
+      4,
+      4,
+      4,
+      null
+    ],
+    "simulation_exhaustion_policy": "partial_final_release_then_stop",
+    "eligibility_and_distribution": null,
+    "cadence_status": "user_confirmed_existing_60_second_target"
+  },
+  "fees": {
+    "burn_percent": 0,
+    "operator_percent": 100,
+    "policy_status": "user_confirmed_no_burn",
+    "amount_schedule": null,
+    "eligible_recipient_distribution": null,
+    "provider_service_payments_are_separate": true
+  },
+  "gru": {
+    "transferable": false,
+    "part_of_gwd_supply": false,
+    "reference_usd_per_gru": "0.01",
+    "initial_gwd_reference_usd": "0.01",
+    "reference_is_market_price_or_redemption_promise": false,
+    "consensus_precision": null,
+    "simulation_units_per_gru": "1000000",
+    "quote_authority": null,
+    "reference_rates": {
+      "cpu_vcpu_hour": "1.20",
+      "ram_gib_hour": "0.15",
+      "object_storage_gb_month": "1.00",
+      "persistent_storage_gb_month": "1.50",
+      "egress_gb": "2.00",
+      "t4_gpu_hour": "15.00"
+    },
+    "rates_status": "provisional_unvalidated_costs",
+    "subsidy_gru_ceilings": null
+  },
+  "unresolved_production_requirements": [
+    "allocation_ratification_and_cost_model",
+    "signer_and_guardian_identities",
+    "consensus_clock_and_idle_block_semantics",
+    "emission_eligibility_and_exhaustion_ratification",
+    "fee_amounts_and_distribution",
+    "gru_precision_and_metering_standard",
+    "quote_authority_trust_and_expiry",
+    "gru_program_and_beneficiary_limits",
+    "bootstrap_fee_and_hot_wallet_funding",
+    "remaining_gru_settlement_and_independent_security_qualification"
+  ]
+}

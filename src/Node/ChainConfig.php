@@ -13,12 +13,11 @@ namespace Greenwood\Node;
  *   hard_cap:           1,000,000,000 GWD   hard supply ceiling
  *   emission source:    security_infrastructure_reserve (rewards RELEASE from
  *                       this reserve; they never mint beyond the hard cap)
- *   fees:               20% permanent burn, 80% network/operator compensation
+ *   fees:               0% burn, 100% network/operator compensation
  *
  * Reward release and per-transaction fee disposition are exposed here as the
- * production schedule; they are NOT yet executed by the runtime as on-chain
- * mutation primitives. Those gaps are reported by the deployment tooling rather
- * than implemented as a second tokenomics engine.
+ * production schedule. Economic genesis activates the native Economics Ledger,
+ * which executes reserve-funded rewards and operator fees in consensus state.
  */
 final class ChainConfig
 {
@@ -26,8 +25,8 @@ final class ChainConfig
     public const DEFAULT_HARD_CAP = 1_000_000_000;
     public const PLANNED_BLOCKS_PER_YEAR = 525960; // 365.25d * 24h * 60m, at 60s/block
     public const DEFAULT_EMISSION_SOURCE = 'security_infrastructure_reserve';
-    public const DEFAULT_FEE_BURN_PERCENT = 20;
-    public const DEFAULT_FEE_OPERATOR_PERCENT = 80;
+    public const DEFAULT_FEE_BURN_PERCENT = 0;
+    public const DEFAULT_FEE_OPERATOR_PERCENT = 100;
 
     private int $blockTimeSeconds;
     private int $hardCap;

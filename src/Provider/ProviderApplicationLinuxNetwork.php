@@ -155,6 +155,10 @@ final class ProviderApplicationLinuxNetwork
     }
 
     private function identity(int $pid): string
+    { return self::namespaceIdentity($pid); }
+
+    /** Shared read-only lineage for attachment and host-side network metering. */
+    public static function namespaceIdentity(int $pid): string
     {
         if ($pid < 2) throw new \RuntimeException('Invalid runtime PID');
         $ns = @readlink('/proc/' . $pid . '/ns/net');

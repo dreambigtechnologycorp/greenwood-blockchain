@@ -17,7 +17,7 @@ declare(strict_types=1);
  * This service never generates or replaces network issuer identity.
  */
 
-$chainId = getenv('GREENWOOD_CHAIN_ID') ?: 'greenwood-physical-v1';
+$chainId = getenv('GREENWOOD_CHAIN_ID') ?: '';
 $rpcEndpoint = getenv('GREENWOOD_RPC_ENDPOINT') ?: '';
 $appRegistryContract = getenv('GREENWOOD_APP_REGISTRY_CONTRACT') ?: '';
 $issuerKeyPath = getenv('GREENWOOD_REGISTRY_ISSUER_KEY')
@@ -42,6 +42,8 @@ if (is_link($issuerKeyPath) || !is_file($issuerKeyPath) || !is_readable($issuerK
         'Provisioned registry issuer key is unavailable'
     );
 }
+
+\Greenwood\DeploymentController\Auth\DeploymentIdentity::configure(['chain_id'=>$chainId,'genesis_hash'=>getenv('GREENWOOD_GENESIS_HASH')?:'','registry_contract_id'=>$appRegistryContract,'registry_wasm_hash'=>getenv('GREENWOOD_APP_REGISTRY_WASM_HASH')?:'']);
 
 return [
     'chain_id' => $chainId,

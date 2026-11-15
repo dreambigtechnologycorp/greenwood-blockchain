@@ -5,6 +5,10 @@ greenwood_control_files: []
 greenwood_control_directories: []
 greenwood_control_configs: {}
 greenwood_system_services: []
+greenwood_governed_service_agent_stage: false
+greenwood_governed_service_agent_config:
+  enabled: false
+  mode: qualification_snapshot
 greenwood_policy_mode: ''
 greenwood_policy_environment: {}
 greenwood_policy_sftp: {}

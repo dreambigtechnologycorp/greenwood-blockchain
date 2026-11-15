@@ -1,0 +1,15 @@
+{
+  "tests": "579",
+  "assertions": "5057",
+  "errors": "0",
+  "failures": "0",
+  "skipped": "2",
+  "time": "61.746255",
+  "skipped_tests": [
+    "testRuntimeDiagnosticsAcceptStandardSbinMkfsExt4Path",
+    "testGetPreservesRpcFailureSubtypeAndCode"
+  ],
+  "runtime": "PHP 8.5.12",
+  "source_snapshot": "/tmp/greenwood-production-review",
+  "native_containerd_executed": false
+}

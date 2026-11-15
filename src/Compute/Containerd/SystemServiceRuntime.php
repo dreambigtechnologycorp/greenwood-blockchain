@@ -91,7 +91,7 @@ final class SystemServiceRuntime
                     $definition->imageRef
                 );
 
-            $this->leaseService->create($leaseId);
+            if($definition->exclusiveLease)$this->leaseService->createExclusive($leaseId);else $this->leaseService->create($leaseId);
             $leaseCreated = true;
 
             $parentSnapshot =
@@ -146,6 +146,7 @@ final class SystemServiceRuntime
                         $definition->hostNetwork
                     );
 
+            $definition->applyResourceLimits($builder);
             foreach ($definition->mounts as $mount) {
                 $builder->addMount($mount);
             }

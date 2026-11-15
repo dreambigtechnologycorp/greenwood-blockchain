@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__) . '/autoload.php';
+require_once __DIR__.'/identity-fixture.php';
 use Greenwood\ControlPlane\SignedPolicySnapshot;
 use Greenwood\DeploymentController\Assignment\PolicyInstaller;
 umask(0077);

@@ -16,10 +16,11 @@ final class ProviderApplicationRestorer
         private readonly \Closure $resumeTask,
         private readonly ProviderApplicationNetwork $network,
         private readonly \Closure $guard,
+        private readonly ?\Closure $fundingGuard=null,
     ) {}
 
     public static function fromClients(ContainerdClientSet $clients, ProviderApplicationRegistry $registry,
-        ProviderApplicationNetwork $network, \Closure $guard): self
+        ProviderApplicationNetwork $network, \Closure $guard, ?\Closure $fundingGuard=null): self
     {
         $inspector = ProviderApplicationRuntimeInspector::fromClients($clients);
         $tasks = new TaskService($clients);
@@ -43,7 +44,7 @@ final class ProviderApplicationRestorer
                 }
                 // A timeout leaves the task intact; the next pass inspects before retrying.
                 $tasks->start($id);
-            }, $network, $guard);
+            }, $network, $guard,$fundingGuard);
     }
 
     public function tick(): array
@@ -57,6 +58,7 @@ final class ProviderApplicationRestorer
                     $record = $this->registry->get($id, $service);
                     if ($record['state'] !== 'RUNNING') return compact('id', 'service') + ['outcome' => 'SKIPPED'];
                     ($this->guard)($id, $service);
+                    $this->requireFunding($record);
                     $binding = $this->network->find($id, $service);
                     if ($binding === null || ($binding['image_digest'] ?? null) !== $record['image_digest']) {
                         throw new \RuntimeException('Recovery requires matching existing network binding');
@@ -69,6 +71,7 @@ final class ProviderApplicationRestorer
                             if ($view['task_present'] && !in_array($view['task_state'], ['STOPPED', 'CREATED'], true)) {
                                 throw new \RuntimeException('Recovery task state uncertain');
                             }
+                            $this->requireFunding($record);
                             ($this->resumeTask)($record, $view);
                             $view = ($this->inspect)($record);
                             $this->assertOwned($record, $view);
@@ -79,6 +82,7 @@ final class ProviderApplicationRestorer
                         }
                         $health = $this->network->observe($id, $service);
                         if (($health['ready'] ?? false) !== true || ($health['pid'] ?? null) !== $view['pid']) {
+                            $this->requireFunding($record);
                             $this->network->reconcile($record, $this->inspect);
                         }
                     } catch (\Throwable $e) {
@@ -92,6 +96,12 @@ final class ProviderApplicationRestorer
             }
         }
         return $results;
+    }
+
+    private function requireFunding(array $record): void
+    {
+        try{($this->fundingGuard)?->__invoke((int)$record['application_id'],$record['service'],$record['image_ref']);}
+        catch(\Throwable $e){$this->network->cleanup((int)$record['application_id'],$record['service']);throw $e;}
     }
 
     private function assertOwned(array $record, array $view): void

@@ -1,0 +1,12 @@
+{
+  "chain_id": "REPLACE_FRESH_CHAIN_ID",
+  "genesis_hash": "REPLACE_GENESIS_HASH",
+  "provider_public_key": "REPLACE_PROVIDER_PUBLIC_KEY",
+  "receiver_ledger": "/var/lib/greenwood-control-plane/receiver/receiver.sqlite",
+  "max_stale_head_seconds": 180,
+  "metering_enabled": false,
+  "metering_network_enabled": false,
+  "metering_transport": "system_service_unix",
+  "metering_socket": "/var/lib/greenwood/system-service-data/REPLACE_APPROVED_SERVICE/meter.sock",
+  "metering_sample_ms": 15000
+}

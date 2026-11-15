@@ -1,0 +1,2505 @@
+{
+  "status": "PASS",
+  "runs": [
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/production-allocation.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.184,
+      "result": {
+        "status": "PASS",
+        "checks": 14,
+        "allocation": "15-25-30-25-5",
+        "permanent_genesis_created": false,
+        "formal_ratification": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/local-resource-evidence.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.075,
+      "result": {
+        "status": "PASS",
+        "checks": 17,
+        "actual_sqlite": true,
+        "counter_inputs": "SYNTHETIC_FIXTURES",
+        "physical_qualification": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/meter-ipc.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.213,
+      "result": {
+        "status": "PASS",
+        "checks": 12,
+        "actual_private_unix_ipc": true,
+        "actual_process_sigkill_recovery": true,
+        "oci_container_executed": false,
+        "physical_independence": false,
+        "samples": "explicit_fixture_counters"
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/resource-worker-ipc.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.281,
+      "result": {
+        "status": "PASS",
+        "checks": 8,
+        "actual_unix_ipc": true,
+        "actual_subprocess": true,
+        "oci_execution": false,
+        "live_transactions": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/system-service-journal.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.089,
+      "result": {
+        "status": "PASS",
+        "checks": 24,
+        "actual_sqlite": true,
+        "containerd_execution_tested": false,
+        "runtime_handles": "fixture_values_only"
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/network-metering.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.042,
+      "result": {
+        "status": "PASS",
+        "checks": 9,
+        "actual_workload_veth_tested": false,
+        "physical_qualification": false,
+        "counter_inputs": "explicit_fixture_values"
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/resources.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.057,
+      "result": {
+        "status": "PASS",
+        "checks": 75,
+        "resource_definitions": 36,
+        "physical_qualification": false,
+        "local_fixture_only": true
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/metering.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.076,
+      "result": {
+        "status": "PASS",
+        "checks": 11,
+        "independent_measurement_qualified": false,
+        "container_execution_tested": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/meter-checkpoints.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.07,
+      "result": {
+        "status": "PASS",
+        "checks": 13,
+        "physical_qualification": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/network-policy.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 1.216,
+      "result": {
+        "status": "PASS",
+        "checks": 35,
+        "physical_independence": false,
+        "fixture_classification": "single_process_synthetic_reviewed_domains",
+        "production_activation": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/head-watchdog.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.036,
+      "result": {
+        "status": "PASS",
+        "checks": 10,
+        "physical_cutoff_demonstrated": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/settlement-outbox.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.217,
+      "result": {
+        "status": "PASS",
+        "checks": 17,
+        "certified_blocks": 3,
+        "live_broadcasts": 0,
+        "permanent_keys": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/infrastructure-cost.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.037,
+      "result": {
+        "status": "PASS",
+        "checks": 7,
+        "policy_ratified": false,
+        "automatic_payments": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/hosted-boundaries.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.11,
+      "result": {
+        "status": "PASS",
+        "checks": 18,
+        "actual_receiver_sqlite": true,
+        "actual_operator_guard": true,
+        "container_execution_tested": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/deployment-identity.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.035,
+      "result": {
+        "status": "PASS",
+        "checks": 9,
+        "live_requests": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/bootstrap-operator-settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "15-25-30-25-5"
+      },
+      "exit_code": 0,
+      "seconds": 2.954,
+      "result": {
+        "status": "PASS",
+        "checks": 23,
+        "allocation": "15-25-30-25-5",
+        "actual_registry_wasm": true,
+        "physical_execution": false,
+        "trust_profile": "BOOTSTRAP_OPERATOR_ATTESTED",
+        "subsidy_spent": 0,
+        "live_transactions": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/run.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "15-25-30-25-5"
+      },
+      "exit_code": 0,
+      "seconds": 1.702,
+      "result": {
+        "status": "PASS",
+        "checks": 64,
+        "seconds": 1.673,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "15-25-30-25-5"
+      },
+      "exit_code": 0,
+      "seconds": 6.944,
+      "result": {
+        "status": "PASS",
+        "checks": 68,
+        "adapters": [
+          "compute_cpu_v1"
+        ],
+        "hosted_adapter_tested": false,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0,
+        "seconds": 6.909
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/hosted.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "15-25-30-25-5"
+      },
+      "exit_code": 0,
+      "seconds": 2.864,
+      "result": {
+        "status": "PASS",
+        "checks": 32,
+        "actual_registry_wasm": true,
+        "distributed_execution_tested": false,
+        "independent_metering_qualified": false,
+        "mainnet_activation": false,
+        "seconds": 2.822
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/resource-settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "15-25-30-25-5"
+      },
+      "exit_code": 0,
+      "seconds": 3.054,
+      "result": {
+        "status": "PASS",
+        "checks": 28,
+        "actual_registry_wasm": true,
+        "adapters": [
+          "compute_resources_v2",
+          "hosted_resources_v2"
+        ],
+        "independent_physical_qualification": false,
+        "production_activation": false,
+        "seconds": 3.022
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/certified-chain.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "15-25-30-25-5"
+      },
+      "exit_code": 0,
+      "seconds": 0.569,
+      "result": {
+        "status": "PASS",
+        "checks": 38,
+        "validators": 3,
+        "certified_blocks": 3,
+        "replay": true,
+        "network_transport_tested": false,
+        "seconds": 0.537
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/independent-resource-settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "15-25-30-25-5"
+      },
+      "exit_code": 0,
+      "seconds": 7.612,
+      "result": {
+        "status": "PASS",
+        "checks": 58,
+        "actual_registry_wasm": true,
+        "native_governance_and_finance": true,
+        "allocation": "15-25-30-25-5",
+        "physical_independence": false,
+        "qualification_facts": "SYNTHETIC_SINGLE_ADMIN_FIXTURES",
+        "live_transactions": 0,
+        "seconds": 7.584
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/bootstrap-operator-settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "40-20-15-24-1"
+      },
+      "exit_code": 0,
+      "seconds": 3.164,
+      "result": {
+        "status": "PASS",
+        "checks": 23,
+        "allocation": "40-20-15-24-1",
+        "actual_registry_wasm": true,
+        "physical_execution": false,
+        "trust_profile": "BOOTSTRAP_OPERATOR_ATTESTED",
+        "subsidy_spent": 0,
+        "live_transactions": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/run.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "40-20-15-24-1"
+      },
+      "exit_code": 0,
+      "seconds": 1.8,
+      "result": {
+        "status": "PASS",
+        "checks": 64,
+        "seconds": 1.768,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "40-20-15-24-1"
+      },
+      "exit_code": 0,
+      "seconds": 6.977,
+      "result": {
+        "status": "PASS",
+        "checks": 68,
+        "adapters": [
+          "compute_cpu_v1"
+        ],
+        "hosted_adapter_tested": false,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0,
+        "seconds": 6.951
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/hosted.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "40-20-15-24-1"
+      },
+      "exit_code": 0,
+      "seconds": 2.978,
+      "result": {
+        "status": "PASS",
+        "checks": 32,
+        "actual_registry_wasm": true,
+        "distributed_execution_tested": false,
+        "independent_metering_qualified": false,
+        "mainnet_activation": false,
+        "seconds": 2.948
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/resource-settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "40-20-15-24-1"
+      },
+      "exit_code": 0,
+      "seconds": 3.184,
+      "result": {
+        "status": "PASS",
+        "checks": 28,
+        "actual_registry_wasm": true,
+        "adapters": [
+          "compute_resources_v2",
+          "hosted_resources_v2"
+        ],
+        "independent_physical_qualification": false,
+        "production_activation": false,
+        "seconds": 3.147
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/certified-chain.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "40-20-15-24-1"
+      },
+      "exit_code": 0,
+      "seconds": 0.603,
+      "result": {
+        "status": "PASS",
+        "checks": 38,
+        "validators": 3,
+        "certified_blocks": 3,
+        "replay": true,
+        "network_transport_tested": false,
+        "seconds": 0.564
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/independent-resource-settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "40-20-15-24-1"
+      },
+      "exit_code": 0,
+      "seconds": 7.616,
+      "result": {
+        "status": "PASS",
+        "checks": 58,
+        "actual_registry_wasm": true,
+        "native_governance_and_finance": true,
+        "allocation": "40-20-15-24-1",
+        "physical_independence": false,
+        "qualification_facts": "SYNTHETIC_SINGLE_ADMIN_FIXTURES",
+        "live_transactions": 0,
+        "seconds": 7.574
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/bootstrap-operator-settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "10-25-30-34-1"
+      },
+      "exit_code": 0,
+      "seconds": 3.099,
+      "result": {
+        "status": "PASS",
+        "checks": 23,
+        "allocation": "10-25-30-34-1",
+        "actual_registry_wasm": true,
+        "physical_execution": false,
+        "trust_profile": "BOOTSTRAP_OPERATOR_ATTESTED",
+        "subsidy_spent": 0,
+        "live_transactions": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/run.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "10-25-30-34-1"
+      },
+      "exit_code": 0,
+      "seconds": 1.876,
+      "result": {
+        "status": "PASS",
+        "checks": 64,
+        "seconds": 1.843,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "10-25-30-34-1"
+      },
+      "exit_code": 0,
+      "seconds": 7.488,
+      "result": {
+        "status": "PASS",
+        "checks": 68,
+        "adapters": [
+          "compute_cpu_v1"
+        ],
+        "hosted_adapter_tested": false,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0,
+        "seconds": 7.454
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/hosted.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "10-25-30-34-1"
+      },
+      "exit_code": 0,
+      "seconds": 2.808,
+      "result": {
+        "status": "PASS",
+        "checks": 32,
+        "actual_registry_wasm": true,
+        "distributed_execution_tested": false,
+        "independent_metering_qualified": false,
+        "mainnet_activation": false,
+        "seconds": 2.773
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/resource-settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "10-25-30-34-1"
+      },
+      "exit_code": 0,
+      "seconds": 3.085,
+      "result": {
+        "status": "PASS",
+        "checks": 28,
+        "actual_registry_wasm": true,
+        "adapters": [
+          "compute_resources_v2",
+          "hosted_resources_v2"
+        ],
+        "independent_physical_qualification": false,
+        "production_activation": false,
+        "seconds": 3.051
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/certified-chain.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "10-25-30-34-1"
+      },
+      "exit_code": 0,
+      "seconds": 0.612,
+      "result": {
+        "status": "PASS",
+        "checks": 38,
+        "validators": 3,
+        "certified_blocks": 3,
+        "replay": true,
+        "network_transport_tested": false,
+        "seconds": 0.587
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/independent-resource-settlement.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "10-25-30-34-1"
+      },
+      "exit_code": 0,
+      "seconds": 7.631,
+      "result": {
+        "status": "PASS",
+        "checks": 58,
+        "actual_registry_wasm": true,
+        "native_governance_and_finance": true,
+        "allocation": "10-25-30-34-1",
+        "physical_independence": false,
+        "qualification_facts": "SYNTHETIC_SINGLE_ADMIN_FIXTURES",
+        "live_transactions": 0,
+        "seconds": 7.599
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/distribution.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.293,
+      "result": "Assignment distribution: matching atomic installs, two-node ACK gate, partial delivery, restart-after-fsync, retry, conflict, revocation, allocation, wrong ACK, expiry, replay, principal and monotonic generation checks passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/registry_authority.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.033,
+      "result": "Registry authority: synthetic ABI response parity; stale query height, wrong contract/method/digest/code, syncing, incoherent state and unauthorized account rejected\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/registry_identity.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.059,
+      "result": "Registry identity: fresh app 1, signed registry domain, legacy/wrong/missing registry and chain rejection, isolated durable operations passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/signed_policy.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.073,
+      "result": "Signed policy: valid, repeat, restart rollback, equivocation, signer, tamper, expiry, future, lifetime, purpose, chain, missing and malformed checks passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/allocation_approval.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.029,
+      "result": "PASS: exact export/generation binding, finalized denial/unavailability, tamper rejection, initial-version restriction\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/policy_install.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.126,
+      "result": "PASS: install, idempotency, advancement, rollback, equivocation, expiry, chain, signature, issuer, preservation, recovery\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/orchestration.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.396,
+      "result": "Orchestration integration: durable reservation export, owner-signed resume/replay/isolation, pre-start ACK/plan gate, runtime binding, idempotency, restart, revocation and readiness checks passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/http_gate.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.158,
+      "result": "HTTP entry point: backend liveness, closed readiness, disabled capabilities/writes and hidden metrics passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/edge_admission.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.089,
+      "result": "Edge admission: principal, identity, allocation, partial ACK, protected install, idempotency and status-only verification passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/deployment-controller/tests/release_content.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.024,
+      "result": "Release content: timestamp-only variation, HTML/asset tampering, shape, redirect and raw compatibility PASS\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/registry-auth/tests/authority.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.105,
+      "result": "Registry issuer: signed scoped token, cross-app denial, invalid session, unauthorized pull, revoked permissions and incoherent finalized authority checks passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "system-services/registry-auth/tests/database.php"
+      ],
+      "environment_overrides": {},
+      "exit_code": 0,
+      "seconds": 0.05,
+      "result": "Registry database: private creation, symlink and permission rejection PASS\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/hosted-certified-history.php"
+      ],
+      "environment_overrides": {
+        "GWD_ALLOCATION_CANDIDATE": "15-25-30-25-5",
+        "GWD_RESOURCE_V2": "1",
+        "GWD_NETWORK_POLICY_V1": "1",
+        "GWD_ARCHIVE_V1": "1",
+        "GWD_BOOTSTRAP_TRUST": "1"
+      },
+      "exit_code": 0,
+      "seconds": 406.305,
+      "result": {
+        "status": "PASS",
+        "checks": 9,
+        "resource_v2": true,
+        "explicit_bootstrap_trust": true,
+        "allocation": "15/25/30/25/5",
+        "certified_blocks": 24488,
+        "validator_signers": 3,
+        "full_service_history_replay": true,
+        "actual_registry_wasm": true,
+        "physical_network_tested": false,
+        "independent_measurement_tested": false,
+        "live_transactions": 0,
+        "seconds": 404.658
+      },
+      "stderr": "Certified hosted history: 5000 blocks\nCertified hosted history: 10000 blocks\nCertified hosted history: 15000 blocks\nCertified hosted history: 20000 blocks\n"
+    }
+  ],
+  "production_touched": false,
+  "physical_qualification": false,
+  "source_commit": "5f120b0c64c3376c71c1322284870e4d956e7fae",
+  "working_tree_may_be_dirty": true,
+  "lint": [
+    {
+      "file": "src/Block/Block.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Block/Header.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Cli/GreenwoodCli.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Codec/Canonical.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Codec/Reader.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Codec/ComputeReceiptCodec.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Codec/ComputeReceiptV2Codec.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Codec/ComputeRequestCodec.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/CgroupAccounting.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ComputeSecurityProfile.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ContainerdClientSet.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ContainerdConnection.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ContainerdExecutor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ExecutionIo.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ExecutionLaunch.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ExecutionRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/GovernedServiceDefinition.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Model/OciPlatform.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/OciImageRuntimeConfig.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/OciSpecBuilder.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/RegistryTransferAuth.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ResolvedImage.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ResourceLimits.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ContainerService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ExecutionRegistryService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ImagePreparationService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ImageRootfsResolver.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ImageService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/LeaseService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/NamespaceService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/OciImageRuntimeConfigResolver.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/SnapshotService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/TaskService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/VersionService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/SystemServiceDefinition.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/SystemServiceHandle.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/SystemServiceRuntime.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Ttrpc/TtrpcClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Ttrpc/TtrpcException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ValueObject/PreparedSnapshot.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/ComputeAssign.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/ComputeProtocol.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/ComputeReceipt.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/ComputeReceiptV2.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/ComputeRequest.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/ComputeState.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/ComputeStatus.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/ProviderCapability.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/ProviderId.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/RequestState.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Protocol/TrustClass.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Runtime/ExecutionResult.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Runtime/ExecutionSpec.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Runtime/ExecutionStatus.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Runtime/Monotonic.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Runtime/Mount.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Runtime/OutputCommitment.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Runtime/ResolvedImage.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Runtime/ResourceUsage.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Runtime/RuntimeInfo.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Scheduling/FinalizedStateAdapter.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Scheduling/ProviderRecord.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Scheduling/ProviderStatus.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Scheduling/ReservationLedger.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Scheduling/Scheduler.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Scheduling/SchedulingFailure.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Verification/ComputeReceiptVerifier.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Verification/ComputeRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Verification/GenesisProviderEligibility.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Verification/ProviderEligibility.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Consensus/Journal/SafetyJournal.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Consensus/Messages/Certificate.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Consensus/Messages/Message.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Consensus/Network/Transport.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Consensus/Runtime/ConsensusDriver.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/AbiEncoder.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContainerdException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContainerdRpcException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContainerdUnavailableException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractAbi.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractEvent.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractExecutionContext.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractExecutionResult.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractHost.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractHostInterface.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractId.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractLimits.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractReceipt.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractStateCommitter.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractStateView.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractStateViewInterface.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractStatus.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractTransactionEvent.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractTransactionException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractTransactionExecutor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ContractTransactionLimits.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/ExecutionOverlay.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/GuestArgumentException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/GuestMemory.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/GuestMemoryInterface.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/HostCallException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmEngineInterface.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmExecutionException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmExecutionResult.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmPolicy.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmValidationException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmtimeBindings.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmtimeConfig.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmtimeEngine.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmtimeException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmtimeHostBindings.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmtimeHostBridge.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Contracts/WasmtimeUnavailableException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/ControlPlane/DeploymentReadinessService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/ControlPlane/MutualTlsChannel.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/ControlPlane/ProviderObservationService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/ControlPlane/SignedPolicySnapshot.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Crypto/Ed25519KeyPair.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Crypto/MerkleTree.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Crypto/ProtocolHash.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/Amount.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/CanonicalJson.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/GruQuote.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/HostedFundingGuard.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/HostedFundingHttpReader.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/HostedServiceBinding.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/Ledger.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/Policy.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/ResourceQuote.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/ServiceAuthorization.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/ServicePresentation.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/ServiceSettlement.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/ApacheApplyAdapter.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/ApacheIngressConfiguration.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/ApacheSystemAdapter.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/ApprovedDeploymentStore.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/AuthenticatedRouteController.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/BoundHttpProbe.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/EdgeController.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/EdgeRouteRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/ProviderObservationException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Edge/ReleaseContentVerifier.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Genesis/Genesis.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Network/AttestationTrust.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Network/InfrastructureCostModel.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Network/ResourcePolicyState.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Node/Chain.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Node/ChainConfig.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Node/Configuration.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Persistence/AtomicFile.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Persistence/BlockFilesystem.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Persistence/StateSqlite.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/AssignmentView.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ChainClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/FinalizedHeadWatchdog.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/GovernedServiceWatcher.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/GovernedSystemServiceAgent.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HostedAssignmentJournal.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HostedMeteringMonitor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HostedRuntimeFunding.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HostedServiceMonitor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HttpChainClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/LocalResourceEvidence.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/MeterJournal.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/MeteringProtocol.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/MeteringService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/MeteringSocketClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProcessManager.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationBindingRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationDependencies.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationLinuxNetwork.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationNetwork.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationNetworkPolicy.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationOperator.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationReconciler.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationRestorer.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationRuntimeCleaner.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationRuntimeInspector.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderConfig.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderContent.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderIdentity.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderJobRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderOperator.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderWorker.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderWorkload.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/QualifiedSourceAttestor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ReceiptBuilder.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ResourcePolicyHttpReader.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ResourcePolicyView.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ResourceSettlementWorkflow.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/SettlementCoordinator.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/SettlementOutbox.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/Supervisor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/SystemServiceInstallJournal.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/VacantSystemService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/WorkerFacts.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/WorkerJob.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/Metering/NetworkAccounting.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/Metering/ObservationReconciler.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/Metering/SignedObservation.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/ProviderCapabilityV2.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/ResourceCatalog.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/ResourceManifest.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/ResourceUsageEvidence.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/ApiError.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/HttpApi.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/HttpResponse.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/OperatorApi.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/OperatorAuth.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/ProviderApplicationHttpApi.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/ProviderQueries.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/RateLimiter.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/RpcClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/State/Account.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/State/State.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Transaction/CallContract.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Transaction/DeployContract.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Transaction/Envelope.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Transaction/Transfer.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Transaction/TransferU64.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "system-services/metering/meter.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "system-services/runtime/bootstrap.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "system-services/runtime/resource-worker.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "system-services/runtime/resource-workflow.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "system-services/runtime/supervise.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/archive-rpc-checks.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/bootstrap-operator-settlement.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/bootstrap.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/certified-chain.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/deployment-identity.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/fixtures.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/head-watchdog.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/hosted-boundaries.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/hosted-certified-history.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/hosted.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/independent-resource-settlement.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/infrastructure-cost.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/local-resource-evidence.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/meter-checkpoints.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/meter-ipc.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/metering.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/network-metering.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/network-policy.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/production-allocation.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/resource-fixtures.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/resource-settlement.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/resource-worker-ipc.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/resources.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/run.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/settlement-outbox.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/settlement.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/system-service-journal.php",
+      "exit_code": 0,
+      "error": null
+    }
+  ],
+  "source_sha256": {
+    "src/Block/Block.php": "099d9a936bc29061294e196788bdad5efc49ccd6b7337f7f1f53ad70d3e9c5b2",
+    "src/Block/Header.php": "5908ee487364a5f808fbf03666d3b39190697ece1f3804cc229fc8f814d37e1d",
+    "src/Cli/GreenwoodCli.php": "73bba6bcdb38c6c9ff449e98a168e466837c1e4516a76b43210fbc3e015c4edc",
+    "src/Codec/Canonical.php": "7516cc0f332b51054b719737dc3d1454ee68e93e0ae5148f745c6ebc2b0fdf86",
+    "src/Codec/Reader.php": "25868e9ba18054ca534e1b1914245995dfceabec2e83914dc028e659cbdd7175",
+    "src/Compute/Codec/ComputeReceiptCodec.php": "3c3558d946725db9f67b6428e61b580ca72e53f31379654b2c77328e0a88fc50",
+    "src/Compute/Codec/ComputeReceiptV2Codec.php": "0ca4f51707fd5432dc279442a128397786d882265a3baeebda94aa7ff9813c69",
+    "src/Compute/Codec/ComputeRequestCodec.php": "ad85eb567bacb3952419df9ced62b06535d5a51054985f5078bea1f6dac43e56",
+    "src/Compute/Containerd/CgroupAccounting.php": "bd77f66c6da7d07a9613993ba37d4192543d6d79f2f400f7a07c14c50579b5b7",
+    "src/Compute/Containerd/ComputeSecurityProfile.php": "0383e16b9f240285f7701e5c9e8e5f9be8fad764eec34800c61c32cd639bbb12",
+    "src/Compute/Containerd/ContainerdClientSet.php": "f588a4a63656eceff3c2b6f6c66d06073f126acb9393c0b4195bb447829f07d9",
+    "src/Compute/Containerd/ContainerdConnection.php": "20cb1eb5c74365b486694ad3420f907c1c66a7aa7cfbd5769fc9fcd9dde02fef",
+    "src/Compute/Containerd/ContainerdExecutor.php": "d48db6f0bff6fd5027d0dd9555551cd1177e5ad5ccffaa868848feefaeb0975c",
+    "src/Compute/Containerd/ExecutionIo.php": "e8cd29c3b36a877dcbda46e26e4410a1b7088d49b2fc9e2b9749e1833c08ca71",
+    "src/Compute/Containerd/ExecutionLaunch.php": "5e7d67d00763fdbe19479a72e0a4a7d96fe8bb414509c23ec0556284fb93870a",
+    "src/Compute/Containerd/ExecutionRegistry.php": "165c098a3d46d09e4fe87d922ec65e1cdcea0bf18bec9448d64bb58036f2961f",
+    "src/Compute/Containerd/GovernedServiceDefinition.php": "85904cec0857ee2af05bf4ab55f69c6c6d27ec45d53d5c7bc159463e17fe790c",
+    "src/Compute/Containerd/Model/OciPlatform.php": "3af83ddd8becd0c478e010843f96a80badda88fff9a4c3dc5465a04b5695c869",
+    "src/Compute/Containerd/OciImageRuntimeConfig.php": "9141004e8b65c15a62e1eaede79d4bc9c5b095ddbe02ddfa159e49b079a84d71",
+    "src/Compute/Containerd/OciSpecBuilder.php": "98543f47146a29fa2da5bec4112486318acf5bd7cdcd750ffbbf37e76af85577",
+    "src/Compute/Containerd/RegistryTransferAuth.php": "6727d9aeb64df175bf2c9ba204737acada9fd42663dac72917ca31b492fc837e",
+    "src/Compute/Containerd/ResolvedImage.php": "be1ea4c1cdabf59516ef31fdd335c865f5c6bdedd57f31b1b277da0519ef496d",
+    "src/Compute/Containerd/ResourceLimits.php": "d396f93d2c76eaf341c92db481fcb5de7244cc28b353a7cdf80efac9dc2e395e",
+    "src/Compute/Containerd/Service/ContainerService.php": "d438d2a169ff022b814bd119fe1b20b989f1480cea912c734a915686435c74b1",
+    "src/Compute/Containerd/Service/ExecutionRegistryService.php": "a070a0ce83000015409cab69141362638c1fca575733cf4b9ce931dbd2288b80",
+    "src/Compute/Containerd/Service/ImagePreparationService.php": "c09b9a40e285482d4a9062e5cbe27bbbbf107657f90fd8ea9a5d477eec2a4621",
+    "src/Compute/Containerd/Service/ImageRootfsResolver.php": "4397b0ea6ff94514b5da91b92f3f22cf048cb99a9c6c507489bef14b1772bb83",
+    "src/Compute/Containerd/Service/ImageService.php": "5c572fa07de8934b670de5c1e612528b4b9f6c91f5fb746af9c25597d7eeb2c4",
+    "src/Compute/Containerd/Service/LeaseService.php": "9b321541a8c28db61ca9489e4973023b84942d1946f71fb88444db1dc2a6aff9",
+    "src/Compute/Containerd/Service/NamespaceService.php": "8bed6a8bf9456b9a51a7ecdbc4be66be18892548643520222dcc1509068e3f50",
+    "src/Compute/Containerd/Service/OciImageRuntimeConfigResolver.php": "6248b5d93ccbab6d1e5cd6ed66c27fb62be508ca5a63b73753e108f36eefba98",
+    "src/Compute/Containerd/Service/SnapshotService.php": "c6a47fa3da2112dc873f0c8fd04ee4d617a428c41a901f4ffd334539a115d816",
+    "src/Compute/Containerd/Service/TaskService.php": "d5bcb385dfbadefc0fe4ff0a439d1fc1fcd6f2eac8eaddb1bd43cacfe43ea3a9",
+    "src/Compute/Containerd/Service/VersionService.php": "576f85ad13f8ee3eee8c7a30b1ee4d87a464d39197fe6d5e82d6b0160ae46470",
+    "src/Compute/Containerd/SystemServiceDefinition.php": "2ef6620baf9e85042e058fcbe27ce00da6f39dc0c0000833dfe4b350dd23a6c0",
+    "src/Compute/Containerd/SystemServiceHandle.php": "5454d367b7c5d7051e002bf058d8760deaca61319aeca23ca90dc79cbcc8a376",
+    "src/Compute/Containerd/SystemServiceRuntime.php": "901f2c838fda46662ac884e509ae38c9d885f67d4c34dc82e8187db768b221be",
+    "src/Compute/Containerd/Ttrpc/TtrpcClient.php": "bdb7a4c9d65bd594763019c0ac8781c81a562e0bf33715f50f06f26fc18735db",
+    "src/Compute/Containerd/Ttrpc/TtrpcException.php": "95976cd229e0bc29ad84febd08f56550359625380bc256f7fb41deeef9adfbda",
+    "src/Compute/Containerd/ValueObject/PreparedSnapshot.php": "388ccc4ccc5a60c04f34c72c96149a7887bba9fccaf02a713b9f4b4f11d29735",
+    "src/Compute/Protocol/ComputeAssign.php": "5f5a4c7b76d1a67d951c8a25df5cffbaa18314db92f1b27cb5e843deeca6cb31",
+    "src/Compute/Protocol/ComputeProtocol.php": "b68384b8fb676b947fe186f3ab29c538b9ef6c945090eb9f7e45b5679794254c",
+    "src/Compute/Protocol/ComputeReceipt.php": "a3576fa5700f592a1c9e4243bb3b54074d8c51fb4434203bc6e9cb75d30bf1e4",
+    "src/Compute/Protocol/ComputeReceiptV2.php": "029465bdded369678d8196576fc4599a176d9bc9850f2df8466ff500da7e1ac1",
+    "src/Compute/Protocol/ComputeRequest.php": "eb271ae85df5ee02293e73b71680367ac038a9e83049abbb7cccbf2d500ab019",
+    "src/Compute/Protocol/ComputeState.php": "04829b9b2267fc5121241771c072e5f74dd2f9f6b006c3bf464c8aa87db1d144",
+    "src/Compute/Protocol/ComputeStatus.php": "2ce9e0c3178b413531a2102a93517fcc8d7a98acb2b52e7b6f9eb2c6c333ddf1",
+    "src/Compute/Protocol/ProviderCapability.php": "5a7852420d3739ebf53186d40fb6f50102d809627a0b9445c19a92af292fb4a2",
+    "src/Compute/Protocol/ProviderId.php": "0d35aeca70a84fc50906639922984080bdee7d15daf54489281474b40f10c887",
+    "src/Compute/Protocol/RequestState.php": "0d648c31350d846d9d90f7e705cc10b64ee59945694016d9d644cf44e1206696",
+    "src/Compute/Protocol/TrustClass.php": "bcb29f623b3911b230a68e765a931a23e6f382dfc7f8a958ce6dce2ef51d4606",
+    "src/Compute/Runtime/ExecutionResult.php": "17e7f738ed7566fda3a189f57ffe7f951f561f96fe92bb8ba84bf0fc9e00406d",
+    "src/Compute/Runtime/ExecutionSpec.php": "4775f093da0b96dc3eb26622dc25ac72b1585787ab737e2775915c1d06e6bfed",
+    "src/Compute/Runtime/ExecutionStatus.php": "052897a23d8b0d3e79ba6ee18c04134ad6f55928aed4e9599494d093b3e2e80c",
+    "src/Compute/Runtime/Monotonic.php": "1e0f3852592ce15a2240070f868013975798377ed363d774a8d9fb758e5f9480",
+    "src/Compute/Runtime/Mount.php": "463ace561ea7040b38d93d91e20d2bcf86ecd6bc953a2d179e35b4acce466921",
+    "src/Compute/Runtime/OutputCommitment.php": "24ba56dd951e2637d146e215a0a77ea16e498d9fd7a7bb363be8d0a8f6b08d72",
+    "src/Compute/Runtime/ResolvedImage.php": "58f2ea47150cd4cb0e6cabaa090ff0318acf1327dfe1a9cd68e6b4d6fad4e3c4",
+    "src/Compute/Runtime/ResourceUsage.php": "f6c1f7ef26285ac27c9e7ce4c212c736f132d918bbdcbf839442bd2ca5844988",
+    "src/Compute/Runtime/RuntimeInfo.php": "ed34ff2159999160725db3145adf834ece2f73025e189b7d16876288b3912517",
+    "src/Compute/Scheduling/FinalizedStateAdapter.php": "38553c9121ee004dcd365ab45c9ea3ac95bf449c0d724a626d2836d2db18e154",
+    "src/Compute/Scheduling/ProviderRecord.php": "3e7edd2baa312d97c96e702275a87f153547ece0b395f2eca497413df9b62ee0",
+    "src/Compute/Scheduling/ProviderStatus.php": "f7e1629d752d63e65c8a15c214e567270b8811ed023ffe887c111c130886a5af",
+    "src/Compute/Scheduling/ReservationLedger.php": "ca69934ec221cd339624136f2714b89f5a70d15e595d4262dc183d8f059dc57a",
+    "src/Compute/Scheduling/Scheduler.php": "a7aea85e4daf7c7fb0cabc74f822bc1efc3b06030fc68c1bfb668992e03b651d",
+    "src/Compute/Scheduling/SchedulingFailure.php": "eb71c80da674073b3250cda69ed24f55414d60e8664a890521575b793771c60c",
+    "src/Compute/Verification/ComputeReceiptVerifier.php": "19ea95d435f1dd52fd6c24cdc0b2a4cd02304e5cd269ec13ef3ecfccdaca0cac",
+    "src/Compute/Verification/ComputeRegistry.php": "547bffae5692b39452e43c1d891fb73a1d982649ba83da67748b5c3e2f55a33c",
+    "src/Compute/Verification/GenesisProviderEligibility.php": "21f32d92ed45e4fea87d669cb35610fa6c911c6f521a7ec92b9842a5e2fca19e",
+    "src/Compute/Verification/ProviderEligibility.php": "ac26b666207dc33650cc9fcf17380fce411f64029c268d0851057f8cdb7b5cf4",
+    "src/Consensus/Journal/SafetyJournal.php": "fe5a332a670d8bf4b5250af7a72adfc063b481d4782496518f6cbb17575f1790",
+    "src/Consensus/Messages/Certificate.php": "e96c1a66ccf13b59b5c7f47d0d37cf72e951ae9cbc6d318c590571e13f5ede36",
+    "src/Consensus/Messages/Message.php": "91a1ef8f6753725b52f4b7cddf8186f2b961bc69e05d9f6633584ddf055bc1d4",
+    "src/Consensus/Network/Transport.php": "c51505a6298dc494f5c35b6a356e73f2ba1074fce178b2035668b7e885f93d82",
+    "src/Consensus/Runtime/ConsensusDriver.php": "a39926055852149ccafd80e2225ccdafa96027dfcd32ca39bcf35bd85bef14fc",
+    "src/Contracts/AbiEncoder.php": "858da8af33e5e37422f5cd07ef8bfae854cfcaf4c468b7eb28d6544dc7395b58",
+    "src/Contracts/ContainerdException.php": "a538e26e068405944f06fe5809966abbfea266062f9891d093c396757a76f6b6",
+    "src/Contracts/ContainerdRpcException.php": "d15731c274b36763d0a9f3e56951d415b0c9da753fece1d7a9b39953304bcea1",
+    "src/Contracts/ContainerdUnavailableException.php": "baaae4ec1ad93bd5219639a383771f3a29aa47838b15310449962a4a824137af",
+    "src/Contracts/ContractAbi.php": "219ea3e2be3ac59c77635be5c1e593de0f35ab6b9bba01f16a5f37ca5f1606c8",
+    "src/Contracts/ContractEvent.php": "0918c71ab3c071fa2437398c0588c88161b0d43a4a5f88652200d94d871bb25c",
+    "src/Contracts/ContractExecutionContext.php": "fa15787df7b119961b7b8e16a10b9e8c712804d0e0a3d23d6d0b20140d723f89",
+    "src/Contracts/ContractExecutionResult.php": "99a7efd5a7a6e43144531725ec2588681dfe93986e7308dcbd648b9de067bf1b",
+    "src/Contracts/ContractHost.php": "bca816b5402a4b5f4507eef2e1e5581c03c5e944fdf683d848bee70f80facaba",
+    "src/Contracts/ContractHostInterface.php": "e249c56ee3396ca538116d9ffaeb5eaddb3c1c2c83fc8d8dba6c54ce09b002b5",
+    "src/Contracts/ContractId.php": "6e4e6500caac8242715af63f4feb3ad1a20976757b53dc95736213d62f644334",
+    "src/Contracts/ContractLimits.php": "f1cb6bec941dc9bbcaafb8792208a51a2dd396efa537170de7fb8461bae90da4",
+    "src/Contracts/ContractReceipt.php": "4cb810ce506eaa7ba5a6a02c171475dc29e426dacc5a7a88ab4731d2317100d9",
+    "src/Contracts/ContractStateCommitter.php": "4c61e47de1e20d38c9fafba8fb393d3abfd3568d1922f8c4b91aa00e7f0ff564",
+    "src/Contracts/ContractStateView.php": "edbb793cd0c3ef3979624eb785d9d8c7e27c4fbbed74fd143f70e6051b06b63c",
+    "src/Contracts/ContractStateViewInterface.php": "b2c82fbde3360f90425839dd62bb9d19bc3411f85d51b08d63adac40bf68c451",
+    "src/Contracts/ContractStatus.php": "a16ced14be8df8386153102aafcd946a0190829de6e3db85ef61f84095b7828f",
+    "src/Contracts/ContractTransactionEvent.php": "b16219d3fd10f91da21b5af3e7423b20815765ac35caf2773f199e4fb8e59cf9",
+    "src/Contracts/ContractTransactionException.php": "49d71993dc6ee2d95fd188e7264f0855a7bdbeb4d7a739759877a135d0afe5e4",
+    "src/Contracts/ContractTransactionExecutor.php": "19bc578e24ae345f035bfe8679cc073b0b25d15fc8695bf2e98c9b37a2f1fb3d",
+    "src/Contracts/ContractTransactionLimits.php": "a9f2d663f670e21245eaa1cfbbf40997e2d4a21fefdf643afd7ecfc3ff1e45b6",
+    "src/Contracts/ExecutionOverlay.php": "eab856adb9043dfd6c46bfa27e79659aa5145b7bfcc1334913e1caf4d8e48f84",
+    "src/Contracts/GuestArgumentException.php": "ba9d00f029b9140e5c111614e24947596cf73043cfcdb55e4ee3b433187f3d65",
+    "src/Contracts/GuestMemory.php": "1c1b9ff204e743efe5e352f5c0474ac7b299363bde0509b6f971fdb1d2d38224",
+    "src/Contracts/GuestMemoryInterface.php": "7297f8e1ba077b71208c0cc3bb013cb80043fafae5d694063a1e28d4a49c126b",
+    "src/Contracts/HostCallException.php": "e523c0f8a22df3bd50a00f7f92453bbeeddaf0226e7bd382bfe5113eba1a20e9",
+    "src/Contracts/WasmEngineInterface.php": "8166c7bb94019fe405d8b711312ab28de8aaae6e22f692f71b82557120981d03",
+    "src/Contracts/WasmExecutionException.php": "530632c6a2f03aa63d9db8118271dfa8449802229b9db8b8a4627b280832734d",
+    "src/Contracts/WasmExecutionResult.php": "09930ed6f3920d64ce5d6263eb46d3384ab133106f354ef5f337772dc962c69c",
+    "src/Contracts/WasmPolicy.php": "acce505cd19f4c79f078f28b54b5e7225caea35b96d4bcc691d3f17588226da7",
+    "src/Contracts/WasmValidationException.php": "fa8bcad6fd2b2b461da1a1ba3fdcd9566d7c4f6efaf6514385ac4344f8ca11af",
+    "src/Contracts/WasmtimeBindings.php": "0de3208ac5dd9f64cadd260a45475cec0973ebcb82d68580499d94722398f409",
+    "src/Contracts/WasmtimeConfig.php": "9d4f2bf80a60aa388625c70c95c2dca803650238ce2e61fdd40f8de0ce36b62d",
+    "src/Contracts/WasmtimeEngine.php": "75ddd01f263435fe3572e0f6f7786fc38b297ecdd118a19879fcb2bd20cfb7b6",
+    "src/Contracts/WasmtimeException.php": "ed91384394805d17237d2b61ed8b12b3659c30e9f156957240d815163abd04b1",
+    "src/Contracts/WasmtimeHostBindings.php": "92b907c1de435d61381238f8c05c5f2d1e95b8c608283dde4a4976457ed1d0a7",
+    "src/Contracts/WasmtimeHostBridge.php": "26e868d695d1c297d32146815f7a48895b5eb8adbf9666d0638802ab6663b6fe",
+    "src/Contracts/WasmtimeUnavailableException.php": "6bae1977dbd858f33fb31ce033cb9a18835c47b5b9864105043fe82fa0c0b4f6",
+    "src/ControlPlane/DeploymentReadinessService.php": "936c4b0f92a20c15ed540e745714f25d761b2ee32ebca4f14c594a240a2b2a7c",
+    "src/ControlPlane/MutualTlsChannel.php": "726ddc281ace1a71c422385e9beee40d829dac5b993e97408632e29b1156d031",
+    "src/ControlPlane/ProviderObservationService.php": "cc83bb2f8c6b157d32adfbb91629134834c8dbf98b1db660fff2cbbbc8241d82",
+    "src/ControlPlane/SignedPolicySnapshot.php": "652adacd24aeac380064ce27a34cf081ab71f0bacb7d18310c9ec456db8438db",
+    "src/Crypto/Ed25519KeyPair.php": "477dcefc47f8fcbb2fcf3486e16808c1b4f2817166b3c0975bed8cb3b7605f81",
+    "src/Crypto/MerkleTree.php": "27ff9ad64464f60df742f7e2b00b9ee9d4200f351c9f7e1391db209302f7af67",
+    "src/Crypto/ProtocolHash.php": "d850aa0124b30bcd7aa0cd07b30ac8c1d28127410ab64af90c3104a6defef63e",
+    "src/Economics/Amount.php": "c3944b2c52f31027d5cd901fe25ecb4d2b8b25b0e39a45b0f4cf1f62118baf4a",
+    "src/Economics/CanonicalJson.php": "818174e780bed32ac015d40089153cfc4cc58c481463d48f13c19b6cd233b615",
+    "src/Economics/GruQuote.php": "0c48f7bbd8a7dede2f75f15667cf712aa43e03bd06f78f629c9a1dc963d06f5d",
+    "src/Economics/HostedFundingGuard.php": "a74867122e52ef5261cf527318335c10b02c207f9b8360e88af840f8b7197f82",
+    "src/Economics/HostedFundingHttpReader.php": "a15d582ff014455c9a43b56fce617f06008446475467004a3d635f9f61953293",
+    "src/Economics/HostedServiceBinding.php": "fe228b732c30beffbd71a938612cb00dff3f1f8a4cfaa664520a585972065ff3",
+    "src/Economics/Ledger.php": "8ecc71f12742abb70338e587fbaf0e8024f0685cda35dc807992447ef2dc2982",
+    "src/Economics/Policy.php": "78a07533e025cda88216cd98cb7b40084077c320c14d6e6073ac595841195923",
+    "src/Economics/ResourceQuote.php": "0816da257291577d36fc8478ad3c2968a61bc1175a18ff4330dd58c7489269cf",
+    "src/Economics/ServiceAuthorization.php": "cb70c4eebf3c08f5230321f180ba458b958e4e1056900b26a91e2b057599922a",
+    "src/Economics/ServicePresentation.php": "dce16ff70e46a23c4c8bab7de68a6a314b5dd24372a7e9255bab06a73305f9a8",
+    "src/Economics/ServiceSettlement.php": "a66a1c0e9d94fe12d84250f49647b439714afd4cfa73dbe12d93607e3881c5ff",
+    "src/Edge/ApacheApplyAdapter.php": "4e8340f4d09a54acaa5fd7de849a732b5a74c22ca123c4f86c137add8c9456db",
+    "src/Edge/ApacheIngressConfiguration.php": "9af8ff4413447651b260dfaa4cd10976239d7c085dd03e0df8131fe6d1002339",
+    "src/Edge/ApacheSystemAdapter.php": "2d3a9e4339a81b92df58dfacb6b95c535e2d33cd1a629d3eb394feec4909a4b2",
+    "src/Edge/ApprovedDeploymentStore.php": "8d306fbc1f4914aba7b497072ace96bb08c7aa65b15307da8edc676918bd4bc5",
+    "src/Edge/AuthenticatedRouteController.php": "771e731bac685aaacf94abf454203d6a49c0de5fd350eb18414e3ce283abfd56",
+    "src/Edge/BoundHttpProbe.php": "a57e48bc29e46aaa1b57d1d6c3641b58efff7e3a1b537c4926edcbb3c4fd5bf1",
+    "src/Edge/EdgeController.php": "24bb4f581b49d8684d4a4f22becc4828946237ca27f60ad915537b1b844e0178",
+    "src/Edge/EdgeRouteRegistry.php": "6a33e8bbe938987ad6cbb6c8662e408297e01247b213cf926f49bdc830c07bab",
+    "src/Edge/ProviderObservationException.php": "cca14bbca936b6068350b640dce84474b620cbee6e5bda12daa967f9469c4e11",
+    "src/Edge/ReleaseContentVerifier.php": "4eb0cca9e1fc95789f55ace67851b31da87056db02058051cf694c2396014a01",
+    "src/Genesis/Genesis.php": "de6918baec1575e4f3ee6c284afda9a7744a2623725e5e21be957c3ca4598259",
+    "src/Network/AttestationTrust.php": "148721110bedcce23113a232c048d50387f5dfc05929bf968f3d49516c468446",
+    "src/Network/InfrastructureCostModel.php": "8968e9def4f209fb3063b8d648c31904d377e96e91af622479aee838cd206915",
+    "src/Network/ResourcePolicyState.php": "f056211e3ab8fda46c5214a11f6a4929dd9e26d10d9a7df219d041eb86794fa0",
+    "src/Node/Chain.php": "11be4aab2f7673819dc3cb15ff2c96e7f7218e3bc5253828e4b3ec753c9dc515",
+    "src/Node/ChainConfig.php": "725d98c14571ef5d94a6be1d23e956de0b2013a8386bc0e27eff3e2ad6511376",
+    "src/Node/Configuration.php": "cad04ca0e2c9cff3130ef779fb8f5f56ba574a4c9320b88e651670917c47f336",
+    "src/Persistence/AtomicFile.php": "3481a76e8fe904935c6f8937d0d90718a305deddb9d1d073815e703567bf3a47",
+    "src/Persistence/BlockFilesystem.php": "b22e4fffb71a7cd04a47a7720a64fd4dc1a2fc407e7198081310ed5977638b6a",
+    "src/Persistence/StateSqlite.php": "b89dd833d931d1626980928f60991fa143e017875178e5d3b3a772756467aca5",
+    "src/Provider/AssignmentView.php": "34c0343f1eaf4f60bf575a8e3a0e752dedd61740fa834efe92870da472d3112e",
+    "src/Provider/ChainClient.php": "9dc87a3db5957cf60c7d6cc6467f386a03fa3b4e6eb0c0e248e82a1cf265a0d9",
+    "src/Provider/FinalizedHeadWatchdog.php": "1c3decb63a94c8509afa703d3c7f4443a8eef8bd3824f399f77f4c301029e8d5",
+    "src/Provider/GovernedServiceWatcher.php": "e98688e6683fe57c601a6e5f54eb59da6e0fea06569f0b9e62261eab21c6b040",
+    "src/Provider/GovernedSystemServiceAgent.php": "e8d8593d82c1a6fcfc073dce490532714048ed9c420e1e8507af280f6c05a33f",
+    "src/Provider/HostedAssignmentJournal.php": "c0e54e3d1d10b2d76bf645048a34581bbf52b192e198b596f358c9b5738f78b5",
+    "src/Provider/HostedMeteringMonitor.php": "7bf5a418345c32a6d140f815024ae3bbcaa31630e0c29d80c897bab5e1583589",
+    "src/Provider/HostedRuntimeFunding.php": "d293c4292833bacba587fc46059a02c97b6553be331c6fc14ec1f215e23ad71d",
+    "src/Provider/HostedServiceMonitor.php": "31b24923f0236ba690c26e0e1a092e535b1c77b40e8d6f00da79dfb1dffa065d",
+    "src/Provider/HttpChainClient.php": "292e530cd92cf236b7f57a1795d12518f7883585a0b0463a721b8d3c3455aac1",
+    "src/Provider/LocalResourceEvidence.php": "5e021608224d9802b15711dcc2a8398f708fa00a23eb1d19bf3ca543d852b114",
+    "src/Provider/MeterJournal.php": "a050215a54e01603e409d7b058cf564ea54d2ba226ea823d830c5257f59633e3",
+    "src/Provider/MeteringProtocol.php": "6bb94a44f1b554fddde1566db8e33ff7de6403a1090494478e0308550de1543a",
+    "src/Provider/MeteringService.php": "15cb80344e74a45fcb508fdc20ba446216ad0d168ccee3e7e03b909a54972ced",
+    "src/Provider/MeteringSocketClient.php": "d060f290603bc934a60e96b8e41c9a5efef742314165a48add2768892a6997d4",
+    "src/Provider/ProcessManager.php": "0b5475726fca9281d6ad2b6efb0af377d03346e0651387c3d3c4a531338ba544",
+    "src/Provider/ProviderApplicationBindingRegistry.php": "5099c73d5695d94cbfafcbf112df5b96c4f0bc860442f1a0ea115336328cd02c",
+    "src/Provider/ProviderApplicationDependencies.php": "78114e540f6876f0e5b405b8082d476a8f5962f0d9e46bc4356e2e35a64493a3",
+    "src/Provider/ProviderApplicationLinuxNetwork.php": "257404d4b61e9e028977d39363cccab9b3f22f260c8230e0a193cd3d4d600452",
+    "src/Provider/ProviderApplicationNetwork.php": "07dc9b8bf23a8428dee7f93bd725521f5fe45d2288d5f363b9a62b2e69b2da79",
+    "src/Provider/ProviderApplicationNetworkPolicy.php": "9bc194e5d2829ca74b98fc19f23459118eaff149ee62b436e39994374ce74caa",
+    "src/Provider/ProviderApplicationOperator.php": "408c16ee0028e17208bd21d72ac0c8db99a01867daec90af83eeaaac22d0f288",
+    "src/Provider/ProviderApplicationReconciler.php": "ece61ff17c243c0f2fc027fe8b127663fc6a860a5087347581be3aa19c681130",
+    "src/Provider/ProviderApplicationRegistry.php": "a4fcd6183c4b1c8beb09f7fa24bfcb9a45d0357b8cd4a7186a2bdb72132d0ae6",
+    "src/Provider/ProviderApplicationRestorer.php": "5a4bc365f4de1b27548f7423716048ca7cbf1b0e8a86eb741066565fb8576d7d",
+    "src/Provider/ProviderApplicationRuntimeCleaner.php": "a45687be1712b3c6d075d4615d0316070376c3bb7a01142c1ac77a36b291796d",
+    "src/Provider/ProviderApplicationRuntimeInspector.php": "c0697d2cae9befd5c672efdb1680fd7648d5b9856ca40558fd0347a8b98eff9e",
+    "src/Provider/ProviderConfig.php": "96d9413242c42e41591c968bd973e191072b1663dd67d7927c034a52c5fbe2c9",
+    "src/Provider/ProviderContent.php": "59d1b5364657dc8c686e7cf0be759a079f776d7a66df5b48ccf233cf3440a6dc",
+    "src/Provider/ProviderIdentity.php": "a6075d88587d6d242c40ff60516c8b11772dcdd4edd2dafbf20d15893d8a8b03",
+    "src/Provider/ProviderJobRegistry.php": "f3c7d5397d54f4978fbbdbe1d896c04f0aa9f02aab948a9350e45aaef330acce",
+    "src/Provider/ProviderOperator.php": "f134660fea6b750b89377ea49b0acda172675d5e4e12d74657fd2580271b37ce",
+    "src/Provider/ProviderWorker.php": "7fd1818cefc1faf10c4b0643ff50e69968edc06aec516bf9589edbc53172a7e1",
+    "src/Provider/ProviderWorkload.php": "07256b6dbf16f6704a5d4c51b3510b1d637eb5f485795a4db52ba42ac89d12f7",
+    "src/Provider/QualifiedSourceAttestor.php": "d1dd958374979247cc280db7359f74303382fa72dd1e33ee06723ce33e265059",
+    "src/Provider/ReceiptBuilder.php": "fadda31dfc32a2bf826775ca949255c3802cfcea3dcca0f836488bb0f969dd26",
+    "src/Provider/ResourcePolicyHttpReader.php": "8a4e21cd11da5544e163dca8a0d62c975348bad4852de393d704aeeeea37b373",
+    "src/Provider/ResourcePolicyView.php": "79244bef1d9c0a57f9ff5b79be20ca77c485885deedcb48522b40ae9ccc8dff9",
+    "src/Provider/ResourceSettlementWorkflow.php": "63b3b24d98213a63169308d42f98e676fe56e9c415cfb54ed359abba6a819e3b",
+    "src/Provider/SettlementCoordinator.php": "b8202a59a18edc9704c95bc0ec884af16a97ada0c639bb65e2b0802bc90da63a",
+    "src/Provider/SettlementOutbox.php": "54c5d97d51320bada4e0825b677c2364b71ee5f004eae2032f6b71c08bb2fc53",
+    "src/Provider/Supervisor.php": "004381cdae17ce5f8183c3b0ea678db30e4226de17a466f2e881de2d1a939102",
+    "src/Provider/SystemServiceInstallJournal.php": "89ed08fb64ad4881732c9669de53be224d31d43fc3b73f81aafc4e5bad174b6a",
+    "src/Provider/VacantSystemService.php": "1b0dbcbf692bab36482767e1c178278051a482bd7cdf57586f60406920cb183b",
+    "src/Provider/WorkerFacts.php": "dcb96d025276d0e68b184ff272359f5e18dcad5262c5b60fe7767780b90efe0e",
+    "src/Provider/WorkerJob.php": "8b78ccaf3797de0d2373cee543ad75d4bcaa5c8e77014a53d1db808eaf307d7f",
+    "src/Resources/Metering/NetworkAccounting.php": "63e31e65f6ba24129660af198afb6de896d4f43b93988529e192e3ebbee92188",
+    "src/Resources/Metering/ObservationReconciler.php": "dac6aae251091ff91231de3ba9366405522c1ce3379f06d9daa7df1c917b1f80",
+    "src/Resources/Metering/SignedObservation.php": "51b8f0a16be72a8b1e5804f4104ce9582e169131c83faea3fa361d9976a882eb",
+    "src/Resources/ProviderCapabilityV2.php": "ee4f94e326e61f702cc8be305e596a7059421457cd5342ae089c296dfdd25eb6",
+    "src/Resources/ResourceCatalog.php": "f7c92f2d062ca737fb65824bc15ba39ebdda4efbac3d75506698eb0d610abd00",
+    "src/Resources/ResourceManifest.php": "b9e945634e19e27865a1b8be00f7dfb2cec9cf3709d33f955500148090f6b79a",
+    "src/Resources/ResourceUsageEvidence.php": "66adb65f09aea146259f25e2cf862f1ee33b65edd43359ebae8f3f9678c96861",
+    "src/Rpc/ApiError.php": "b8a2baf5f837375afe33c20ea5667c44f2215c2dcd92ffdbfda713fc44b44d38",
+    "src/Rpc/HttpApi.php": "b214ad818ffc8e48ccbf35a009ad565bbee22a0c431ce4bd46c8c633f2eb865d",
+    "src/Rpc/HttpResponse.php": "2cb1b6bc12fed0f6e060a3cca83ba83eed49caa9a92de22f3a4d077bf396bd91",
+    "src/Rpc/OperatorApi.php": "dbf04d82d17266ae200a09518c5202a2c47e29f14dfbdfe628a97f045e70a566",
+    "src/Rpc/OperatorAuth.php": "2b83dd8ef581bad5aa45f4094367d211bbdce682abbb008e2a6ad6a7d2e10992",
+    "src/Rpc/ProviderApplicationHttpApi.php": "d8ac0fda04cb3b81a8d28833287a2b9bbb851dc1066c626c7651d1a3ac7150a8",
+    "src/Rpc/ProviderQueries.php": "6e385e12c39b41292e17b034a97086418c142f7eb5724568d5199a69d84aaf04",
+    "src/Rpc/RateLimiter.php": "1601454b0fca466b2a62ea4522659776d451837f4f8a7818d9a1cca70a87ad2d",
+    "src/Rpc/RpcClient.php": "db07ca9ed755cad7eb39272781d17ddea0bc14d4713d48bea0bf6a00e58622b7",
+    "src/State/Account.php": "04e6163be8be01d58f64ea701b96709ab687098b3792eab8e624bdc279f5b40c",
+    "src/State/State.php": "355b67410cab9934c9e4313aacf432ac7ee65996b78700b345f1929768647a15",
+    "src/Transaction/CallContract.php": "8a510de72f05b75f70000b3db6009e713336a615aa79ac83bf01a1fa0fbf95f1",
+    "src/Transaction/DeployContract.php": "74e271edcf880776ecaa6fe096c91c33e494cefc17b6fe74ba8124e5a41998a0",
+    "src/Transaction/Envelope.php": "57c91425001d69b825a157dcd16678f3c5fff5232373ac5145807b0dce973826",
+    "src/Transaction/Transfer.php": "a253d0bebf7e6d467de87a633fef6abb0304ff2c9d35f3c4677c71a3ad65fd06",
+    "src/Transaction/TransferU64.php": "bce4f484d24b4446a62645ac9bc55f521593c2452f5984374ac42dcc204bea08",
+    "system-services/metering/meter.php": "8668dcb5ed5d0d1634468e4db8a0f39256130b8229206122dff060ae384239b5",
+    "system-services/runtime/bootstrap.php": "034f0de5bf3a1daa428df803906947acbe3b7d368ad2533e7d84c078d28dddc7",
+    "system-services/runtime/resource-worker.php": "1c7aa177ac41f220f06a3e21780c35441d09df3e2eb9ac7d14304a234960b047",
+    "system-services/runtime/resource-workflow.php": "586e10aea46082cdc1daf3845ee67e7f01accc1e7ead11c31a6816b2533eba76",
+    "system-services/runtime/supervise.php": "35356e83e81d88389a7d7d90105e13c6fd94f31bfd910595098d55b58877e0ec",
+    "tests/Economics/archive-rpc-checks.php": "6b9e11a2ee963ed42da7067f3860a609533d1ab14ce118b4e0222f0e73e516f6",
+    "tests/Economics/bootstrap-operator-settlement.php": "812bd760448f1a9f6880fa9368474b521bcbb0aa3a8435f52239d6462523a9c2",
+    "tests/Economics/bootstrap.php": "e8939d02e6624a55229fef52a7407978790294cc3f2a1c8243914588daf53b08",
+    "tests/Economics/certified-chain.php": "3466068bf1147a242ccc28e247006cd8662dbca9a7a35bd09fd807b962d32081",
+    "tests/Economics/deployment-identity.php": "a1c3babc4a11832f6e6c42668707bc4866154b8339856dd7e2e7d1682068dae8",
+    "tests/Economics/fixtures.php": "f489f936771e5ff8bd676d67de4c98f4de8fcb0fdb38f1d6f10a0bdbf0393c85",
+    "tests/Economics/head-watchdog.php": "f333b6f95fe996e1f2414adc35850b36670850ae7ee17407d2770910f7da4f47",
+    "tests/Economics/hosted-boundaries.php": "9febfc491da83730a738b1d27d259c9850e1c21df89268038b3f40101a75db53",
+    "tests/Economics/hosted-certified-history.php": "ddf20d75d4581bd7a42d4a7bc6277b20060561c5ba67848ab8fd02a5c7c8def3",
+    "tests/Economics/hosted.php": "a087b664c60f3662295a2ff74999d5ac4a9e8dfa5ba72d4033e554346e518750",
+    "tests/Economics/independent-resource-settlement.php": "68febaf16dd6b949e61ec9b5537dc12d75190cdb1dbf98c8ceb2af3da86eb621",
+    "tests/Economics/infrastructure-cost.php": "8b868db9b94af5c0b4eeffe77e3d19f922183f5e35897dcd0ae995a974f709d0",
+    "tests/Economics/local-resource-evidence.php": "8847446b2d2eecd4e171d14889b0ececd74a888bd388586d9645d39c06dd65ce",
+    "tests/Economics/meter-checkpoints.php": "bb931be53a9b8807574ffb652273e1119061a8496c3433b43a4a0a68105ea2c8",
+    "tests/Economics/meter-ipc.php": "94dcd23c125021c01ca565448aa170a18ba8654c5acdc7eaac52d49fd500e7a0",
+    "tests/Economics/metering.php": "fe7775f3c7fbcffb03d9b9f4688dda3f7f379e511fed348dce7799b4a8f0c5ef",
+    "tests/Economics/network-metering.php": "44de6643ada20c9faa6eb07bd45e8fac3db81aa0fbb0014a558e5a6527d65d1e",
+    "tests/Economics/network-policy.php": "ec9cc9c971c01b7c7966f7983da2f3b20551a7c5cc8c6bfdc1c8b2c57099f65f",
+    "tests/Economics/production-allocation.php": "9c4b95c0257c2a239a64f0790a0cd3fb5920fe91f259c749b2a991b26028c806",
+    "tests/Economics/resource-fixtures.php": "c7cab7ceb3cb3825dc69de270eba2fa1e1fd2a88c1900961b0f874735189ae12",
+    "tests/Economics/resource-settlement.php": "e39dfc40706f1d4d98e785be0977b60b64d033cc1b5fed5a833d93aa76979cd6",
+    "tests/Economics/resource-worker-ipc.php": "527336e5a6fe9840d76a900d4d861cb722c8b86aeefaa0715c9eaab91fccdbc2",
+    "tests/Economics/resources.php": "34d61b4945c6e902c3ae83447f7b73878cedba3773cebf60f23695e38c930607",
+    "tests/Economics/run.php": "a2aac42c82810f489e16251c4c2485cac791de90d603f872c16863a657ca1148",
+    "tests/Economics/settlement-outbox.php": "0d70e104673d3b012302659cfd10ec21c14de6e6a600beba5cc15d05ef958bfe",
+    "tests/Economics/settlement.php": "cb8bca865b03fa5d7accb8d11b05be611ce0892b78a3ea5100925ab2279ad3ae",
+    "tests/Economics/system-service-journal.php": "47b2b32c13540940b641d74af1515f5b75929eebb4a0eb351b6f1b4057e67f43"
+  },
+  "diff_check": {
+    "exit_code": 0,
+    "output": ""
+  }
+}

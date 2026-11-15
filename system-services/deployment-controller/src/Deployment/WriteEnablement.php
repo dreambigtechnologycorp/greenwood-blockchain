@@ -70,7 +70,7 @@ final class WriteEnablement
             || !is_string($peer['identity'] ?? null)) throw new \RuntimeException('PINNED_PHYSICAL_PEER_REQUIRED');
         foreach ($this->config['tls']['peer_identities'] ?? [] as $pin => $identity) {
             if ($identity === $peer['identity'] && preg_match('/^[a-f0-9]{64}$/D',$pin)
-                && ($this->config['tls']['peer_uris'][$pin] ?? null) === 'spiffe://greenwood-physical-v1/control-plane/'.$role) return;
+                && ($this->config['tls']['peer_uris'][$pin] ?? null) === 'spiffe://'.DeploymentIdentity::chain().'/control-plane/'.$role) return;
         }
         throw new \RuntimeException('PHYSICAL_PEER_ROLE_PIN_REQUIRED');
     }

@@ -13,7 +13,7 @@ final class DeploymentCoordinator {
         private readonly \Closure $admit,private readonly \Closure $observe,private readonly \Closure $edge,
         private readonly \Closure $readiness,private readonly bool $writesEnabled=false,
         private readonly ?\Closure $assignmentPreflight=null,private readonly ?\Closure $canonicalUrl=null,
-        private readonly ?\Closure $acknowledgeAssignment=null) {}
+        private readonly ?\Closure $acknowledgeAssignment=null,private readonly ?\Closure $fundedInterval=null) {}
     public function authority(string $account,array $intent):array {
         DeploymentIdentity::validate($intent);
         $proof=($this->authorize)($account,$intent);
@@ -31,6 +31,7 @@ final class DeploymentCoordinator {
             $advance=function(string $state)use(&$op,&$e):void{$op=$this->store->save($op,$state,$e);};
             try {
                 $e['authority']=$this->authority($op['account'],$i);
+                if(isset($e['assignment_document'])&&$this->fundedInterval!==null)$e['financial_authorization']=($this->fundedInterval)($e['assignment_document']);
                 if(!$allowSideEffects&&!in_array($op['state'],['ASSIGNED','EDGE_PENDING','READY'],true))return $this->response($op,false);
                 if(!$this->writesEnabled)throw new \RuntimeException('WRITES_DISABLED');
                 if($op['state']==='ACCEPTED'){$advance('AUTHORIZED');}
@@ -55,6 +56,7 @@ final class DeploymentCoordinator {
                     if(isset($e['assignment_document'])&&AssignmentDocument::generation($e['assignment_document'])!==$generation)throw new \RuntimeException('RESERVATION_CHANGED');
                     $e['assignment_document']=$document;
                     $advance('RESERVED'); // exportable before allocation approval or distribution I/O
+                    if($this->fundedInterval!==null)$e['financial_authorization']=($this->fundedInterval)($document);
                     if($this->acknowledgeAssignment!==null)$prepared['ack']=($this->acknowledgeAssignment)($document);
                     $ack=$prepared['ack']??[];
                     if(($ack['acknowledged']??false)!==true||($ack['generation']??null)!==$generation
@@ -76,6 +78,7 @@ final class DeploymentCoordinator {
                     foreach($ack['nodes']as$row)if(time()-$row['observed_at']>15)throw new \RuntimeException('ASSIGNMENT_ACK_EXPIRED');
                     // First attempt only. Provider serializes by application/service and
                     // rejects a conflicting immutable image; recovery below never replays it.
+                    if($this->fundedInterval!==null)$e['financial_authorization']=($this->fundedInterval)($document);
                     $advance('START_UNCERTAIN'); // durable BEFORE network side effect
                     ($this->start)($op['id'],$e['plan']);
                 }

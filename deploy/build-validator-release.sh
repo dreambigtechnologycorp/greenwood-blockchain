@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 022
 # Greenwood Validator Release Builder
 # Target platform: Linux ARM64 (Ubuntu 24.04, PHP 8.5)
 
@@ -12,7 +13,9 @@ STAGING_DIR="${BUILD_DIR}/staging"
 ARTIFACT_DIR="${BUILD_DIR}/artifacts"
 
 RELEASE_VERSION="${RELEASE_VERSION:-1.0.0}"
-RELEASE_TIMESTAMP="$(date -u +%Y%m%d%H%M%S)"
+SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -C "${PROJECT_ROOT}" log -1 --format=%ct)}"
+[[ "${SOURCE_DATE_EPOCH}" =~ ^[0-9]+$ ]] || { echo "Invalid SOURCE_DATE_EPOCH" >&2; exit 1; }
+RELEASE_TIMESTAMP="$(date -u -d "@${SOURCE_DATE_EPOCH}" +%Y%m%d%H%M%S)"
 RELEASE_ID="${RELEASE_VERSION}-${RELEASE_TIMESTAMP}"
 
 verify_platform() {
@@ -88,18 +91,18 @@ copy_runtime() {
     # Package only the pinned commit, excluding untracked or ignored experiments.
     local source_sha
     source_sha="$(git -C "${PROJECT_ROOT}" rev-parse HEAD)"
-    git -C "${PROJECT_ROOT}" -c core.filemode=false diff --quiet HEAD -- src bin runtime composer.json composer.lock || {
+    git -C "${PROJECT_ROOT}" -c core.filemode=false diff --quiet HEAD -- src bin runtime system-services deploy/application-recovery scripts/economics-bootstrap.php scripts/economics-cli.php scripts/resource-operations.php composer.json composer.lock || {
         echo "ERROR: Release source contains tracked local changes" >&2
         exit 1
     }
-    git -C "${PROJECT_ROOT}" archive "${source_sha}" src bin runtime system-services deploy/application-recovery composer.json composer.lock LICENSE NOTICE TRADEMARKS.md LICENSES THIRD_PARTY_NOTICES.md | tar -x -C "${STAGING_DIR}"
+    git -C "${PROJECT_ROOT}" archive "${source_sha}" src bin runtime system-services deploy/application-recovery composer.json composer.lock LICENSE NOTICE TRADEMARKS.md LICENSES THIRD_PARTY_NOTICES.md scripts/economics-bootstrap.php scripts/economics-cli.php scripts/resource-operations.php | tar -x -C "${STAGING_DIR}"
     printf '{"source_sha":"%s"}\n' "${source_sha}" > "${STAGING_DIR}/release-source.json"
     echo "[OK] Runtime files copied"
 }
 
 install_dependencies() {
     cd "${STAGING_DIR}"
-    composer install --no-dev --optimize-autoloader --classmap-authoritative --no-scripts
+    composer install --no-dev --optimize-autoloader --classmap-authoritative --no-scripts --no-plugins --no-interaction
     
     echo "[OK] Composer dependencies installed"
 }
@@ -107,7 +110,7 @@ install_dependencies() {
 cleanup_development() {
     rm -rf "${STAGING_DIR}/tests/" 2>/dev/null || true
     rm -rf "${STAGING_DIR}/docs/" 2>/dev/null || true
-    rm -rf "${STAGING_DIR}/scripts/" 2>/dev/null || true
+    # Only the explicitly archived operational CLI scripts are included above.
     rm -rf "${STAGING_DIR}/.git/" 2>/dev/null || true
     echo "[OK] Development artifacts removed"
 }
@@ -118,7 +121,7 @@ create_archive() {
     
     mkdir -p "${ARTIFACT_DIR}"
     cd "${STAGING_DIR}"
-    tar -czf "${artifact_path}" .
+    tar --sort=name --mtime="@${SOURCE_DATE_EPOCH}" --owner=0 --group=0 --numeric-owner --format=gnu -cf - . | gzip -n > "${artifact_path}"
     
     local sha256="$(shasum -a 256 "${artifact_path}" | cut -d' ' -f1)"
     echo "${sha256}  ${artifact_name}" > "${ARTIFACT_DIR}/${artifact_name}.sha256"

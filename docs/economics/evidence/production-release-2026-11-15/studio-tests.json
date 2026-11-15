@@ -1,0 +1,7 @@
+{
+  "read_adapter_checks": 7,
+  "status_projection_checks": 17,
+  "status": "PASS",
+  "browser_render_tested": false,
+  "live_finality_tested": false
+}

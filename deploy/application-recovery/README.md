@@ -27,6 +27,7 @@ Install the service/timer under `/etc/systemd/system` and create a root-owned
 ```ini
 GREENWOOD_RECOVERY_ROOT=/opt/approved-greenwood-release
 GREENWOOD_PROVIDER_CONFIG=/etc/greenwood/provider.json
+GREENWOOD_HOSTED_FUNDING_CONFIG=/etc/greenwood/hosted-funding.json
 GREENWOOD_APPLICATION_NETWORK_POLICY=/path/to/existing/protected/network-policy.json
 ```
 
@@ -86,3 +87,5 @@ an unexplained digest, container ID, assignment or ingress-port change is not.
 To disable recovery, stop and disable the timer and stop its oneshot service.
 This does not stop application tasks. Never restore pre-recovery databases over
 live state as a rollback procedure.
+
+Hosted economic recovery now requires a pinned `expectedPublicKey` in provider configuration and protected hosted funding configuration. It reads no signing key. An expired, revoked or unavailable funded interval blocks task resume and triggers managed network cleanup. See `../../docs/economics/HOSTED_SETTLEMENT_REPORT.md`; mainnet qualification remains on HOLD.

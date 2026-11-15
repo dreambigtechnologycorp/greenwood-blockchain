@@ -18,7 +18,7 @@ if (PHP_OS_FAMILY !== 'Linux' || posix_geteuid() !== 0) {
 }
 
 $mtls = $services['channel'];
-$store = new \Greenwood\Edge\ApprovedDeploymentStore($settings['assignments_directory'], \Greenwood\DeploymentController\Auth\DeploymentIdentity::CHAIN, \Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY);
+$store = new \Greenwood\Edge\ApprovedDeploymentStore($settings['assignments_directory'], \Greenwood\DeploymentController\Auth\DeploymentIdentity::chain(), \Greenwood\DeploymentController\Auth\DeploymentIdentity::registry());
 $domain = $settings['public_domain'] ?? '';
 if (!is_string($domain) || !preg_match('/^(?:[a-z0-9-]+\.)+[a-z]{2,}$/D', $domain)
     || !filter_var($settings['proxy_source_address'] ?? '', FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {

@@ -1,0 +1,47 @@
+<?php
+declare(strict_types=1);
+require __DIR__.'/fixtures.php';
+use Greenwood\Provider\SystemServiceInstallJournal;
+use Greenwood\Compute\Containerd\SystemServiceHandle;
+use Greenwood\Network\ResourcePolicyState;
+$dir=sys_get_temp_dir().'/greenwood-service-install-'.bin2hex(random_bytes(8));$genesis=str_repeat('a',64);$chain='service-install-local-fixture';
+$manifest=['version'=>1,'kind'=>'service','id'=>str_repeat('b',64),'revision'=>1,'activation_height'=>10,'expires_height'=>1000,'status'=>'active','service_id'=>'greenwood-attestor','image_digest'=>'sha256:'.str_repeat('c',64),'artifact_source'=>'registry.invalid/attestor@sha256:'.str_repeat('c',64),'config_schema_hash'=>str_repeat('d',64),'budget_policy_ref'=>str_repeat('0',64),'approved_role'=>'ATTESTOR','user'=>'65532:65532','host_network'=>false,'host_permissions'=>[],'command'=>['php','/app/attestor.php'],'minimum_eligible_replicas'=>1,'grace_blocks'=>10,'rollback_revision'=>0,'execution_profile'=>['cpu_millicores'=>1000,'memory_bytes'=>268435456,'pids'=>64]];
+ResourcePolicyState::validate($manifest);$hash=ResourcePolicyState::hash($manifest);
+try{
+ $journal=new SystemServiceInstallJournal($dir,$chain,$genesis);$journal->assertIdentity($chain,$genesis);
+ $clients=new \Greenwood\Compute\Containerd\ContainerdClientSet(new \Greenwood\Compute\Containerd\ContainerdConnection('qualification-test'));
+ $agent=new \Greenwood\Provider\GovernedSystemServiceAgent($clients,$journal);$journal->pinRuntime('qualification-test','/run/containerd/containerd.sock','overlayfs');
+ rejects(fn()=>$journal->pinRuntime('different-namespace','/run/containerd/containerd.sock','overlayfs'),'Owned task journal cannot silently change namespaces');
+ rejects(fn()=>$journal->pinRuntime('qualification-test','/another/socket','overlayfs'),'Owned task journal cannot silently change daemon sockets');
+ rejects(fn()=>$journal->assertIdentity('other-chain',$genesis),'Agent cannot mix a valid chain with another installation journal');
+ $r=$journal->stage($hash,$manifest,'greenwood-attestor-r1',10);check($r['state']==='STAGED','Only digest-committed manifest can be staged');
+ check(\Greenwood\Economics\CanonicalJson::encode($journal->stage($hash,$manifest,'greenwood-attestor-r1',10))===\Greenwood\Economics\CanonicalJson::encode($r),'Staging is idempotent');
+ rejects(fn()=>$journal->stage($hash,$manifest,'different-container',10),'Same policy cannot change task identity');
+ rejects(fn()=>$journal->stage(str_repeat('0',64),$manifest,'greenwood-attestor-r2',10),'Forged manifest hash denied');
+ $journal->transition($hash,'STAGED','STARTING',11);unset($journal);$journal=new SystemServiceInstallJournal($dir,$chain,$genesis);
+ check($journal->get($hash)['state']==='STARTING','Crash during containerd start retains uncertainty');
+ rejects(fn()=>$journal->transition($hash,'STAGED','STARTING',11),'Concurrent or restarted agent cannot repeat task creation');
+ rejects(fn()=>$journal->transition($hash,'STARTING','STAGED',11),'Uncertain start cannot become a retryable fresh install');
+ $wrong=new SystemServiceHandle('greenwood-attestor-r1',$manifest['artifact_source'],'sha256:'.str_repeat('0',64),'greenwood-attestor-r1','gw-system-view-greenwood-attestor-r1','parent','gw-system-lease-greenwood-attestor-r1',123);
+ rejects(fn()=>$journal->transition($hash,'STARTING','RUNNING',11,$wrong),'Different image cannot claim installation ownership');
+ $handle=new SystemServiceHandle('greenwood-attestor-r1',$manifest['artifact_source'],$manifest['image_digest'],'greenwood-attestor-r1','gw-system-view-greenwood-attestor-r1','parent','gw-system-lease-greenwood-attestor-r1',123);
+ $journal->transition($hash,'STARTING','RUNNING',11,$handle);check($journal->get($hash)['handle']['imageDigest']===$manifest['image_digest'],'Exact runtime handle retained for cleanup');
+ rejects(fn()=>$journal->transition($hash,'RUNNING','READY',10),'Regressed finalized view cannot authorize readiness');
+ $journal->transition($hash,'RUNNING','READY',12);
+ rejects(fn()=>$journal->transition($hash,'READY','DRAINING',12,null,11),'Drain grace cannot precede cutover');
+ $replacement=$manifest;$replacement['revision']=2;$replacementHash=ResourcePolicyState::hash($replacement);$journal->stage($replacementHash,$replacement,'greenwood-attestor-r2',12);
+ $journal->transition($replacementHash,'STAGED','STARTING',12);$replacementHandle=new SystemServiceHandle('greenwood-attestor-r2',$manifest['artifact_source'],$manifest['image_digest'],'greenwood-attestor-r2','gw-system-view-greenwood-attestor-r2','parent','gw-system-lease-greenwood-attestor-r2',124);
+ $journal->transition($replacementHash,'STARTING','RUNNING',12,$replacementHandle);rejects(fn()=>$agent->drain($hash,$replacementHash,12),'Running replacement is not automatically ready');
+ $journal->transition($replacementHash,'RUNNING','READY',12);$drained=$agent->drain($hash,$replacementHash,12);
+ check($drained['drain_after']===22&&$drained['replacement_hash']===$replacementHash,'Actual agent binds two-phase cutover to exact ready replacement and grace');
+ check($agent->drain($hash,$replacementHash,13)['drain_after']===22,'Repeated reconciliation cannot renew drain grace');
+ rejects(fn()=>$agent->stopOwned($hash,21),'Old service cannot stop before grace; no containerd mutation attempted');
+ $journal->transition($hash,'DRAINING','STOPPING',22);unset($agent,$journal);
+ $journal=new SystemServiceInstallJournal($dir,$chain,$genesis);check($journal->get($hash)['state']==='STOPPING','Interrupted stop retains uncertainty instead of claiming STOPPED');
+ $journal->transition($hash,'STOPPING','UNCERTAIN',22);rejects(fn()=>$journal->transition($hash,'UNCERTAIN','STARTING',23),'Uncertain ownership requires explicit reconciliation');
+ $audit=$journal->audit($hash);check($audit['history_complete']&&count($audit['events'])===7&&!$audit['independent_qualification'],'Durable audit preserves complete local transition lineage without independence claim');
+ $auditKey=\Greenwood\Crypto\Ed25519KeyPair::generate();$signed=$journal->signedAudit($hash,$auditKey);check(sodium_crypto_sign_verify_detached(hex2bin($signed['signature']),\Greenwood\Crypto\ProtocolHash::hash('GREENWOOD_SYSTEM_SERVICE_AUDIT_EXPORT_V1',$signed['body']),$auditKey->getPublicKey()),'Operator-supplied fixture key signs canonical installation audit without reading a wallet');
+ rejects(fn()=>new SystemServiceInstallJournal($dir,'wrong-chain',$genesis),'Restart cannot repin installation journal');
+ $second=$manifest;$second['revision']=2;$secondHash=ResourcePolicyState::hash($second);rejects(fn()=>$journal->stage($secondHash,$second,'greenwood-attestor-r1',23),'New manifest cannot take over an existing task identity');
+ echo json_encode(['status'=>'PASS','checks'=>$checks,'actual_sqlite'=>true,'containerd_execution_tested'=>false,'runtime_handles'=>'fixture_values_only'],JSON_PRETTY_PRINT)."\n";
+}finally{unset($journal);foreach(glob($dir.'/*')?:[] as $p)unlink($p);if(is_dir($dir))rmdir($dir);}

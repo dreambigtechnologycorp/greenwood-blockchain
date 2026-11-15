@@ -1,0 +1,329 @@
+{
+    "version": 2,
+    "entries": [
+        {
+            "resource_id": "backup.snapshot.capacity",
+            "unit": "MiB_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "backup.snapshot.restore",
+            "unit": "operation",
+            "measurement_type": "consumed",
+            "meter_version": "backup.workload.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "compute.accelerator.reserved",
+            "unit": "millidevice_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "compute.cpu.consumed",
+            "unit": "millisecond",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.cpu.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "compute.cpu.reserved",
+            "unit": "millicore_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "compute.gpu.reserved",
+            "unit": "millidevice_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "compute.gpu.vram",
+            "unit": "MiB_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "compute.npu.reserved",
+            "unit": "millidevice_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "infrastructure.node.reserved",
+            "unit": "node_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "memory.ram.reserved",
+            "unit": "MiB_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "network.bandwidth.reserved",
+            "unit": "kbps_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "network.egress",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "network.workload.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "network.ingress",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "network.workload.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "network.public_ip.reserved",
+            "unit": "address_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.block.capacity",
+            "unit": "MiB_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.block.iops",
+            "unit": "operation",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.block.read",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.block.write",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.hdd.capacity",
+            "unit": "MiB_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.hdd.iops",
+            "unit": "operation",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.hdd.read",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.hdd.write",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.nas.capacity",
+            "unit": "MiB_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.nas.operations",
+            "unit": "operation",
+            "measurement_type": "consumed",
+            "meter_version": "nas.workload.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.nas.transfer",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "nas.workload.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.nvme.capacity",
+            "unit": "MiB_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.nvme.iops",
+            "unit": "operation",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.nvme.read",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.nvme.write",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.object.capacity",
+            "unit": "MiB_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.object.egress",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "object.workload.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.object.requests",
+            "unit": "request",
+            "measurement_type": "consumed",
+            "meter_version": "object.workload.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.ssd.capacity",
+            "unit": "MiB_millisecond",
+            "measurement_type": "reserved",
+            "meter_version": "allocation.interval.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.ssd.iops",
+            "unit": "operation",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.ssd.read",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "resource_id": "storage.ssd.write",
+            "unit": "byte",
+            "measurement_type": "consumed",
+            "meter_version": "cgroup.io.v1",
+            "enabled": false,
+            "verification_level": "C",
+            "qualification_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+    ]
+}

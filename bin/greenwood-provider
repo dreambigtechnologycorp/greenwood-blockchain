@@ -4,7 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 use Greenwood\Provider\{ProviderConfig, ProviderIdentity, ProviderJobRegistry, HttpChainClient, Supervisor};
 umask(0077);
-$options = getopt('', ['config:', 'once', 'status', 'drain', 'job:', 'active', 'recent:', 'operator-socket:', 'operator-token-file:', 'application-listen:', 'application-peer:', 'application-network-policy:']);
+$options = getopt('', ['config:', 'once', 'status', 'drain', 'job:', 'active', 'recent:', 'operator-socket:', 'operator-token-file:', 'application-listen:', 'application-peer:', 'application-network-policy:', 'hosted-funding-config:']);
 try {
     $config = ProviderConfig::fromFile($options['config'] ?? throw new InvalidArgumentException('--config is required'));
     if (isset($options['status']) || isset($options['job']) || isset($options['active']) || isset($options['recent'])) {
@@ -72,14 +72,21 @@ try {
             $applicationNetworkPolicy->assertCoverage($applicationRegistry->active(), $applicationNetwork);
         }
 
+        $runtimeFunding=\Greenwood\Provider\HostedRuntimeFunding::fromFile($options['hosted-funding-config']??null,$config,$identity->publicKey);
+        $requireHosted=$runtimeFunding->require(...);
+        $hostedMeter=$runtimeFunding->meteringMonitor($applicationRegistry,$applicationNetwork);
         $applicationAdapter =
             \Greenwood\Provider\ProviderApplicationOperator::fromClients(
                 $applicationClients,
                 $applicationRegistry,
                 $applicationNetwork,
-                $applicationNetworkPolicy === null ? null : $applicationNetworkPolicy->assertMutable(...)
+                $applicationNetworkPolicy === null ? null : $applicationNetworkPolicy->assertMutable(...),
+                $requireHosted
             );
 
+        $hostedMonitor=new \Greenwood\Provider\HostedServiceMonitor($applicationRegistry->active(...),$requireHosted,
+            static function(int $app,string $service)use($applicationNetwork):void{if($applicationNetwork===null)throw new RuntimeException('Managed network restriction unavailable');$applicationNetwork->cleanup($app,$service);},
+            $applicationAdapter->stop(...));
         $operator = new \Greenwood\Rpc\OperatorApi(
             \Greenwood\Rpc\OperatorAuth::fromFile($tokenPath),
             providerStatus: fn (): array => $adapter->status(),
@@ -141,6 +148,8 @@ try {
     do {
         $operatorTransport?->poll();
         $applicationTransport?->poll();
+        if(isset($hostedMonitor))foreach($hostedMonitor->tick() as $result)if($result['outcome']==='RESTRICTION_RETRY_REQUIRED')fwrite(STDERR,json_encode($result)."\n");
+        if(isset($hostedMeter))foreach($hostedMeter->tick() as $result)if($result['status']==='UNVERIFIED')fwrite(STDERR,json_encode($result)."\n");
         try { $supervisor->tick(); }
         catch (Throwable $error) { $supervisor->publish(get_class($error)); fwrite(STDERR, json_encode(['error_class' => get_class($error)]) . "\n"); }
         if (isset($options['once'])) break;

@@ -1,0 +1,336 @@
+{
+  "date": "2026-11-14",
+  "overall": "SOURCE_IMPLEMENTATION_INCOMPLETE_PRODUCTION_HOLD",
+  "source_sha": "5f120b0c64c3376c71c1322284870e4d956e7fae",
+  "dirty_working_tree": true,
+  "production_activation": false,
+  "source_pushed": false,
+  "dependencies_installed": false,
+  "protected_keys_accessed": false,
+  "operating_cluster_contacted": false,
+  "permanent_keys_generated": 0,
+  "mainnet_transactions": 0,
+  "independent_physical_qualification": false,
+  "work_packages": {
+    "WP0": {
+      "status": "TESTED_LOCAL",
+      "components": [
+        "Audited dirty local source and existing GRU v2/hosted/system-service boundaries; preserved existing work."
+      ],
+      "files": [
+        "docs/economics/evidence/universal-resource-2026-11-14/baseline.json",
+        "docs/economics/evidence/universal-resource-2026-11-14/working-tree.txt"
+      ],
+      "tests": [
+        "Baseline: core 64, resources 75, metering 11, actual-WASM composite 21 before this increment.",
+        "Final regression: 31 suites PASS; 114 PHP syntax checks PASS."
+      ],
+      "limitations": [
+        "Audit is local source/test evidence; operating physical services and hosts were not contacted."
+      ],
+      "physical": [
+        "Disposable runtime and independently administered hosts are not designated."
+      ],
+      "ratification": [
+        "No policy ratified by audit."
+      ]
+    },
+    "WP1": {
+      "status": "TESTED_LOCAL",
+      "components": [
+        "Reused existing 36-definition catalog v2, typed manifests, type-14 capabilities and existing scheduler/reservation adapter without frozen codec changes."
+      ],
+      "files": [
+        "src/Resources/ResourceCatalog.php",
+        "src/Resources/ProviderCapabilityV2.php",
+        "src/Resources/ResourceManifest.php",
+        "src/Compute/Scheduling/ReservationLedger.php",
+        "src/Compute/Scheduling/Scheduler.php",
+        "docs/economics/proposals/GREENWOOD_UNIVERSAL_RESOURCES_V1.md"
+      ],
+      "tests": [
+        "resources.php: 75 PASS; resource-settlement.php: 28 PASS per allocation; SDK codec tests: 30 PASS."
+      ],
+      "limitations": [
+        "Definitions and advertised model names do not prove actual hardware. All default catalog entries remain disabled."
+      ],
+      "physical": [
+        "Runtime discovery/assignment and evidence qualification for each deployed hardware class."
+      ],
+      "ratification": [
+        "Per-class units/qualification/bundle policy and payable profile activation."
+      ]
+    },
+    "WP2": {
+      "status": "TESTED_LOCAL",
+      "components": [
+        "Existing unified finite/hosted resource settlement retained; added exact trust-policy offer binding and terminal archival protection."
+      ],
+      "files": [
+        "src/Economics/ServiceSettlement.php",
+        "src/Economics/Ledger.php",
+        "src/Network/AttestationTrust.php",
+        "tests/Economics/resource-settlement.php",
+        "tests/Economics/hosted-certified-history.php"
+      ],
+      "tests": [
+        "Per allocation: core 64, finite CPU 68, hosted CPU 32, resource settlement 28, certified foundation 25 PASS.",
+        "24,487 certified blocks/restart replay per allocation PASS; original allocation includes archive_v1; proposed allocation includes network policy but predates archive use."
+      ],
+      "limitations": [
+        "Explicit independent profile checks tested as native policy/trust components; a full financial journey under that profile is not yet added."
+      ],
+      "physical": [
+        "Actual funded workloads and physical metering, payouts/refunds on a disposable network."
+      ],
+      "ratification": [
+        "Programs, profiles, allocations and budgets remain unratified."
+      ]
+    },
+    "WP3": {
+      "status": "NOT_IMPLEMENTED",
+      "components": [
+        "Partial: periodic SQLite FULL/WAL checkpoints, hash lineage, restart-safe closure, CPU/block reset rejection, signed nonpayable scoped observations, private stdin service and candidate OCI recipe."
+      ],
+      "files": [
+        "src/Provider/MeteringService.php",
+        "src/Resources/Metering/SignedObservation.php",
+        "system-services/metering/meter.php",
+        "system-services/metering/Dockerfile",
+        "tests/Economics/meter-checkpoints.php"
+      ],
+      "tests": [
+        "Existing meter journal: 11 PASS; final checkpoint/recovery/signature/corruption suite: 13 PASS.",
+        "Actual local observation recorded separately; this is not funded workload or physical qualification evidence."
+      ],
+      "limitations": [
+        "WP is partial, not complete: no continuous funded-workload collector composition, approved persistent OCI mount/transport or qualified vendor/storage/network collectors. RAM peaks are not time integrals. OCI image was not built/run."
+      ],
+      "physical": [
+        "Disposable containerd host, actual cgroup/device/volume/netns identity, restart/reboot/counter/reset/cutoff tests."
+      ],
+      "ratification": [
+        "Host collector permissions, meter profiles, evidence retention and measurement trust bases."
+      ]
+    },
+    "WP4": {
+      "status": "NOT_IMPLEMENTED",
+      "components": [
+        "Partial: native timelocked service manifest records and exact local opt-in adapter to existing SystemServiceDefinition; explicit nonroot/no-host-network/no-mount execution profile."
+      ],
+      "files": [
+        "src/Network/ResourcePolicyState.php",
+        "src/Compute/Containerd/GovernedServiceDefinition.php",
+        "src/Economics/Ledger.php",
+        "docs/economics/proposals/GREENWOOD_NETWORK_SYSTEM_SERVICES_V1.md"
+      ],
+      "tests": [
+        "network-policy.php: included in 28 PASS (manifest mutation/root/network/mount/opt-in denial)."
+      ],
+      "limitations": [
+        "Automatic OCI fetch/distribution, consent file installation, durable staging/cutover/health/rollback, supervisor/Ansible integration, attestor/coordinator executables remain unimplemented. Existing two-seed Ansible allowlist intentionally unchanged."
+      ],
+      "physical": [
+        "Disposable runtime distribution/update/outage qualification."
+      ],
+      "ratification": [
+        "Exact artifacts, schema/roles/privileges, activation/grace/rollback, replica policy and budget references."
+      ]
+    },
+    "WP5": {
+      "status": "TESTED_LOCAL",
+      "components": [
+        "Three trust labels represented honestly: dev/bootstrap cannot fund native payments; independent opt-in programs require qualified source/roles/E2 and distinct nonprovider domains; quotes bind immutable trust policy; no legacy contract rewrite."
+      ],
+      "files": [
+        "src/Network/AttestationTrust.php",
+        "src/Resources/Metering/SignedObservation.php",
+        "src/Economics/ServiceSettlement.php",
+        "docs/economics/proposals/GREENWOOD_ATTESTATION_TRUST_V1.md"
+      ],
+      "tests": [
+        "network-policy.php: 28 PASS total; checkpoint/signature suite: 13 PASS; existing CPU/resource adversarial settlement suites PASS."
+      ],
+      "limitations": [
+        "Logical reviewed-domain fixtures share real administration. No physical independence or trusted bare-metal consumed-CPU source demonstrated. Native payable bootstrap is deliberately unavailable; independent end-to-end financial journey still needs a dedicated test."
+      ],
+      "physical": [
+        "External beneficial-control/custody/source review; direct qualified measurement; malicious telemetry/refusal/collusion tests."
+      ],
+      "ratification": [
+        "Qualification authorities, conflict policy, quorum, source profiles, revocation/challenges and any bounded payable bootstrap extension."
+      ]
+    },
+    "WP6": {
+      "status": "TESTED_LOCAL",
+      "components": [
+        "Native versioned operator roles, immutable controller/domain identity, review/evidence/participation windows, freshness bounds, revocation, delayed E0/E1/E2 policies; same-domain keys count once; no E3/dynamic-validator upgrade."
+      ],
+      "files": [
+        "src/Network/ResourcePolicyState.php",
+        "src/Economics/Ledger.php",
+        "src/Network/AttestationTrust.php",
+        "tests/Economics/network-policy.php",
+        "docs/economics/proposals/GREENWOOD_DECENTRALIZATION_EPOCHS_V1.md"
+      ],
+      "tests": [
+        "network-policy.php: 28 PASS total; native governed bootstrap record retained in both full certified replays."
+      ],
+      "limitations": [
+        "Reviewed availability is externally asserted, not live uptime proof. Automatic heartbeat/qualification workflow and actual founder authority migration/sunset are not implemented. Operator registry grants neither validator votes nor treasury custody."
+      ],
+      "physical": [
+        "Genuine separate control, sustained real participation, profile-qualified sources and custody."
+      ],
+      "ratification": [
+        "Domain review/anti-Sybil/challenge process, E1/E2 thresholds/windows/maximum evidence age/notice; any authority sunset and separate dynamic membership upgrade."
+      ]
+    },
+    "WP7": {
+      "status": "TESTED_LOCAL",
+      "components": [
+        "Nonpayable deterministic bounded infrastructure cost projection using existing GWD and separate treasury approval; no circular self-approved invoices or issuance expansion."
+      ],
+      "files": [
+        "src/Network/InfrastructureCostModel.php",
+        "tests/Economics/infrastructure-cost.php",
+        "docs/operations/operator-onboarding.md"
+      ],
+      "tests": [
+        "infrastructure-cost.php: 7 PASS (cap, overflow, zero work, bounded operators/activity)."
+      ],
+      "limitations": [
+        "Projection only: no automatically payable infrastructure invoice protocol or measured profitability claim. Real external costs are unknown."
+      ],
+      "physical": [
+        "Actual operator equipment/electricity/connectivity/availability cost evidence."
+      ],
+      "ratification": [
+        "Infrastructure budget/category, eligibility, independent invoice review, availability/activity rates and bootstrap sunset."
+      ]
+    },
+    "WP8": {
+      "status": "NOT_IMPLEMENTED",
+      "components": [
+        "Partial: existing GAP SDK types 13/14 and document domains; UTF-8 canonical cross-language signatures; durable exact-byte outbox and actual certified-chain reconciliation; bounded native policy/archive RPCs; status/consent DTO and read-only operator CLI."
+      ],
+      "files": [
+        "src/Provider/SettlementOutbox.php",
+        "src/Economics/ServicePresentation.php",
+        "src/Rpc/HttpApi.php",
+        "scripts/resource-operations.php",
+        "tests/Economics/signing.mjs",
+        "tests/Economics/settlement-outbox.php",
+        "/home/djordanjones/Apps/intown-metaverse-naf-main/greenwood-avatar-protocol/sdk/typescript/signing.mjs",
+        "/home/djordanjones/Apps/intown-metaverse-naf-main/greenwood-avatar-protocol/sdk/typescript/signing.d.mts"
+      ],
+      "tests": [
+        "SDK: 30 PASS with actual PHP signature/codec verification.",
+        "Outbox: 13 PASS with real native actions, SQLite restart and three certificate-verified blocks."
+      ],
+      "limitations": [
+        "Automatic coordinator/attestor outbox relay, RPC/UI journey integration and operator workflow remain incomplete. DTO helper is not a finished dashboard. RPC-specific new-route integration assertions still need expansion."
+      ],
+      "physical": [
+        "Real transport uncertainty, operator service deployment and customer workflow qualification."
+      ],
+      "ratification": [
+        "Exact trust/refund/consent disclosure and operational key custody."
+      ]
+    },
+    "WP9": {
+      "status": "TESTED_LOCAL",
+      "components": [
+        "Authenticated archive_v1 terminal compaction retaining quote/binding protection and budgets; private journals; checkpoint corruption rejection; stale-head watchdog wired to provider funding; bounded uncertain nonce retries."
+      ],
+      "files": [
+        "src/Economics/ServiceSettlement.php",
+        "src/Provider/FinalizedHeadWatchdog.php",
+        "src/Economics/HostedFundingGuard.php",
+        "src/Provider/HostedRuntimeFunding.php",
+        "src/Provider/SettlementOutbox.php",
+        "tests/Economics/head-watchdog.php",
+        "tests/Economics/resource-settlement.php"
+      ],
+      "tests": [
+        "Watchdog: 10 PASS; resource settlement/archival: 28 PASS per allocation; original-allocation full 24,487-block archival replay PASS; outbox 13 PASS; checkpoint corruption included in final 13 PASS."
+      ],
+      "limitations": [
+        "Local hardening is partial release qualification. 10,000 live/100,000 lifetime quote+tombstone/1,000 immutable program limits remain finite; no indefinite accumulator migration. Block history must remain. Treasury lost-quorum recovery is not implemented. Stale-head polling is not real-time CPU enforcement. Full security/load/retention/rollback review outstanding."
+      ],
+      "physical": [
+        "Stalled chain/network restriction, actual hard resource cutoff, disk/WAL faults and distributed recovery soak."
+      ],
+      "ratification": [
+        "Retention/export/capacity migration, signing quorum recovery, watchdog deadline, secret custody and security review."
+      ]
+    },
+    "WP10": {
+      "status": "BLOCKED_EXTERNAL",
+      "components": [
+        "Preserved disabled qualification/metering inventories; documented exact qualification staircase and production HOLD."
+      ],
+      "files": [
+        "deploy/ansible/inventory/qualification.ini",
+        "deploy/ansible/inventory/metering.ini",
+        "docs/economics/proposals/RELEASE_GATES_UNIVERSAL_RESOURCES.md",
+        "docs/operations/resource-metering.md",
+        "docs/operations/operator-onboarding.md"
+      ],
+      "tests": [
+        "Local simulations/replays only; no physical qualification performed."
+      ],
+      "limitations": [
+        "No disposable host or independently administered source/operator has been designated. Existing operating cluster excluded explicitly."
+      ],
+      "physical": [
+        "All physical staircase A/C/distributed lifecycle/soak requirements remain pending; simulated logical role tests are not independent witnesses."
+      ],
+      "ratification": [
+        "Production policies, allocations, authorities, budgets, artifacts, security/physical acceptance and explicit activation authorization."
+      ]
+    }
+  },
+  "verification": {
+    "matrix": "verification.json",
+    "sdk": "sdk-signing.json",
+    "meter_final": "meter-checkpoint-final.json",
+    "proposed_full_history": "certified-history.json",
+    "original_full_archival_history": "certified-history-original-archival.json",
+    "local_observation": "local-observation.json"
+  },
+  "runtime": {
+    "php": "8.5.12",
+    "node": "24.22.1",
+    "wasmtime": "48.0.1",
+    "wasm_sha256": "f0a4ab801537bce0c5a8e4fed9b4cab13ee4b7a2c107584f2e1da3b6d3c209e7",
+    "wasmtime_library_sha256": "145b20e05f9fd4f2f9f05e1769a8df0857e3bac18b34f2ad58f8da4a248115c9",
+    "sqlite_extension_sha256": "ef066a6bb4a354ecbdc284c4a815454b41f55170faa3a62575b2507d3d3b5ac3"
+  },
+  "history_commands": [
+    {
+      "env": {
+        "GWD_RESOURCE_V2": "1",
+        "GWD_NETWORK_POLICY_V1": "1",
+        "GWD_ALLOCATION_CANDIDATE": "10-25-30-34-1"
+      },
+      "command": "GREENWOOD_WASMTIME_LIB=/tmp/wasmtime-v48.0.1-x86_64-linux-c-api/lib/libwasmtime.so php -d ffi.enable=true -d extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so tests/Economics/hosted-certified-history.php",
+      "result": "PASS",
+      "blocks": 24487,
+      "checks": 9,
+      "seconds": 471.358
+    },
+    {
+      "env": {
+        "GWD_RESOURCE_V2": "1",
+        "GWD_NETWORK_POLICY_V1": "1",
+        "GWD_ARCHIVE_V1": "1"
+      },
+      "command": "GREENWOOD_WASMTIME_LIB=/tmp/wasmtime-v48.0.1-x86_64-linux-c-api/lib/libwasmtime.so php -d ffi.enable=true -d extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so tests/Economics/hosted-certified-history.php",
+      "result": "PASS",
+      "blocks": 24487,
+      "checks": 9,
+      "seconds": 455.797
+    }
+  ]
+}

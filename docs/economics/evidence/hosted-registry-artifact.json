@@ -1,0 +1,7 @@
+{
+  "source": "contracts/application-registry-next/ApplicationRegistry.ts",
+  "assemblyscript_version": "0.28.20",
+  "wasmtime_version": "48.0.1",
+  "wasm_sha256": "f0a4ab801537bce0c5a8e4fed9b4cab13ee4b7a2c107584f2e1da3b6d3c209e7",
+  "deployed": false
+}

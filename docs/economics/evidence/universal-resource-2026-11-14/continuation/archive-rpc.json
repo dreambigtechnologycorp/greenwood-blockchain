@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "runs": [
+    {
+      "allocation": "40-20-15-24-1",
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/independent-resource-settlement.php"
+      ],
+      "exit_code": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 58,
+        "actual_registry_wasm": true,
+        "native_governance_and_finance": true,
+        "allocation": "40-20-15-24-1",
+        "physical_independence": false,
+        "qualification_facts": "SYNTHETIC_SINGLE_ADMIN_FIXTURES",
+        "live_transactions": 0,
+        "seconds": 7.37
+      },
+      "stderr": ""
+    },
+    {
+      "allocation": "10-25-30-34-1",
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/independent-resource-settlement.php"
+      ],
+      "exit_code": 0,
+      "result": {
+        "status": "PASS",
+        "checks": 58,
+        "actual_registry_wasm": true,
+        "native_governance_and_finance": true,
+        "allocation": "10-25-30-34-1",
+        "physical_independence": false,
+        "qualification_facts": "SYNTHETIC_SINGLE_ADMIN_FIXTURES",
+        "live_transactions": 0,
+        "seconds": 7.496
+      },
+      "stderr": ""
+    }
+  ],
+  "source_sha256": {
+    "tests/Economics/archive-rpc-checks.php": "6b9e11a2ee963ed42da7067f3860a609533d1ab14ce118b4e0222f0e73e516f6",
+    "tests/Economics/independent-resource-settlement.php": "a85f551e143ac30213d9c3e116aa38285724dd728d4c8ceb5fc98183fd81dad3",
+    "src/Rpc/HttpApi.php": "b214ad818ffc8e48ccbf35a009ad565bbee22a0c431ce4bd46c8c633f2eb865d",
+    "src/Economics/ServiceSettlement.php": "e054bb192b77f87babc964ea806a5b0ffd5716ec638c4048215ef1632754f5c5"
+  },
+  "http_handler_tested": true,
+  "network_transport_tested": false,
+  "synthetic_finalized_tip": true,
+  "production_touched": false
+}

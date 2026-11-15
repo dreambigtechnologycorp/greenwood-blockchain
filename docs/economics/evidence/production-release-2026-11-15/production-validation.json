@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "runs": [
+    {
+      "command": [
+        "php",
+        "tests/Economics/production-allocation.php"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n    \"status\": \"PASS\",\n    \"checks\": 14,\n    \"allocation\": \"15-25-30-25-5\",\n    \"permanent_genesis_created\": false,\n    \"formal_ratification\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-l",
+        "deploy/ansible/files/validate_cluster_identity.php"
+      ],
+      "exit_code": 0,
+      "stdout": "No syntax errors detected in deploy/ansible/files/validate_cluster_identity.php\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ansible/tests",
+        "-p",
+        "test_fresh_cluster.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_fresh_order_and_destructive_guards (test_fresh_cluster.FreshClusterTest.test_fresh_order_and_destructive_guards) ... ok\ntest_identity_never_generates_keys_or_overwrites (test_fresh_cluster.FreshClusterTest.test_identity_never_generates_keys_or_overwrites) ... ok\ntest_inventory_includes_fixed_hosting_roles (test_fresh_cluster.FreshClusterTest.test_inventory_includes_fixed_hosting_roles) ... ok\ntest_inventory_rejects_injection_and_swapped_validators (test_fresh_cluster.FreshClusterTest.test_inventory_rejects_injection_and_swapped_validators) ... ok\ntest_release_contains_hosting_and_recovery (test_fresh_cluster.FreshClusterTest.test_release_contains_hosting_and_recovery) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.183s\n\nOK\n"
+    }
+  ],
+  "source_sha256": {
+    "src/Economics/Policy.php": "78a07533e025cda88216cd98cb7b40084077c320c14d6e6073ac595841195923",
+    "scripts/economics-cli.php": "b8a69a6ed7394ee4761e0c97054c1dd77952dce3569b359ebbb2b319ec589bd3",
+    "deploy/ansible/files/validate_cluster_identity.php": "e5af75b154fd1983f54e66a1423ecec897ad26aa0f8274c8b84a4811b0f6b582"
+  },
+  "physical_identity_installation_tested": false
+}

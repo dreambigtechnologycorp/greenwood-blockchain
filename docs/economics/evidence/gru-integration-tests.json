@@ -1,0 +1,89 @@
+[
+  {
+    "test": "core",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 64,
+      "seconds": 5.046,
+      "live_transactions": 0,
+      "permanent_keys_generated": 0
+    }
+  },
+  {
+    "test": "core_proposed",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 64,
+      "seconds": 3.448,
+      "live_transactions": 0,
+      "permanent_keys_generated": 0
+    }
+  },
+  {
+    "test": "settlement",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 65,
+      "adapters": [
+        "compute_cpu_v1"
+      ],
+      "hosted_enabled": false,
+      "live_transactions": 0,
+      "permanent_keys_generated": 0,
+      "seconds": 8.935
+    }
+  },
+  {
+    "test": "settlement_proposed",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 65,
+      "adapters": [
+        "compute_cpu_v1"
+      ],
+      "hosted_enabled": false,
+      "live_transactions": 0,
+      "permanent_keys_generated": 0,
+      "seconds": 3.436
+    }
+  },
+  {
+    "test": "certified_chain",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 25,
+      "validators": 3,
+      "certified_blocks": 3,
+      "replay": true,
+      "network_transport_tested": false,
+      "seconds": 0.345
+    }
+  },
+  {
+    "test": "certified_chain_proposed",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 25,
+      "validators": 3,
+      "certified_blocks": 3,
+      "replay": true,
+      "network_transport_tested": false,
+      "seconds": 0.397
+    }
+  },
+  {
+    "test": "deployment_identity",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 9,
+      "live_requests": 0
+    }
+  }
+]

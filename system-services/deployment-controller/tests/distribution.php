@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/autoload.php';
+require_once __DIR__.'/identity-fixture.php';
 use Greenwood\DeploymentController\Assignment\{AssignmentDocument,AssignmentReceiver,AssignmentDistributor};
 function ensure(bool $v,string $m):void{if(!$v)throw new RuntimeException($m);}
 function reject(Closure $work,string $label):void{$failed=false;try{$work();}catch(Throwable){$failed=true;}ensure($failed,$label);}
@@ -12,12 +13,12 @@ $receivers=[];$make=function($node)use($root,$authority,$allocation,&$crashNode)
 foreach(['node-1','node-4']as$n)$receivers[$n]=$make($n);
 $send=function($node,$request)use(&$receivers,&$faultNode,&$wrongAck){if($faultNode===$node)throw new RuntimeException('link unavailable');$ack=$receivers[$node]->handle('deployment-controller',$request);if($wrongAck)$ack['generation']=str_repeat('f',64);return $ack;};
 $db=new PDO('sqlite:'.$root.'/distribution.sqlite');$distr=new AssignmentDistributor($db,['node-1','node-4'],$authority,$send);
-$a=['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,'application_id'=>1,'service'=>'web','release_id'=>1,'provider_id'=>str_repeat('a',64),'provider_address'=>'10.77.0.100','ingress_port'=>21001,'instance_id'=>'app-1-web','image_digest'=>'sha256:'.str_repeat('b',64),'provider_endpoint'=>'tcp://10.77.0.100:19443','provider_tls_name'=>'provider.greenwood'];
-$d=['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,'operation_id'=>str_repeat('c',32),'account_id'=>str_repeat('d',64),'version'=>1,'previous_generation'=>null,'assignment'=>$a];
+$a=['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'application_id'=>1,'service'=>'web','release_id'=>1,'provider_id'=>str_repeat('a',64),'provider_address'=>'10.77.0.100','ingress_port'=>21001,'instance_id'=>'app-1-web','image_digest'=>'sha256:'.str_repeat('b',64),'provider_endpoint'=>'tcp://10.77.0.100:19443','provider_tls_name'=>'provider.greenwood'];
+$d=['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'operation_id'=>str_repeat('c',32),'account_id'=>str_repeat('d',64),'version'=>1,'previous_generation'=>null,'assignment'=>$a];
 mkdir($root.'/node-4/admissions',0700);mkdir($root.'/node-4/content',0700);mkdir($root.'/node-4/apply',0700);
 $edge=new \Greenwood\DeploymentController\Provider\TimerEdgeAdmission($root.'/node-4',$distr,static fn()=>str_repeat('e',64));
 $stored=$a;ksort($stored);$stored['assignment_id']=AssignmentDocument::assignmentId($d);
-$proof=['authorized'=>true,'registry_contract'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::REGISTRY,'chain_id'=>$d['chain_id'],'account_id'=>$d['account_id']];
+$proof=['authorized'=>true,'registry_contract'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'chain_id'=>$d['chain_id'],'account_id'=>$d['account_id']];
 $request=static fn($action,$doc)=>['action'=>$action,'document'=>$doc,'nonce'=>bin2hex(random_bytes(32)),'issued_at'=>time(),'expires_at'=>time()+30];
 try{
     $faultNode='node-4';reject(fn()=>$edge->admit($d['operation_id'],$stored,$proof),'Partial prepare accepted');ensure(!is_file($root.'/node-4/content/1-web.json'),'Content published without both acknowledgments');ensure(!is_file($root.'/node-1/assignments/1-web.json'),'Prepare installed active assignment');

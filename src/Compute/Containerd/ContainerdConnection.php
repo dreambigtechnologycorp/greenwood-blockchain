@@ -53,6 +53,7 @@ class ContainerdConnection
     {
         return $this->namespace;
     }
+    public function getSocketPath(): string { return $this->socketPath; }
 
     /**
      * Get containerd namespace metadata for RPC calls.

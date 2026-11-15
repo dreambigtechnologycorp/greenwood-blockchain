@@ -75,6 +75,20 @@ class LeaseService
             );
         }
     }
+    /** Governed install intent cannot adopt or delete an existing unknown lease. */
+    public function createExclusive(string $leaseId): void
+    {
+        $request=new CreateRequest();$request->setId($leaseId);$request->setLabels(['greenwood.io/owner'=>'greenwood']);
+        [$response,$status]=$this->clients->getLeases()->Create($request,$this->clients->getConnection()->getMetadata(),['timeout'=>30_000_000])->wait();
+        if($status->code!==\Grpc\STATUS_OK)throw new ContainerdRpcException('Exclusive service lease creation denied',$status->code);
+    }
+    public function exists(string $leaseId): bool
+    {
+        $request=new \Containerd\Services\Leases\V1\ListRequest();
+        [$response,$status]=$this->clients->getLeases()->List($request,$this->clients->getConnection()->getMetadata(),['timeout'=>30_000_000])->wait();
+        if($status->code!==\Grpc\STATUS_OK)throw new ContainerdRpcException('Cannot establish service lease ownership',$status->code);
+        foreach($response->getLeases() as $lease)if($lease->getId()===$leaseId)return true;return false;
+    }
 
     /**
      * Delete a lease (idempotent). Makes leased resources eligible for GC

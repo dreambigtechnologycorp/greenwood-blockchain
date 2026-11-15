@@ -2,6 +2,11 @@
 declare(strict_types=1);
 // Review template only. Invalid placeholders deliberately prevent startup.
 return [
+    // Must match the selected fresh genesis and deployed registry. No historical defaults.
+    'deployment_identity'=>['chain_id'=>'REPLACE_CHAIN_ID','genesis_hash'=>'REPLACE_GENESIS_HASH','registry_contract_id'=>'REPLACE_REGISTRY_ID','registry_wasm_hash'=>'REPLACE_REGISTRY_CODE_HASH'],
+    // Disposable-cluster candidate switch only; leave false until integrated qualification.
+    'hosted_settlement_candidate_enabled'=>false,
+    'hosted_provider_public_key'=>'REPLACE_PROVIDER_PUBLIC_KEY',
     'node_id' => 'OPERATOR_SELECTED_NODE',
     'listen' => 'OPERATOR_SELECTED_PRIVATE_TCP_ENDPOINT',
     'rpc_endpoint' => 'OPERATOR_VERIFIED_RPC_ORIGIN',

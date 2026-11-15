@@ -1,0 +1,9 @@
+{
+    "status": "PASS",
+    "checks": 12,
+    "actual_private_unix_ipc": true,
+    "actual_process_sigkill_recovery": true,
+    "oci_container_executed": false,
+    "physical_independence": false,
+    "samples": "explicit_fixture_counters"
+}

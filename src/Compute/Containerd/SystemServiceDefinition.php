@@ -17,8 +17,15 @@ final readonly class SystemServiceDefinition
         public array $mounts = [],
         public string $user = '0:0',
         public bool $hostNetwork = true,
-        public string $workingDirectory = '/'
+        public string $workingDirectory = '/',
+        public ?int $cpuMillicores = null,
+        public ?int $memoryBytes = null,
+        public ?int $pidsLimit = null,
+        public bool $exclusiveLease = false
     ) {
+        if($this->cpuMillicores!==null||$this->memoryBytes!==null||$this->pidsLimit!==null){
+            if($this->cpuMillicores===null||$this->cpuMillicores<1||$this->cpuMillicores>intdiv(PHP_INT_MAX,100)||$this->memoryBytes===null||$this->memoryBytes<1||$this->pidsLimit===null||$this->pidsLimit<1)throw new \InvalidArgumentException('Complete bounded system service resource profile required');
+        }
         if (!preg_match(
             '/^[a-z0-9][a-z0-9._-]{0,62}$/D',
             $this->id
@@ -143,6 +150,11 @@ final readonly class SystemServiceDefinition
     public function containerId(): string
     {
         return $this->id;
+    }
+    public function applyResourceLimits(OciSpecBuilder $builder): OciSpecBuilder
+    {
+        if($this->cpuMillicores!==null)$builder->setCpuQuota($this->cpuMillicores*100,100000)->setMemoryLimit($this->memoryBytes)->setPidsLimit($this->pidsLimit);
+        return $builder;
     }
 
     public function viewKey(): string

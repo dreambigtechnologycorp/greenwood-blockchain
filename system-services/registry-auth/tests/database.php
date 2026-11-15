@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/autoload.php';
+require_once dirname(__DIR__,2).'/deployment-controller/tests/identity-fixture.php';
 use Greenwood\SystemServices\RegistryAuth\Database;
 $root=sys_get_temp_dir().'/gw-registry-db-'.bin2hex(random_bytes(8));
 mkdir($root,0700);

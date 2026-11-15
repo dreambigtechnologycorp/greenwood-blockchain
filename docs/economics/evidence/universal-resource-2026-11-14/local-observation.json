@@ -1,0 +1,16 @@
+{
+    "status": "OBSERVED",
+    "sample": {
+        "version": 1,
+        "verification_level": "C",
+        "source": "local_cgroup_v2",
+        "runtime_identity": "c9c9ec411a4793a47bcf639e6a543745f4d9c20153a77dc8434c1ffcffc697e4",
+        "cpu_ms": "3365376",
+        "memory_peak_bytes": "5440835584",
+        "memory_current_bytes": "3635458048",
+        "io_devices": null,
+        "io_attribution": "cgroup_block_device_counters_not_tenant_storage_proof"
+    },
+    "funded_workload": false,
+    "physical_independence": false
+}

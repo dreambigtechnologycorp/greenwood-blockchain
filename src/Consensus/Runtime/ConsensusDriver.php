@@ -51,6 +51,7 @@ final class ConsensusDriver
     public function __construct(public readonly Chain $chain,private readonly string $id,private readonly array $peers,private readonly ?SafetyJournal $journal,string $endpoint,?ChainConfig $config=null)
     {
         $this->config=$config ?? ChainConfig::defaults();
+        if($chain->state->economicSummary()!==null && ($this->config->blockTimeSeconds()!==60 || $this->config->feeBurnPercent()!==0 || $this->config->feeOperatorPercent()!==100))throw new \InvalidArgumentException('Node configuration disagrees with committed 60-second/no-burn economics');
         $this->validators=$chain->genesis->getValidators(); ksort($this->validators,SORT_STRING);
         
         // Startup authorization: if we're running as a validator (have a journal), 

@@ -1,0 +1,15 @@
+{
+  "enabled": false,
+  "mode": "pinned_node",
+  "chain_id": "REPLACE_APPROVED_CHAIN",
+  "genesis_hash": "REPLACE_GENESIS_HASH",
+  "node_origin": "https://REPLACE_PINNED_NODE",
+  "tls_peer_fingerprint": "REPLACE_NODE_CERTIFICATE_SHA256",
+  "data_directory": "/var/lib/greenwood/service-agent",
+  "containerd_namespace": "REPLACE_GENESIS_SCOPED_NAMESPACE",
+  "containerd_socket": "/run/containerd/containerd.sock",
+  "snapshotter": "erofs",
+  "poll_seconds": 15,
+  "max_stale_head_seconds": 180,
+  "consents": []
+}

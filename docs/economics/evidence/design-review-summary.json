@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "economic_checks": 102,
+  "original_allocation_core_checks": 64,
+  "original_allocation_chain_checks": 25,
+  "proposed_allocation_core_checks": 64,
+  "proposed_allocation_chain_checks": 25,
+  "shared_signing_checks": 13,
+  "scenario_categories": 5,
+  "compared_allocations": 2,
+  "allocation_ratified": false,
+  "existing_production_template_replaced": false,
+  "provider_priced_offers_supported": true,
+  "reference_pricing_enabled_by_default": false,
+  "service_settlement_enabled": false,
+  "production_ready": false,
+  "deployed": false,
+  "permanent_genesis_generated": false
+}

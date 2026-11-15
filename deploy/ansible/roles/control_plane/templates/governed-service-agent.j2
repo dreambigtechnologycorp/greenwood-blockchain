@@ -1,0 +1,12 @@
+[Unit]
+Description=Greenwood consented system-service reconciliation
+Requires=containerd.service
+After=containerd.service
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/usr/bin/php {{ greenwood_hosting_release }}/bin/greenwood-system-service-agent /etc/greenwood/system-services/governed-agent.json
+# Uncertain starts are journaled and require reconciliation, never blind restart.
+Restart=no

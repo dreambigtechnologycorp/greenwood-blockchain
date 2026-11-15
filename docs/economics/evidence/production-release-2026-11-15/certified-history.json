@@ -1,0 +1,14 @@
+{
+    "status": "PASS",
+    "checks": 9,
+    "resource_v2": true,
+    "allocation": "15\/25\/30\/25\/5",
+    "certified_blocks": 24487,
+    "validator_signers": 3,
+    "full_service_history_replay": true,
+    "actual_registry_wasm": true,
+    "physical_network_tested": false,
+    "independent_measurement_tested": false,
+    "live_transactions": 0,
+    "seconds": 423.666
+}

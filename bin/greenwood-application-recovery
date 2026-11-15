@@ -7,13 +7,15 @@ use Greenwood\Compute\Containerd\{ContainerdClientSet, ContainerdConnection};
 umask(0077);
 try {
     if (PHP_OS_FAMILY !== 'Linux' || posix_geteuid() !== 0) throw new RuntimeException('Recovery requires Linux root');
-    $args = getopt('', ['config:', 'application-network-policy:']);
+    $args = getopt('', ['config:', 'application-network-policy:', 'hosted-funding-config:']);
     $config = ProviderConfig::fromFile($args['config'] ?? throw new InvalidArgumentException('Missing config'));
     $policy = ProviderApplicationNetworkPolicy::fromFile($args['application-network-policy'] ?? throw new InvalidArgumentException('Missing network policy'));
     $registry = new ProviderApplicationRegistry($config->dataPath . '/applications');
     $network = $policy->createNetwork($config->dataPath . '/application-network');
     $clients = (new ContainerdClientSet(new ContainerdConnection('greenwood', [], $config->containerdSocket)))->setSnapshotter($config->snapshotter);
-    $results = ProviderApplicationRestorer::fromClients($clients, $registry, $network, $policy->assertMutable(...))->tick();
+    $public=$config->expectedPublicKey??throw new RuntimeException('Recovery requires a pinned provider public key');
+    $funding=\Greenwood\Provider\HostedRuntimeFunding::fromFile($args['hosted-funding-config']??null,$config,$public);
+    $results = ProviderApplicationRestorer::fromClients($clients, $registry, $network, $policy->assertMutable(...),$funding->require(...))->tick();
     echo json_encode(['applications' => $results], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES) . "\n";
     exit(in_array('RETRY_REQUIRED', array_column($results, 'outcome'), true) ? 1 : 0);
 } catch (Throwable $e) {

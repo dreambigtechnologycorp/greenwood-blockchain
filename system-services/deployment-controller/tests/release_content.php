@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/autoload.php';
+require_once __DIR__.'/identity-fixture.php';
 use Greenwood\Edge\ReleaseContentVerifier as V;
 function reject(Closure $f):void {try{$f();}catch(Throwable){return;}throw new RuntimeException('Expected rejection');}
 $body='<html>Marketing /assets/main.js'.'{i:"__root__' . "\0" . '",u:1792370532380,s:"success",ssr:!0}'.'{i:"' . "\0\0" . '",u:1792370532380,s:"success",ssr:!0}</html>';

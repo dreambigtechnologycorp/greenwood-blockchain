@@ -1,0 +1,126 @@
+[
+  {
+    "test": "core",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 64,
+      "seconds": 4.862,
+      "live_transactions": 0,
+      "permanent_keys_generated": 0
+    }
+  },
+  {
+    "test": "core_proposed",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 64,
+      "seconds": 3.604,
+      "live_transactions": 0,
+      "permanent_keys_generated": 0
+    }
+  },
+  {
+    "test": "compute_settlement",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 68,
+      "adapters": [
+        "compute_cpu_v1"
+      ],
+      "hosted_adapter_tested": false,
+      "live_transactions": 0,
+      "permanent_keys_generated": 0,
+      "seconds": 6.336
+    }
+  },
+  {
+    "test": "compute_settlement_proposed",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 68,
+      "adapters": [
+        "compute_cpu_v1"
+      ],
+      "hosted_adapter_tested": false,
+      "live_transactions": 0,
+      "permanent_keys_generated": 0,
+      "seconds": 6.83
+    }
+  },
+  {
+    "test": "hosted",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 32,
+      "actual_registry_wasm": true,
+      "distributed_execution_tested": false,
+      "independent_metering_qualified": false,
+      "mainnet_activation": false,
+      "seconds": 2.727
+    }
+  },
+  {
+    "test": "hosted_proposed",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 32,
+      "actual_registry_wasm": true,
+      "distributed_execution_tested": false,
+      "independent_metering_qualified": false,
+      "mainnet_activation": false,
+      "seconds": 2.736
+    }
+  },
+  {
+    "test": "hosted_boundaries",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 17,
+      "actual_receiver_sqlite": true,
+      "actual_operator_guard": true,
+      "container_execution_tested": false
+    }
+  },
+  {
+    "test": "certified_chain",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 25,
+      "validators": 3,
+      "certified_blocks": 3,
+      "replay": true,
+      "network_transport_tested": false,
+      "seconds": 0.445
+    }
+  },
+  {
+    "test": "certified_chain_proposed",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 25,
+      "validators": 3,
+      "certified_blocks": 3,
+      "replay": true,
+      "network_transport_tested": false,
+      "seconds": 0.443
+    }
+  },
+  {
+    "test": "deployment_identity",
+    "exit": 0,
+    "result": {
+      "status": "PASS",
+      "checks": 9,
+      "live_requests": 0
+    }
+  }
+]

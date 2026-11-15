@@ -1,0 +1,70 @@
+<?php
+declare(strict_types=1);
+require __DIR__.'/resource-fixtures.php';
+use Greenwood\Crypto\{Ed25519KeyPair,ProtocolHash};
+use Greenwood\Economics\{CanonicalJson,ServiceAuthorization,HostedServiceBinding,ServiceSettlement};
+use Greenwood\Resources\{ResourceCatalog,ResourceManifest};
+use Greenwood\Network\{AttestationTrust,ResourcePolicyState};
+use Greenwood\Provider\{MeteringService,LocalResourceEvidence,ResourceSettlementWorkflow};
+use Greenwood\Contracts\ContractId;
+use Greenwood\Transaction\{DeployContract,CallContract,TransferU64};
+$f=fixture(true);$s=$f['g']->initialState();$chain=$f['g']->getChainId();$genesis=$f['g']->getGenesisHash();$provider=Ed25519KeyPair::generate();
+$cap=resourceCapability($provider,bin2hex($genesis));$catalog=resourceCatalog();foreach($catalog['entries'] as &$entry)$entry['verification_level']='C';unset($entry);$manifest=resourceManifest();
+registerResources($s,$provider,$cap,1,$chain);
+$wasm=file_get_contents($argv[1]??'/tmp/greenwood-hosted-registry.wasm');$registry=ContractId::fromWasm($wasm)->bytes;
+$s->applyTransaction(resourceTx($s,$f['beneficiary'],2,(new DeployContract($wasm,'',0,1000000))->serialize(),$chain),$chain,1);
+foreach([['cre',''],['pub',pack('Nn',1,1).chr(3).'web'.str_repeat('d',32)],['act',pack('NN',1,1)]] as [$method,$data])$s->applyTransaction(resourceTx($s,$f['beneficiary'],3,(new CallContract($registry,$method,$data,0,1000000))->serialize(),$chain),$chain,1);
+$operator=['version'=>1,'kind'=>'operator','id'=>str_repeat('1',64),'revision'=>1,'activation_height'=>20162,'expires_height'=>50000,'status'=>'active','controller_key'=>$cap['provider_key'],'domain'=>str_repeat('2',64),'independence_evidence_hash'=>str_repeat('0',64),'reviewer_key'=>$f['p']['signers'][0],'roles'=>['PROVIDER','METERING','ATTESTOR'],'qualified_profiles'=>[],'independent'=>false];
+$epoch=['version'=>1,'kind'=>'epoch','id'=>str_repeat('3',64),'revision'=>1,'activation_height'=>20162,'expires_height'=>50000,'status'=>'active','stage'=>'E0_BOOTSTRAP','sustained_blocks'=>1,'notice_blocks'=>1,'provider_domains'=>1,'attestor_domains'=>1,'participation_max_age_blocks'=>1,'evidence_profile'=>str_repeat('4',64)];
+$p=['id'=>str_repeat('a',64),'adapter'=>'hosted_resources_v2','registry_contract_id'=>bin2hex($registry),'registry_code_hash'=>bin2hex($registry),'provider_key'=>$cap['provider_key'],'service_id'=>str_repeat('b',64),'catalog_hash'=>ResourceCatalog::hash($catalog),'resource_catalog'=>$catalog,'start_height'=>20162,'end_height'=>50000,'subsidy_percent'=>0,'threshold'=>1,'gru_scale'=>1,'budget_units'=>'10000','beneficiary_budget_units'=>'10000','max_gru_units'=>'10000','beneficiaries'=>[bin2hex(addr($f['beneficiary']))],'attestors'=>[$cap['provider_key']],'trust_profile'=>'BOOTSTRAP_OPERATOR_ATTESTED','evidence_profile'=>$epoch['evidence_profile'],'provider_operator'=>$operator['id'],'meter_operator'=>$operator['id'],'attestor_operators'=>[$cap['provider_key']=>$operator['id']]];
+ServiceSettlement::validateProgram($p,$f['p']);check(true,'Explicit single founder operator may supply all bootstrap roles');
+$bad=$p;unset($bad['trust_profile']);rejects(fn()=>ServiceSettlement::validateProgram($bad,$f['p']),'Fresh production cannot omit trust profile');
+$bad=$p;$bad['adapter']='hosted_cpu_v1';rejects(fn()=>ServiceSettlement::validateProgram($bad,$f['p']),'Fresh production cannot select legacy untyped adapter');
+$bad=$p;$bad['subsidy_percent']=1;rejects(fn()=>ServiceSettlement::validateProgram($bad,$f['p']),'Bootstrap cannot acquire subsidy authority');
+$bad=$p;$bad['trust_profile']='INDEPENDENT_ATTESTED';rejects(fn()=>ServiceSettlement::validateProgram($bad,$f['p']),'Founder signature cannot become independent quorum');
+rejects(fn()=>AttestationTrust::authorize($p,new ResourcePolicyState(),20162),'Bootstrap requires finalized governance, not local configuration');
+$proposals=[];
+foreach([$operator,$epoch] as $nonce=>$record){act($s,$f['signers'][0],['action'=>'propose','kind'=>'resource_network','reserve'=>'institute_treasury','nonce'=>$nonce,'expires'=>50000,'record'=>$record],1,$chain);$id=array_key_last($s->economicSummary()['proposals']);approve($s,$f,$id,4,1);$proposals[]=$id;}
+act($s,$f['signers'][0],['action'=>'propose','kind'=>'service_program','reserve'=>'subsidies','nonce'=>0,'expires'=>50000,'program'=>$p],1,$chain);$id=array_key_last($s->economicSummary()['proposals']);approve($s,$f,$id,4,1);$proposals[]=$id;
+advance($s,20160);foreach($proposals as $id)act($s,$f['signers'][0],['action'=>'execute','proposal'=>$id],20161,$chain);
+$s->applyTransaction(resourceTx($s,$f['ops'],11,(new TransferU64(addr($f['beneficiary']),10000))->serialize(),$chain),$chain,20161);advance($s,20161);
+$assignment=['chain_id'=>$chain,'registry_contract_id'=>bin2hex($registry),'application_id'=>1,'service'=>'web','release_id'=>1,'provider_id'=>$cap['provider_id'],'provider_address'=>'10.1.2.3','ingress_port'=>11000,'instance_id'=>'app-1-web','image_digest'=>'sha256:'.bin2hex(str_repeat('d',32)),'provider_endpoint'=>'tcp://10.1.2.3:5000','provider_tls_name'=>'provider.fixture'];
+$document=['chain_id'=>$chain,'registry_contract_id'=>bin2hex($registry),'account_id'=>bin2hex(addr($f['beneficiary'])),'operation_id'=>str_repeat('e',32),'version'=>1,'previous_generation'=>null,'assignment'=>$assignment];$ids=[];
+$policies=ResourcePolicyState::restore($s->economicSummary()['resource_policies']);
+AttestationTrust::authorize($p,$policies,20162);check(true,'Finalized founder role and explicit E0 activate only the bootstrap profile');
+$records=$policies->snapshot();$records['operator'][$operator['id']][0]['status']='revoked';
+rejects(fn()=>AttestationTrust::authorize($p,ResourcePolicyState::restore($records),20162),'Revoked founder role denies bootstrap funding');
+$records=$policies->snapshot();$records['epoch'][$epoch['id']][0]['stage']='E2_VERIFICATION_EXPANSION';
+rejects(fn()=>AttestationTrust::authorize($p,ResourcePolicyState::restore($records),20162),'A stronger active epoch cannot fall back to bootstrap');
+$records=$policies->snapshot();$records['operator'][$operator['id']][0]['controller_key']=str_repeat('0',64);
+rejects(fn()=>AttestationTrust::authorize($p,ResourcePolicyState::restore($records),20162),'Operator record cannot substitute another founder signing key');
+$subsidiesBefore=$s->economicSummary()['balances']['subsidies'];
+foreach([[20163,20165],[20165,20167]] as [$start,$end]){
+ $hosted=['document'=>$document,'start_height'=>$start,'cpu_budget_ms'=>'1000','max_payment_units'=>'2000','authority_epoch'=>1];
+ $q=['chain'=>$chain,'genesis'=>bin2hex($genesis),'gru_scale'=>1,'issued_height'=>20162,'expiry_height'=>20170,'payer'=>bin2hex(addr($f['beneficiary'])),'provider'=>bin2hex(addr($provider)),'service_id'=>$p['service_id'],'catalog_hash'=>$p['catalog_hash'],'price_kind'=>'provider_gwd','gwd_units_per_gru_num'=>'1','gwd_units_per_gru_den'=>'1','max_gru_units'=>'2000','max_gwd_units'=>'2000','binding_hash'=>HostedServiceBinding::hash($hosted+['end_height'=>$end]),'offer_nonce'=>(string)$start,'capability_nonce'=>1,'capability_hash'=>\Greenwood\Resources\ProviderCapabilityV2::hash($cap),'resource_quote_version'=>2,'resource_manifest'=>$manifest,'resource_manifest_hash'=>ResourceManifest::hash($manifest),'trust_profile'=>$p['trust_profile'],'program_policy_hash'=>AttestationTrust::programHash($p)];
+ $fund=['action'=>'fund','program'=>$p['id'],'hosted'=>$hosted,'end_height'=>$end,'quote'=>CanonicalJson::encode($q),'quote_approvals'=>[ServiceAuthorization::approval('quote',$q,$provider)['approval']]];
+ $bad=$q;unset($bad['trust_profile']);$unconsented=$fund;$unconsented['quote']=CanonicalJson::encode($bad);$unconsented['quote_approvals']=[ServiceAuthorization::approval('quote',$bad,$provider)['approval']];rejects(fn()=>resourceFinance($s,$f['beneficiary'],$unconsented,20162,$chain),'Customer offer must disclose bootstrap policy');
+ resourceFinance($s,$f['beneficiary'],$fund,20162,$chain);$ids[]=array_key_last($s->economicSummary()['services']['commitments']);
+}
+check($s->getAccount(addr($f['beneficiary']))->getBalance()===6000,'Customer funds entire bootstrap escrow');
+check($s->economicSummary()['balances']['subsidies']===$subsidiesBefore,'Bootstrap funding cannot lock protected subsidies');
+$c=$s->economicSummary()['services']['commitments'][$ids[0]];
+$scope=['chain'=>$chain,'genesis'=>bin2hex($genesis),'provider_id'=>$cap['provider_id'],'workload_id'=>$c['request_id'],'assignment_generation'=>$c['usage_assignment_generation'],'commitment'=>$c['id'],'interval_start_height'=>20163,'interval_end_height'=>20165,'catalog_hash'=>$p['catalog_hash'],'manifest_hash'=>ResourceManifest::hash($manifest)];
+$dir=sys_get_temp_dir().'/greenwood-bootstrap-meter-'.bin2hex(random_bytes(8));
+try{
+ $meter=new MeteringService($dir);$meter->bind($scope);$sample=['version'=>1,'verification_level'=>'C','source'=>'local_cgroup_v2','runtime_identity'=>str_repeat('a',64),'cpu_ms'=>'10','monotonic_ms'=>'1000','memory_limit_bytes'=>'4194304'];
+ $meter->begin($c['id'],$sample);$sample['cpu_ms']='760';$sample['monotonic_ms']='2000';$meter->finish($c['id'],$sample);unset($meter);$meter=new MeteringService($dir);
+ $candidate=LocalResourceEvidence::prepare($meter->bundle($c['id']),$c,$p,$chain,bin2hex($genesis));
+}finally{unset($meter);foreach(glob($dir.'/*')?:[] as $file)unlink($file);if(is_dir($dir))rmdir($dir);}
+advance($s,20165);$e=$candidate['evidence'];$approvals=[ServiceAuthorization::approval('resource-usage',$e,$provider)['approval']];
+rejects(fn()=>ResourceSettlementWorkflow::usageAction($s,$c['id'],$e,$approvals,$chain,$genesis,20166),'Independent coordinator never falls back to founder telemetry');
+$prepared=ResourceSettlementWorkflow::bootstrapUsageAction($s,$c['id'],$e,$approvals,$chain,$genesis,20166);
+check(!$prepared['independent_verification']&&!$prepared['subsidy_eligible']&&$prepared['preview']['subsidy_units']===0,'Explicit bootstrap preparation discloses trust and zero subsidy');
+$bad=$e;$bad['measurements'][0]['quantity']='751';rejects(fn()=>ResourceSettlementWorkflow::bootstrapUsageAction($s,$c['id'],$bad,$approvals,$chain,$genesis,20166),'Founder signature binds exact measured quantity');
+resourceFinance($s,$provider,$prepared['action'],20166,$chain);check($s->getAccount(addr($provider))->getBalance()===0,'Bootstrap still waits the challenge delay');
+advance($s,24487);resourceFinance($s,$provider,['action'=>'settle','commitment'=>$ids[0]],24488,$chain);resourceFinance($s,$f['beneficiary'],['action'=>'refund','commitment'=>$ids[1]],24488,$chain);
+check($s->getAccount(addr($provider))->getBalance()===1750,'Founder earns accepted customer-paid resource price');
+check($s->getAccount(addr($f['beneficiary']))->getBalance()===8250,'Unused escrow and unclaimed renewal refund exactly');
+check($s->economicSummary()['balances']['subsidies']===$subsidiesBefore&&$s->economicSummary()['services']['programs'][$p['id']]['spent']===0,'No bootstrap subsidy spent during complete journey');
+$root=$s->getStateRoot();rejects(fn()=>resourceFinance($s,$provider,['action'=>'settle','commitment'=>$ids[0]],24488,$chain),'No duplicate founder payment');check($s->getStateRoot()===$root,'Rejected duplicate payment is atomic');
+echo json_encode(['status'=>'PASS','checks'=>$checks,'allocation'=>getenv('GWD_ALLOCATION_CANDIDATE')?:'15-25-30-25-5','actual_registry_wasm'=>true,'physical_execution'=>false,'trust_profile'=>'BOOTSTRAP_OPERATOR_ATTESTED','subsidy_spent'=>0,'live_transactions'=>0],JSON_PRETTY_PRINT)."\n";

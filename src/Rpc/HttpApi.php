@@ -11,6 +11,7 @@ use Greenwood\Node\Chain;
 use Greenwood\Node\ChainConfig;
 use Greenwood\Contracts\{ContractId, ContractTransactionEvent, ContractTransactionExecutor};
 use Greenwood\Transaction\{CallContract, DeployContract, Envelope};
+use Greenwood\Economics\CanonicalJson;
 
 /**
  * Pass 5 versioned public API (/v1). Pure adapter: handlers delegate to
@@ -31,6 +32,20 @@ final class HttpApi
 
     public const ROUTES = [
         'GET /v1/chain/status' => 'PUBLIC',
+        'GET /v1/resources/catalog' => 'PUBLIC',
+        'GET /v1/resources/operators' => 'PUBLIC',
+        'GET /v1/resources/system-services' => 'PUBLIC',
+        'GET /v1/resources/epochs' => 'PUBLIC',
+        'GET /v1/resources/providers/{id}' => 'PUBLIC',
+        'GET /v1/economics/hosted/funding/{id}' => 'PUBLIC',
+        'GET /v1/economics/services' => 'PUBLIC',
+        'GET /v1/economics/services/{id}' => 'PUBLIC',
+        'GET /v1/economics/programs' => 'PUBLIC',
+        'GET /v1/economics/archives' => 'PUBLIC',
+        'GET /v1/economics/hosted/assignments/{id}' => 'PUBLIC',
+        'GET /v1/economics/policy' => 'PUBLIC',
+        'GET /v1/economics/proposals' => 'PUBLIC',
+        'GET /v1/economics/proposals/{id}' => 'PUBLIC',
         'GET /v1/chain/finality' => 'PUBLIC',
         'GET /v1/chain/validators' => 'PUBLIC',
         'GET /v1/chain/state-root' => 'PUBLIC',
@@ -111,6 +126,69 @@ final class HttpApi
             return $this->metrics();
         }
 
+        if($method==='GET'&&$route==='/v1/resources/catalog')return HttpResponse::json(['version'=>2,'definitions'=>\Greenwood\Resources\ResourceCatalog::definitions(),'disabled_template'=>\Greenwood\Resources\ResourceCatalog::disabled(),'production_qualification_established'=>false]);
+        if($method==='GET'&&in_array($route,['/v1/resources/operators','/v1/resources/system-services','/v1/resources/epochs'],true)){
+            $kind=match($route){'/v1/resources/operators'=>'operator','/v1/resources/system-services'=>'service',default=>'epoch'};
+            $policies=\Greenwood\Network\ResourcePolicyState::restore($this->chain->state->economicSummary()['resource_policies']??[]);
+            $height=$this->chain->tip->getHeight();$all=$policies->current($kind,$height);$rows=[];$limit=(int)($params['limit']??self::DEFAULT_LIMIT);$cursor=$params['cursor']??'';$next=null;
+            foreach($all as $id=>$r){if(strcmp($id,$cursor)<=0)continue;if(count($rows)===$limit){$next=$rows[count($rows)-1]['id'];break;}
+                $rows[]=['id'=>$id,'policy_hash'=>\Greenwood\Network\ResourcePolicyState::hash($r),'record'=>$r]+($kind==='epoch'?['new_commitment_eligibility'=>$policies->qualifies($r,$height)]:[]);}
+            return HttpResponse::json(['chain_id'=>$this->chain->genesis->getChainId(),'genesis_hash'=>bin2hex($this->chain->genesis->getGenesisHash()),'finalized_height'=>$height,'finalized_hash'=>bin2hex($this->chain->tip->getHash()),'state_root'=>bin2hex($this->chain->state->getStateRoot()),'records'=>$rows,'next_cursor'=>$next,'qualification_basis'=>'governance-reviewed assertions; not independently established by software','dynamic_validator_membership'=>false]);
+        }
+        if($method==='GET'&&preg_match('~^/v1/resources/providers/([a-f0-9]{64})$~D',$route,$match)){
+            $c=$this->chain->state->getComputeState()->resourceCapabilities()[$match[1]]??null;if($c===null)throw ApiError::notFound('RESOURCE_PROVIDER_NOT_FOUND','Resource extension not found');
+            $base=$this->chain->state->getComputeState()->capabilities()[hex2bin($match[1])]??null;
+            return HttpResponse::json(['chain_id'=>$this->chain->genesis->getChainId(),'genesis_hash'=>bin2hex($this->chain->genesis->getGenesisHash()),'finalized_height'=>$this->chain->tip->getHeight(),'state_root'=>bin2hex($this->chain->state->getStateRoot()),
+                'capability'=>$c,'advertisement_verification_level'=>'C','base_current'=>$base!==null&&$base->nonce===$c['base_nonce'],'resource_reservations'=>$this->chain->state->resourceReservationTotals()[$match[1]]??[]]);
+        }
+        if($method==='GET' && str_starts_with($route,'/v1/economics/')) {
+            $economic=$this->chain->state->economicSummary();if($economic===null)throw ApiError::notFound('ECONOMICS_DISABLED','Native economics is not enabled');
+            if($route==='/v1/economics/policy')return HttpResponse::json(['policy'=>$economic['policy'],'policy_version'=>$economic['policy_version'],'finalized_height'=>$this->chain->tip->getHeight()]);
+            if(preg_match('~^/v1/economics/hosted/assignments/([a-f0-9]{64})$~D',$route,$match)){
+                $height=$this->chain->tip->getHeight();$all=[];
+                foreach($economic['services']['commitments'] as $id=>$c)if($c['hosted']!==null&&$c['hosted']['start_height']<=$height&&\Greenwood\Economics\HostedServiceBinding::assignmentId($c['hosted']['document'])===$match[1])$all[$id]=['id'=>$id,'assignment_id'=>$match[1],'assignment_generation'=>$c['assignment_generation'],'provider_id'=>$c['hosted']['document']['assignment']['provider_id'],'start_height'=>$c['hosted']['start_height'],'end_height'=>$c['end_height'],'financial_status'=>$c['status'],'payment'=>$c['payment']];
+                foreach($economic['services']['archives']??[] as $id=>$c)if(($c['assignment_id']??null)===$match[1]&&$c['start_height']<=$height)$all[$id]=['id'=>$id,'assignment_id'=>$match[1],'assignment_generation'=>$c['assignment_generation'],'provider_id'=>$c['provider_id'],'start_height'=>$c['start_height'],'end_height'=>$c['end_height'],'financial_status'=>$c['status'],'payment'=>$c['payment'],'record_hash'=>$c['record_hash']];
+                uasort($all,static fn($a,$b)=>($b['start_height']<=>$a['start_height'])?:strcmp($a['id'],$b['id']));
+                $cursor=$params['cursor']??'';$seen=$cursor==='';$rows=[];$next=null;$limit=(int)($params['limit']??self::DEFAULT_LIMIT);
+                foreach($all as $id=>$c){if(!$seen){if($id===$cursor)$seen=true;continue;}if(count($rows)===$limit){$next=$rows[count($rows)-1]['id'];break;}$rows[]=$c+\Greenwood\Economics\ServicePresentation::status(['status'=>$c['financial_status']]);}
+                if(!$seen)throw ApiError::invalidRequest('Unknown hosted financial cursor');
+                return HttpResponse::json(['chain_id'=>$this->chain->genesis->getChainId(),'genesis_hash'=>bin2hex($this->chain->genesis->getGenesisHash()),'finalized_height'=>$height,'finalized_hash'=>bin2hex($this->chain->tip->getHash()),'state_root'=>bin2hex($this->chain->state->getStateRoot()),'records'=>$rows,'next_cursor'=>$next,'legacy_archive_lookup'=>'archive_v1 requires original authenticated history; absence is UNVERIFIED']);
+            }
+            if(preg_match('~^/v1/economics/hosted/funding/([a-f0-9]{64})$~D',$route,$match)){
+                $height=$this->chain->tip->getHeight();$found=null;$foundId=null;
+                foreach($economic['services']['commitments'] as $id=>$c)if(in_array($c['adapter']??null,['hosted_cpu_v1','hosted_resources_v2'],true) && $c['assignment_generation']===$match[1]
+                    && $c['status']==='funded' && $c['funded_height']<$height && $c['hosted']['start_height']<=$height && $height<$c['end_height']){
+                    if($found!==null)throw new \RuntimeException('Ambiguous active funded interval');$found=$c;$foundId=$id;
+                }
+                if($found===null)throw ApiError::notFound('HOSTED_FUNDED_INTERVAL_REQUIRED','No active finalized hosted interval');
+                \Greenwood\Economics\HostedServiceBinding::authorize($this->chain->state,$found['hosted'],$economic['services']['programs'][$found['program']]['policy'],$found['payer']);
+                return HttpResponse::json(['chain_id'=>$this->chain->genesis->getChainId(),'genesis_hash'=>bin2hex($this->chain->genesis->getGenesisHash()),
+                    'finalized_height'=>$height,'state_root'=>bin2hex($this->chain->state->getStateRoot()),'finalized_hash'=>bin2hex($this->chain->tip->getHash()),'commitment_id'=>$foundId,'commitment'=>$found]);
+            }
+            if($route==='/v1/economics/services' || $route==='/v1/economics/programs' || $route==='/v1/economics/archives'){
+                $collection=match($route){'/v1/economics/services'=>'commitments','/v1/economics/archives'=>'archives',default=>'programs'};$all=$economic['services'][$collection]??[];ksort($all,SORT_STRING);
+                $rows=[];$limit=(int)($params['limit']??self::DEFAULT_LIMIT);$cursor=$params['cursor']??'';$next=null;
+                foreach($all as $id=>$value){if(strcmp($id,$cursor)<=0)continue;if(count($rows)===$limit){$next=$rows[count($rows)-1]['id'];break;}
+                    if($collection==='archives'){$rows[]=$value+\Greenwood\Economics\ServicePresentation::status($value);continue;}
+                    $rows[]=$collection==='programs'?['id'=>$id,'program'=>$value]:['id'=>$id,'program'=>$value['program'],'request_id'=>$value['request_id'],'generation'=>$value['generation'],'adapter'=>$value['adapter']??'compute_cpu_v1','assignment_generation'=>$value['assignment_generation']??null,'execution_receipt_finalized'=>in_array($value['adapter']??'compute_cpu_v1',['compute_cpu_v1','compute_resources_v2'],true)?$this->chain->state->getComputeState()->terminal(hex2bin($value['request_id'])):null,'financial_status'=>$value['status'],'payment'=>$value['payment']];}
+                return HttpResponse::json(['records'=>$rows,'next_cursor'=>$next,'finalized_height'=>$this->chain->tip->getHeight()]);
+            }
+            if(preg_match('~^/v1/economics/services/([a-f0-9]{64})$~D',$route,$m)){
+                $pins=['chain_id'=>$this->chain->genesis->getChainId(),'genesis_hash'=>bin2hex($this->chain->genesis->getGenesisHash()),'state_root'=>bin2hex($this->chain->state->getStateRoot()),'finalized_hash'=>bin2hex($this->chain->tip->getHash())];
+                $value=$economic['services']['commitments'][$m[1]]??null;if($value===null){$archive=$economic['services']['archives'][$m[1]]??null;if($archive!==null)return HttpResponse::json(['id'=>$m[1],'archive'=>$archive,'finalized_height'=>$this->chain->tip->getHeight()]+$pins+\Greenwood\Economics\ServicePresentation::status($archive));throw ApiError::notFound('SERVICE_NOT_FOUND','Service not found');}
+                $receipt=in_array($value['adapter'],['compute_cpu_v1','compute_resources_v2'],true)&&$this->chain->state->getComputeState()->terminal(hex2bin($value['request_id']));
+                return HttpResponse::json(['id'=>$m[1],'commitment'=>$value,'finalized_height'=>$this->chain->tip->getHeight(),'consent'=>\Greenwood\Economics\ServicePresentation::consent($economic['services']['programs'][$value['program']]['policy'],CanonicalJson::decode($value['quote']))]+$pins+\Greenwood\Economics\ServicePresentation::status($value,$receipt));
+            }
+            if($route==='/v1/economics/proposals'){
+                $all=$economic['proposals'];ksort($all,SORT_STRING);$rows=[];$limit=(int)($params['limit']??self::DEFAULT_LIMIT);$cursor=$params['cursor']??'';$next=null;
+                foreach($all as $id=>$proposal){if(strcmp($id,$cursor)<=0)continue;if(count($rows)===$limit){$next=$rows[count($rows)-1]['id'];break;}$rows[]=['id'=>$id,'kind'=>$proposal['kind'],'reserve'=>$proposal['reserve'],'amount'=>(string)$proposal['amount'],'recipient'=>$proposal['recipient'],'status'=>$proposal['status'],'approval_count'=>count($proposal['approvals']),'ready_height'=>$proposal['ready'],'expires_height'=>$proposal['expires'],'policy_version'=>$proposal['version']];}
+                return HttpResponse::json(['proposals'=>$rows,'next_cursor'=>$next,'finalized_height'=>$this->chain->tip->getHeight()]);
+            }
+            if(preg_match('~^/v1/economics/proposals/([a-f0-9]{64})$~D',$route,$m)){
+                if(!isset($economic['proposals'][$m[1]]))throw ApiError::notFound('PROPOSAL_NOT_FOUND','Proposal not found');
+                return HttpResponse::json(['id'=>$m[1],'proposal'=>$economic['proposals'][$m[1]],'finalized_height'=>$this->chain->tip->getHeight()]);
+            }
+        }
         if ($method === 'GET' && $route === '/v1/chain/status') {
             return HttpResponse::json($this->chainStatus());
         }
@@ -245,10 +323,13 @@ final class HttpApi
         $accounts=$this->chain->state->getAccounts();
         $totalSupply=0;
         foreach ($accounts as $a) $totalSupply+=$a->getBalance();
+        $economic=$this->chain->state->economicSummary();
+        if($economic!==null){$totalSupply=\Greenwood\Economics\Amount::add($totalSupply,$this->serviceEscrow($economic));foreach($economic['balances'] as $value)$totalSupply=\Greenwood\Economics\Amount::add($totalSupply,$value);foreach($this->chain->state->getContractBalances() as $value)$totalSupply=\Greenwood\Economics\Amount::add($totalSupply,$value);}
         $validatorIds=array_keys($this->chain->genesis->getValidators());
         sort($validatorIds, SORT_STRING);
         return [
             'chain_id' => $this->chain->genesis->getChainId(),
+            'genesis_hash' => bin2hex($this->chain->genesis->getGenesisHash()),
             'api_version' => self::VERSION,
             'role' => ($this->role)(),
             'height' => $this->chain->tip->getHeight(),
@@ -258,20 +339,40 @@ final class HttpApi
             'validator_count' => count($validatorIds),
             'validator_ids' => $validatorIds,
             // V1 consensus/economic surface (see ChainConfig for the authority).
-            'block_time_seconds' => $config?->blockTimeSeconds(),
+            'block_time_seconds' => $economic===null?$config?->blockTimeSeconds():60,
             'supply' => [
-                'hard_cap' => $config?->hardCap(),
+                'hard_cap' => $economic===null?$config?->hardCap():(string)\Greenwood\Economics\Amount::ISSUANCE,
                 'total_supply' => self::u64($totalSupply),
                 'account_count' => count($accounts),
-                // Gaps (see deployment reconciliation report): reward release from
-                // the Security & Infrastructure Reserve and per-transaction fee
-                // disposition/burn are not yet runtime chain primitives.
-                'emitted_rewards' => 0,
+                'categories' => $economic===null?null:$this->economicSupplyCategories($economic,$accounts),
+                // Economic genesis executes rewards and fees in the native ledger.
+                'emitted_rewards' => $economic===null?0:self::u64($economic['released']),
+                'decimals' => $economic===null?null:6,
+                'unit' => $economic===null?'legacy_native_units':'base_units',
+                'operator_fees_distributed' => $economic===null?0:self::u64($economic['fees_distributed']),
                 'burned_fees' => 0,
             ],
-            'economy' => $config?->toArray(),
+            'economy' => $economic===null?$config?->toArray():['version'=>1,'decimals'=>6,'block_time_seconds'=>60,'burn_percent'=>0,'operator_percent'=>100,'policy_version'=>$economic['policy_version'],'reserve_balances'=>array_map(fn($v)=>(string)$v,$economic['balances']),'proposal_count'=>count($economic['proposals']),'last_release_height'=>$economic['last_release_height']],
             'syncing' => false,
         ];
+    }
+
+    /** Disjoint ledger categories; transferability is not exchange liquidity or beneficial ownership. */
+    private function serviceEscrow(array $economic): int {
+        $sum=0;foreach($economic['services']['commitments'] as $c)if(!in_array($c['status'],['paid','refunded'],true))$sum=\Greenwood\Economics\Amount::add($sum,\Greenwood\Economics\Amount::add($c['payer_locked'],$c['subsidy_locked']));return $sum;
+    }
+    private function economicSupplyCategories(array $economic,array $accounts): array
+    {
+        $add=\Greenwood\Economics\Amount::add(...);$protected=0;$pending=0;$ordinary=0;$contracts=0;
+        foreach($economic['balances'] as $value)$protected=$add($protected,$value);
+        foreach($economic['proposals'] as $proposal)if($proposal['kind']==='payment'&&$proposal['status']==='queued'&&$proposal['version']===$economic['policy_version']&&$proposal['expires']>=$economic['last_release_height'])$pending=$add($pending,$proposal['amount']);
+        foreach($accounts as $account)$ordinary=$add($ordinary,$account->getBalance());
+        $operations=$economic['policy']['operations_account']??null;$restricted=$operations===null?0:($accounts[hex2bin($operations)]??null)?->getBalance()??0;
+        foreach($this->chain->state->getContractBalances() as $value)$contracts=$add($contracts,$value);
+        if($pending>$protected || $restricted>$ordinary || $add($add($add($protected,$ordinary),$contracts),$this->serviceEscrow($economic))!==\Greenwood\Economics\Amount::ISSUANCE)throw new \RuntimeException('Economic reporting conservation mismatch');
+        return ['uncommitted_protected_reserves'=>(string)($protected-$pending),'queued_protected_withdrawals'=>(string)$pending,
+            'restricted_operations_accounts'=>(string)$restricted,'unrestricted_accounts'=>(string)($ordinary-$restricted),'contract_held'=>(string)$contracts,
+            'native_service_escrow'=>(string)$this->serviceEscrow($economic),'classification'=>'disjoint_ledger_balances_not_market_circulation','service_escrow_enabled'=>true];
     }
 
     private function finality(): array

@@ -9,6 +9,10 @@ final class Envelope
 {
     public const VERSION = 1;
     public const TYPE_TRANSFER = 1;
+    public const TYPE_TRANSFER_U64 = 11;
+    public const TYPE_TREASURY = 12;
+    public const TYPE_SERVICE = 13;
+    public const TYPE_PROVIDER_CAPABILITY_V2 = 14;
     public const TYPE_DEPLOY_CONTRACT = 2;
     public const TYPE_CALL_CONTRACT = 3;
     public const TYPE_DEPLOY_WORKLOAD = 4;
@@ -25,7 +29,8 @@ final class Envelope
         private string $signature = '', private string $senderPublicKey = ''
     ) {
         if ($version !== 1 || $chainId === '' || strlen($chainId) > 128 || strlen($sender) !== 32
-            || !in_array($type,[1,2,3,7,8,9,10],true) || ($type===1 && strlen($payload)!==36)
+            || !in_array($type,[1,2,3,7,8,9,10,11,12,13,14],true) || ($type===1 && strlen($payload)!==36)
+            || ($type===11 && strlen($payload)!==40) || (in_array($type,[12,13,14],true) && strlen($payload)>65536)
             || strlen($payload)+142+strlen($chainId)>\Greenwood\Contracts\ContractTransactionLimits::MAX_TRANSACTION_BYTES || !in_array(strlen($signature), [0,64], true)
             || !in_array(strlen($senderPublicKey), [0,32], true)) throw new \InvalidArgumentException('Invalid transaction envelope');
         C::encodeU32BE($nonce);

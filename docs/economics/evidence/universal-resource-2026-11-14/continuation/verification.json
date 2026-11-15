@@ -1,0 +1,1340 @@
+{
+  "status": "PASS",
+  "source_sha": "5f120b0c64c3376c71c1322284870e4d956e7fae",
+  "dirty_working_tree": true,
+  "runs": [
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/system-service-journal.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.097,
+      "result": {
+        "status": "PASS",
+        "checks": 24,
+        "actual_sqlite": true,
+        "containerd_execution_tested": false,
+        "runtime_handles": "fixture_values_only"
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/network-metering.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.043,
+      "result": {
+        "status": "PASS",
+        "checks": 9,
+        "actual_workload_veth_tested": false,
+        "physical_qualification": false,
+        "counter_inputs": "explicit_fixture_values"
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/resources.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.06,
+      "result": {
+        "status": "PASS",
+        "checks": 75,
+        "resource_definitions": 36,
+        "physical_qualification": false,
+        "local_fixture_only": true
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/metering.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.084,
+      "result": {
+        "status": "PASS",
+        "checks": 11,
+        "independent_measurement_qualified": false,
+        "container_execution_tested": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/meter-checkpoints.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.082,
+      "result": {
+        "status": "PASS",
+        "checks": 13,
+        "physical_qualification": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/network-policy.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 1.728,
+      "result": {
+        "status": "PASS",
+        "checks": 35,
+        "physical_independence": false,
+        "fixture_classification": "single_process_synthetic_reviewed_domains",
+        "production_activation": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/head-watchdog.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.025,
+      "result": {
+        "status": "PASS",
+        "checks": 10,
+        "physical_cutoff_demonstrated": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/settlement-outbox.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.16,
+      "result": {
+        "status": "PASS",
+        "checks": 17,
+        "certified_blocks": 3,
+        "live_broadcasts": 0,
+        "permanent_keys": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/infrastructure-cost.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.022,
+      "result": {
+        "status": "PASS",
+        "checks": 7,
+        "policy_ratified": false,
+        "automatic_payments": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/hosted-boundaries.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.086,
+      "result": {
+        "status": "PASS",
+        "checks": 18,
+        "actual_receiver_sqlite": true,
+        "actual_operator_guard": true,
+        "container_execution_tested": false
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/deployment-identity.php"
+      ],
+      "allocation": null,
+      "exit_code": 0,
+      "seconds": 0.029,
+      "result": {
+        "status": "PASS",
+        "checks": 9,
+        "live_requests": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/run.php"
+      ],
+      "allocation": "40-20-15-24-1",
+      "exit_code": 0,
+      "seconds": 1.496,
+      "result": {
+        "status": "PASS",
+        "checks": 64,
+        "seconds": 1.467,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/settlement.php"
+      ],
+      "allocation": "40-20-15-24-1",
+      "exit_code": 0,
+      "seconds": 6.05,
+      "result": {
+        "status": "PASS",
+        "checks": 68,
+        "adapters": [
+          "compute_cpu_v1"
+        ],
+        "hosted_adapter_tested": false,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0,
+        "seconds": 6.023
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/hosted.php"
+      ],
+      "allocation": "40-20-15-24-1",
+      "exit_code": 0,
+      "seconds": 2.46,
+      "result": {
+        "status": "PASS",
+        "checks": 32,
+        "actual_registry_wasm": true,
+        "distributed_execution_tested": false,
+        "independent_metering_qualified": false,
+        "mainnet_activation": false,
+        "seconds": 2.42
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/resource-settlement.php"
+      ],
+      "allocation": "40-20-15-24-1",
+      "exit_code": 0,
+      "seconds": 2.679,
+      "result": {
+        "status": "PASS",
+        "checks": 28,
+        "actual_registry_wasm": true,
+        "adapters": [
+          "compute_resources_v2",
+          "hosted_resources_v2"
+        ],
+        "independent_physical_qualification": false,
+        "production_activation": false,
+        "seconds": 2.649
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/certified-chain.php"
+      ],
+      "allocation": "40-20-15-24-1",
+      "exit_code": 0,
+      "seconds": 0.308,
+      "result": {
+        "status": "PASS",
+        "checks": 34,
+        "validators": 3,
+        "certified_blocks": 3,
+        "replay": true,
+        "network_transport_tested": false,
+        "seconds": 0.278
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/independent-resource-settlement.php"
+      ],
+      "allocation": "40-20-15-24-1",
+      "exit_code": 0,
+      "seconds": 6.267,
+      "result": {
+        "status": "PASS",
+        "checks": 24,
+        "actual_registry_wasm": true,
+        "native_governance_and_finance": true,
+        "allocation": "40-20-15-24-1",
+        "physical_independence": false,
+        "qualification_facts": "SYNTHETIC_SINGLE_ADMIN_FIXTURES",
+        "live_transactions": 0,
+        "seconds": 6.23
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/run.php"
+      ],
+      "allocation": "10-25-30-34-1",
+      "exit_code": 0,
+      "seconds": 1.508,
+      "result": {
+        "status": "PASS",
+        "checks": 64,
+        "seconds": 1.475,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/settlement.php"
+      ],
+      "allocation": "10-25-30-34-1",
+      "exit_code": 0,
+      "seconds": 6.088,
+      "result": {
+        "status": "PASS",
+        "checks": 68,
+        "adapters": [
+          "compute_cpu_v1"
+        ],
+        "hosted_adapter_tested": false,
+        "live_transactions": 0,
+        "permanent_keys_generated": 0,
+        "seconds": 6.052
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/hosted.php"
+      ],
+      "allocation": "10-25-30-34-1",
+      "exit_code": 0,
+      "seconds": 2.441,
+      "result": {
+        "status": "PASS",
+        "checks": 32,
+        "actual_registry_wasm": true,
+        "distributed_execution_tested": false,
+        "independent_metering_qualified": false,
+        "mainnet_activation": false,
+        "seconds": 2.405
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/resource-settlement.php"
+      ],
+      "allocation": "10-25-30-34-1",
+      "exit_code": 0,
+      "seconds": 2.588,
+      "result": {
+        "status": "PASS",
+        "checks": 28,
+        "actual_registry_wasm": true,
+        "adapters": [
+          "compute_resources_v2",
+          "hosted_resources_v2"
+        ],
+        "independent_physical_qualification": false,
+        "production_activation": false,
+        "seconds": 2.564
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/certified-chain.php"
+      ],
+      "allocation": "10-25-30-34-1",
+      "exit_code": 0,
+      "seconds": 0.306,
+      "result": {
+        "status": "PASS",
+        "checks": 34,
+        "validators": 3,
+        "certified_blocks": 3,
+        "replay": true,
+        "network_transport_tested": false,
+        "seconds": 0.282
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "tests/Economics/independent-resource-settlement.php"
+      ],
+      "allocation": "10-25-30-34-1",
+      "exit_code": 0,
+      "seconds": 6.18,
+      "result": {
+        "status": "PASS",
+        "checks": 24,
+        "actual_registry_wasm": true,
+        "native_governance_and_finance": true,
+        "allocation": "10-25-30-34-1",
+        "physical_independence": false,
+        "qualification_facts": "SYNTHETIC_SINGLE_ADMIN_FIXTURES",
+        "live_transactions": 0,
+        "seconds": 6.149
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/distribution.php"
+      ],
+      "exit_code": 0,
+      "stdout": "Assignment distribution: matching atomic installs, two-node ACK gate, partial delivery, restart-after-fsync, retry, conflict, revocation, allocation, wrong ACK, expiry, replay, principal and monotonic generation checks passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/registry_authority.php"
+      ],
+      "exit_code": 0,
+      "stdout": "Registry authority: synthetic ABI response parity; stale query height, wrong contract/method/digest/code, syncing, incoherent state and unauthorized account rejected\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/registry_identity.php"
+      ],
+      "exit_code": 0,
+      "stdout": "Registry identity: fresh app 1, signed registry domain, legacy/wrong/missing registry and chain rejection, isolated durable operations passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/signed_policy.php"
+      ],
+      "exit_code": 0,
+      "stdout": "Signed policy: valid, repeat, restart rollback, equivocation, signer, tamper, expiry, future, lifetime, purpose, chain, missing and malformed checks passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/allocation_approval.php"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS: exact export/generation binding, finalized denial/unavailability, tamper rejection, initial-version restriction\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/policy_install.php"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS: install, idempotency, advancement, rollback, equivocation, expiry, chain, signature, issuer, preservation, recovery\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/orchestration.php"
+      ],
+      "exit_code": 0,
+      "stdout": "Orchestration integration: durable reservation export, owner-signed resume/replay/isolation, pre-start ACK/plan gate, runtime binding, idempotency, restart, revocation and readiness checks passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/http_gate.php"
+      ],
+      "exit_code": 0,
+      "stdout": "HTTP entry point: backend liveness, closed readiness, disabled capabilities/writes and hidden metrics passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/edge_admission.php"
+      ],
+      "exit_code": 0,
+      "stdout": "Edge admission: principal, identity, allocation, partial ACK, protected install, idempotency and status-only verification passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/deployment-controller/tests/release_content.php"
+      ],
+      "exit_code": 0,
+      "stdout": "Release content: timestamp-only variation, HTML/asset tampering, shape, redirect and raw compatibility PASS\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/registry-auth/tests/authority.php"
+      ],
+      "exit_code": 0,
+      "stdout": "Registry issuer: signed scoped token, cross-app denial, invalid session, unauthorized pull, revoked permissions and incoherent finalized authority checks passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "-d",
+        "extension=/tmp/intown-php-sqlite/usr/lib/php/20250925/pdo_sqlite.so",
+        "system-services/registry-auth/tests/database.php"
+      ],
+      "exit_code": 0,
+      "stdout": "Registry database: private creation, symlink and permission rejection PASS\n",
+      "stderr": ""
+    }
+  ],
+  "lint": [
+    {
+      "file": "scripts/resource-operations.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/CgroupAccounting.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ComputeSecurityProfile.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ContainerdClientSet.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ContainerdConnection.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ContainerdExecutor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ExecutionIo.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ExecutionLaunch.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ExecutionRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/GovernedServiceDefinition.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Model/OciPlatform.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/OciImageRuntimeConfig.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/OciSpecBuilder.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/RegistryTransferAuth.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ResolvedImage.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ResourceLimits.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ContainerService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ExecutionRegistryService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ImagePreparationService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ImageRootfsResolver.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/ImageService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/LeaseService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/NamespaceService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/OciImageRuntimeConfigResolver.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/SnapshotService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/TaskService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Service/VersionService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/SystemServiceDefinition.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/SystemServiceHandle.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/SystemServiceRuntime.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Ttrpc/TtrpcClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/Ttrpc/TtrpcException.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Compute/Containerd/ValueObject/PreparedSnapshot.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/Amount.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/CanonicalJson.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/GruQuote.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/HostedFundingGuard.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/HostedFundingHttpReader.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/HostedServiceBinding.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/Ledger.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/Policy.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/ResourceQuote.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/ServiceAuthorization.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/ServicePresentation.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Economics/ServiceSettlement.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Network/AttestationTrust.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Network/InfrastructureCostModel.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Network/ResourcePolicyState.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/AssignmentView.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ChainClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/FinalizedHeadWatchdog.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/GovernedServiceWatcher.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/GovernedSystemServiceAgent.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HostedAssignmentJournal.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HostedMeteringMonitor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HostedRuntimeFunding.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HostedServiceMonitor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/HttpChainClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/MeterJournal.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/MeteringProtocol.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/MeteringService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/MeteringSocketClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProcessManager.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationBindingRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationDependencies.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationLinuxNetwork.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationNetwork.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationNetworkPolicy.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationOperator.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationReconciler.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationRestorer.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationRuntimeCleaner.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderApplicationRuntimeInspector.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderConfig.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderContent.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderIdentity.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderJobRegistry.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderOperator.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderWorker.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ProviderWorkload.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/QualifiedSourceAttestor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ReceiptBuilder.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ResourcePolicyHttpReader.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ResourcePolicyView.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/ResourceSettlementWorkflow.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/SettlementCoordinator.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/SettlementOutbox.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/Supervisor.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/SystemServiceInstallJournal.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/VacantSystemService.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/WorkerFacts.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Provider/WorkerJob.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/Metering/NetworkAccounting.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/Metering/ObservationReconciler.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/Metering/SignedObservation.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/ProviderCapabilityV2.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/ResourceCatalog.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/ResourceManifest.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Resources/ResourceUsageEvidence.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/ApiError.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/HttpApi.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/HttpResponse.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/OperatorApi.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/OperatorAuth.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/ProviderApplicationHttpApi.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/ProviderQueries.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/RateLimiter.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "src/Rpc/RpcClient.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "system-services/metering/meter.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/bootstrap.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/certified-chain.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/deployment-identity.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/fixtures.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/head-watchdog.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/hosted-boundaries.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/hosted-certified-history.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/hosted.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/independent-resource-settlement.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/infrastructure-cost.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/meter-checkpoints.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/meter-ipc.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/metering.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/network-metering.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/network-policy.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/resource-fixtures.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/resource-settlement.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/resources.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/run.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/settlement-outbox.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/settlement.php",
+      "exit_code": 0,
+      "error": null
+    },
+    {
+      "file": "tests/Economics/system-service-journal.php",
+      "exit_code": 0,
+      "error": null
+    }
+  ],
+  "diff_check": {
+    "exit_code": 0,
+    "output": ""
+  },
+  "production_touched": false,
+  "physical_qualification": false
+}

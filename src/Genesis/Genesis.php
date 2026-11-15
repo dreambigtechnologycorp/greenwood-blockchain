@@ -13,6 +13,7 @@ class Genesis
     public const PROTOCOL_VERSION = 1;
     
     private array $validators = [];
+    private ?array $economics = null;
     private array $initialAccounts = [];
     private string $chainId;
     private ?string $genesisHash = null;
@@ -52,6 +53,11 @@ class Genesis
         return $this;
     }
     
+    public function configureEconomics(array $policy): self
+    {
+        $this->economics=\Greenwood\Economics\Policy::validate($policy);$this->genesisHash=null;return $this;
+    }
+
     public function getValidators(): array { return $this->validators; }
     public function getInitialAccounts(): array { return $this->initialAccounts; }
     public function getChainId(): string { return $this->chainId; }
@@ -69,7 +75,8 @@ class Genesis
         $validators=[]; $accounts=[];
         foreach ($this->validators as $id=>$v) $validators[$id]=['public_key'=>bin2hex($v['publicKey']),'power'=>$v['votingPower']];
         foreach ($this->initialAccounts as $id=>$a) $accounts[$id]=['public_key'=>bin2hex($a['publicKey']),'balance'=>$a['balance']];
-        return json_encode(['chain_id'=>$this->chainId,'protocol_version'=>1,'wasm_abi_version'=>1,'compute_version'=>1,'validators'=>$validators,'accounts'=>$accounts],JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR);
+        $economicFields=$this->economics===null?[]:['economics'=>$this->economics];
+        return json_encode([...$economicFields,'chain_id'=>$this->chainId,'protocol_version'=>1,'wasm_abi_version'=>1,'compute_version'=>1,'validators'=>$validators,'accounts'=>$accounts],JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR);
     }
     
     public function getCanonicalBytes(): string
@@ -112,6 +119,7 @@ class Genesis
             $bytes .= \Greenwood\Codec\Canonical::encodeU64BE($a['balance']);
         }
         
+        if($this->economics!==null)$bytes .= \Greenwood\Codec\Canonical::encodeBytes("GREENWOOD_ECONOMICS_V1").\Greenwood\Codec\Canonical::encodeBytes(\Greenwood\Economics\CanonicalJson::encode($this->economics));
         return $bytes;
     }
     
@@ -147,6 +155,10 @@ class Genesis
         // Explicit initial provider pools; later validator mutations do not alter eligibility.
         $keys = array_column($this->validators, 'publicKey');
         $state->setProviderEligibility(new \Greenwood\Compute\Verification\GenesisProviderEligibility($keys, $keys));
+        if($this->economics!==null){
+            $operators=array_map(fn($key)=>ProtocolHash::hash('GREENWOOD_ACCOUNT_V1',$key),$keys);
+            $state->enableEconomics($this->economics,$this->chainId,$this->getGenesisHash(),$operators);
+        }
         return $state->setValidators($this->validators)->recomputeStateRoot();
     }
     private function computeStateRoot(): string { return $this->initialState()->getStateRoot(); }

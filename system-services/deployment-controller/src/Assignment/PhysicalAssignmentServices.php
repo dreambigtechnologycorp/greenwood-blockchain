@@ -24,11 +24,13 @@ final class PhysicalAssignmentServices
         }
         $c = require $path;
         if (!is_array($c)) throw new \RuntimeException('INVALID_ASSIGNMENT_CONFIGURATION');
+        DeploymentIdentity::configure($c['deployment_identity']??[]);
         return $c;
     }
 
     public static function build(array $c): array
     {
+        DeploymentIdentity::configure($c['deployment_identity']??[]);
         $tls = $c['tls'];
         if (($tls['peer_identities'] ?? []) === [] || ($tls['peer_uris'] ?? []) === []) {
             throw new \RuntimeException('EXPLICIT_PEER_PINS_REQUIRED');
@@ -38,16 +40,26 @@ final class PhysicalAssignmentServices
             || openssl_x509_fingerprint(file_get_contents($tls['ca']), 'sha256') !== $c['approved_ca_sha256']) {
             throw new \RuntimeException('APPROVED_CA_PIN_REQUIRED');
         }
-        $revocations = new SignedPolicySnapshot($tls['revocations'], $c['policy_ledger'], 'revocations', $c['revocation_public_key'], $c['revocation_max_age']);
-        $allocations = new SignedPolicySnapshot($c['approved_allocations_file'], $c['policy_ledger'], 'allocations', $c['allocation_public_key'], $c['allocation_max_age']);
+        $revocations = new SignedPolicySnapshot($tls['revocations'], $c['policy_ledger'], 'revocations', $c['revocation_public_key'], $c['revocation_max_age'],DeploymentIdentity::chain());
+        $allocations = new SignedPolicySnapshot($c['approved_allocations_file'], $c['policy_ledger'], 'allocations', $c['allocation_public_key'], $c['allocation_max_age'],DeploymentIdentity::chain());
         if ($c['revocation_public_key'] === $c['allocation_public_key']) throw new \RuntimeException('SEPARATE_POLICY_AUTHORITIES_REQUIRED');
         $revocations->read();
         $allocations->read();
+        foreach($tls['peer_uris'] as $uri)if(!str_starts_with($uri,'spiffe://'.DeploymentIdentity::chain().'/control-plane/'))throw new \RuntimeException('CONTROL_PLANE_CHAIN_MISMATCH');
         $channel = new MutualTlsChannel($tls['ca'], $tls['certificate'], $tls['private_key'], $tls['peer_identities'], $tls['peer_uris'], $tls['revocations'], $revocations);
-        $authority = new FinalizedAuthority(ReadOnlyRpc::connect($c['rpc_endpoint'], DeploymentIdentity::CHAIN));
+        $hostedCandidate=($c['hosted_settlement_candidate_enabled']??false)===true;
+        $fundedInterval=null;
+        if($hostedCandidate){
+            $provider=\Greenwood\Economics\Policy::hex($c['hosted_provider_public_key']??null);
+            $reader=new \Greenwood\Economics\HostedFundingHttpReader($c['rpc_endpoint']);
+            $guard=new \Greenwood\Economics\HostedFundingGuard($reader->__invoke(...),DeploymentIdentity::chain(),DeploymentIdentity::genesis(),$provider);
+            $fundedInterval=$guard->require(...);
+        }
+        $authority = new FinalizedAuthority(ReadOnlyRpc::connect($c['rpc_endpoint'], DeploymentIdentity::chain()),$hostedCandidate);
         $policy = new AllocationPolicy($c['approved_allocations_file'], $allocations);
-        $authorize = static function (array $d) use ($authority, $revocations): bool {
+        $authorize = static function (array $d) use ($authority, $revocations,$fundedInterval): bool {
             $revocations->read();
+            if($fundedInterval!==null)$fundedInterval($d);
             $a = $d['assignment'];
             $proof = $authority->verify($d['account_id'], [
                 'chain_id' => $d['chain_id'], 'registry_contract_id' => $d['registry_contract_id'],
@@ -56,7 +68,7 @@ final class PhysicalAssignmentServices
             ]);
             return ($proof['authorized'] ?? false) === true;
         };
-        return compact('channel', 'authority', 'policy', 'authorize');
+        return compact('channel', 'authority', 'policy', 'authorize','fundedInterval');
     }
 
     public static function distributor(array $c, \PDO $db, array $services): AssignmentDistributor

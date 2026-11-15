@@ -30,6 +30,7 @@ final class Configuration
             $addresses[$a['public_key']]=true;
             $g->addInitialAccount($id,new Ed25519KeyPair(self::hex($a['public_key'],32),''),$a['balance']);
         }
+        if(isset($data['economics']))$g->configureEconomics($data['economics']);
         return [$g,$peers];
     }
     public static function hex(string $hex,int $length): string
