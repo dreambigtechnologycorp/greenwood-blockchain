@@ -1,0 +1,32 @@
+{
+  "php_base": "docker.io/library/php@sha256:a7c386318b9508223e934964753bbfb4ac5265c284fe0cac29847e2fd2f03a78",
+  "php_index_digest": "sha256:50956f094e90a716d43bea28087d447555ad80510e386ab8c9c10d8c70d781a9",
+  "platform": "linux/arm64",
+  "php_version": "8.5.12",
+  "debian_packages": [
+    {
+      "name": "libffi-dev",
+      "version": "3.4.8-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libf/libffi/libffi-dev_3.4.8-2_arm64.deb",
+      "file": "libffi-dev_3.4.8-2_arm64.deb",
+      "sha256": "55f6d389cc954407cdba6e4ba5e7039dd2042d2ca8929d6f5eb49d6b97ba92de"
+    },
+    {
+      "name": "libffi8",
+      "version": "3.4.8-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libf/libffi/libffi8_3.4.8-2_arm64.deb",
+      "file": "libffi8_3.4.8-2_arm64.deb",
+      "sha256": "d84a783b818f2386627604e64b793eb4ac5bb9ea1ba321a194a1c9c82fe09a01"
+    }
+  ],
+  "wasmtime": {
+    "version": "48.0.1",
+    "url": "https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.1/wasmtime-v48.0.1-aarch64-linux-c-api.tar.xz",
+    "archive_sha256": "1c521a9be661644541158b360df8f7c7ec5bc2d88d23ff4dbbc12f639247c266",
+    "library_sha256": "6a113cb547f181577eddd0ecc81588ad3306c747b8ba3880d5593f37d8697a74",
+    "license_sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+  },
+  "sbom_generator": "docker.io/docker/buildkit-syft-scanner@sha256:873a7458c3c8ac8e32c7b796c10e1600b07b963d2aa000a72a2d97aaaa2d6315"
+}

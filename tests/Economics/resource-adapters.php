@@ -1,0 +1,52 @@
+<?php
+declare(strict_types=1);
+require __DIR__.'/resource-fixtures.php';
+use Greenwood\Provider\{MeteredStorageAdapter,ResourceAllocationJournal,ResourceCollectionSession,ResourceTelemetryJournal};
+use Greenwood\Resources\ResourceManifest;
+use Greenwood\Crypto\Ed25519KeyPair;
+$dir=sys_get_temp_dir().'/greenwood-adapters-'.bin2hex(random_bytes(8));mkdir($dir,0700);
+$scope=['chain'=>'adapter-fixture','genesis'=>str_repeat('1',64),'provider_id'=>str_repeat('2',64),'workload_id'=>str_repeat('3',64),'assignment_generation'=>str_repeat('4',64),'commitment'=>str_repeat('5',64),'interval_start_height'=>1,'interval_end_height'=>100,'catalog_hash'=>str_repeat('6',64),'manifest_hash'=>''];
+$runtime=str_repeat('7',64);$boot=str_repeat('8',64);$asset=str_repeat('9',64);
+$manifest=['version'=>1,'rounding_policy'=>'ceil_line_gru_then_ceil_gwd_v1','duration_ms'=>'1000','lines'=>[resourceLine('requests','storage.object.requests','9','storage',1,10),resourceLine('transfer','storage.object.egress','9','storage',1,1000)]];
+$scope['manifest_hash']=ResourceManifest::hash($manifest);$key=Ed25519KeyPair::generate();
+try{
+ mkdir($dir.'/objects',0700);$storage=new MeteredStorageAdapter($dir.'/objects',$dir.'/operations',$scope,$asset,'object',1048576,fn($s)=>$s===$scope);
+ $journal=new ResourceTelemetryJournal($dir.'/telemetry');$time=0;
+ $observe=static function()use(&$time,$runtime,$boot,$scope){return ['boot_id'=>$boot,'sample'=>['runtime_identity'=>$runtime,'monotonic_ms'=>(string)$time],'runtime'=>['runtime_identity'=>$runtime,'workload_id'=>$scope['workload_id'],'assignment_generation'=>$scope['assignment_generation'],'ready'=>true]];};
+ $session=new ResourceCollectionSession($journal,$key,$scope,$manifest,1000,$observe,fn($s)=>$s===$scope,null,[$storage]);
+ $legacy=new \Greenwood\Provider\MeteringService($dir.'/legacy');
+ $monitor=new \Greenwood\Provider\HostedMeteringMonitor($legacy,fn()=>[['state'=>'RUNNING','application_id'=>1,'service'=>'web','image_ref'=>'fixture','container_id'=>'fixture']],fn()=>['meter_scope'=>$scope],fn()=>['version'=>1,'verification_level'=>'C','source'=>'local_cgroup_v2','runtime_identity'=>$runtime,'cpu_ms'=>'0'],1000,fn()=>0,fn()=>$session);
+ check($monitor->tick()[0]['status']==='OBSERVED_PROVIDER_ORIGIN','Existing hosted provider loop invokes universal resource collection');unset($monitor,$legacy);
+ $object=hash('sha256','object');$put=hash('sha256','put');$storage->execute($put,'put',$object,'actual local I/O');$read=$storage->execute(hash('sha256','get'),'get',$object);
+ check($read['data']==='actual local I/O'&&$read['bytes']==='16','Actual scoped file write and read measured');
+ rejects(fn()=>$storage->execute(hash('sha256','get'),'get',$object),'Repeated read cannot charge or send twice');
+ rejects(fn()=>$storage->execute($put,'put',hash('sha256','different'),'different'),'Event id cannot alias another operation');
+ rejects(fn()=>$storage->execute(hash('sha256','escape'),'get','../outside'),'Traversal denied');
+ $time=1000;unset($session);$session=new ResourceCollectionSession($journal,$key,$scope,$manifest,1000,$observe,fn()=>true,null,[$storage]);$session->sample(true);$e=$journal->evidence($scope['commitment']);
+ check(array_column($e['measurements'],'quantity')===['2','16'],'Real storage receipts compose into signed typed resource evidence after collector restart');
+ $presentation=\Greenwood\Economics\ServicePresentation::resources(['resource_manifest'=>$manifest,'claim'=>['evidence'=>$e]]);check($presentation[1]['unit']==='byte'&&$presentation[1]['measured_quantity']==='16'&&$presentation[1]['billing_basis']==='consumed','RPC resource projection preserves exact units and measurement basis');
+ rejects(fn()=>$session->sample(),'Closed collection cannot reset');
+ $foreign=$scope;$foreign['workload_id']=str_repeat('a',64);rejects(fn()=>new MeteredStorageAdapter($dir.'/objects',$dir.'/foreign',$foreign,$asset,'object',1048576,fn()=>true),'Cross-tenant root reuse denied');
+ $deny=new MeteredStorageAdapter($dir.'/objects',$dir.'/operations',$scope,$asset,'object',1048576);rejects(fn()=>$deny->execute(hash('sha256','denied'),'get',$object),'Storage writes/reads require explicit finalized funding callback');
+ $next=$scope;$next['commitment']=str_repeat('b',64);$next['interval_start_height']=100;$next['interval_end_height']=200;
+ $renewed=new MeteredStorageAdapter($dir.'/objects',$dir.'/renewed',$next,$asset,'object',1048576,fn()=>true);check($renewed->execute(hash('sha256','renewed-get'),'get',$object)['data']==='actual local I/O','Recurring funded interval retains tenant data with separate counters');
+ symlink('/etc/passwd',$dir.'/objects/'.str_repeat('f',64));rejects(fn()=>$storage->snapshot($manifest),'Unattributed symlink cannot enter storage measurement');unlink($dir.'/objects/'.str_repeat('f',64));
+ foreach(['nas','backup'] as $kind){mkdir($dir.'/'.$kind,0700);$a=new MeteredStorageAdapter($dir.'/'.$kind,$dir.'/'.$kind.'-journal',$scope,$asset,$kind,1048576,fn()=>true);$a->execute(hash('sha256',$kind),$kind==='backup'?'restore':'put',$object,'data');$a->execute(hash('sha256',$kind.'delete'),'delete',$object);check(!file_exists($dir.'/'.$kind.'/'.$object),'Actual '.$kind.' operation and explicit deletion');}
+ $reserved=['version'=>1,'rounding_policy'=>'ceil_line_gru_then_ceil_gwd_v1','duration_ms'=>'1000','lines'=>[resourceLine('gpu','compute.gpu.reserved','9','gpu',500,500000)]];$rs=$scope;$rs['manifest_hash']=ResourceManifest::hash($reserved);
+ $inventory=[['asset_id'=>$asset,'resource_id'=>'compute.gpu.reserved','capacity'=>'1000','exclusive'=>false,'identity_hash'=>str_repeat('c',64),'profile_hash'=>str_repeat('d',64)]];
+ $alloc=new ResourceAllocationJournal($dir.'/allocator',$inventory);$alloc->reserve($rs,$reserved,$runtime,$boot,0,1000);
+ $rs2=$rs;$rs2['commitment']=str_repeat('a',64);$alloc->reserve($rs2,$reserved,$runtime,$boot,0,1000);$rs3=$rs;$rs3['commitment']=str_repeat('b',64);
+ rejects(fn()=>$alloc->reserve($rs3,$reserved,$runtime,$boot,0,1000),'Cross-workload device overcommit rejected');
+ unset($alloc);$alloc=new ResourceAllocationJournal($dir.'/allocator',$inventory);check(count($alloc->leases($rs['commitment'],$runtime,$boot))===1,'Allocation survives restart');
+ rejects(fn()=>$alloc->leases($rs['commitment'],$runtime,str_repeat('e',64)),'Host reboot cannot silently reuse reservation');
+ $alloc->release($rs['commitment'],$runtime);rejects(fn()=>$alloc->reserve($rs,$reserved,$runtime,$boot,0,1000),'Retired commitment cannot reopen');$alloc->reserve($rs3,$reserved,$runtime,$boot,0,1000);
+ $exclusive=$inventory;$exclusive[0]['exclusive']=true;$exclusive[0]['capacity']='500';$x=new ResourceAllocationJournal($dir.'/exclusive',$exclusive);$x->reserve($rs,$reserved,$runtime,$boot,0,1000);rejects(fn()=>$x->reserve($rs2,$reserved,$runtime,$boot,0,1000),'Exclusive GPU/NPU reservation refuses overlapping workload');
+ $device=['asset_id'=>$asset,'resource_id'=>'compute.npu.reserved','device_path'=>'/dev/accel/accel999999','driver'=>'unqualified','driver_version_hash'=>str_repeat('a',64),'profile_hash'=>str_repeat('b',64),'sysfs_path'=>'/sys/devices/greenwood-missing'];
+ check(\Greenwood\Resources\Metering\DeviceReservationCollector::observe($device,getmypid())['available']===false,'Missing NPU device/driver remains explicitly unavailable');
+ $host=new \Greenwood\Provider\ResourceHostCollector('greenwood','fixture',$scope,fn()=>['state'=>'STOPPED']);rejects(fn()=>$host->observe(),'Non-running runtime cannot create resource observations');
+ rejects(fn()=>$storage->execute(hash('sha256','overquota'),'put',hash('sha256','large'),str_repeat('z',1048576)),'Quota applies to actual retained logical bytes');
+ $calls=0;$expired=new MeteredStorageAdapter($dir.'/objects',$dir.'/operations',$scope,$asset,'object',1048576,static function()use(&$calls){return ++$calls===1;});rejects(fn()=>$expired->execute(hash('sha256','expired'),'get',$object),'Funding is rechecked after acquiring storage lock');unset($expired);
+ $operation=new \Greenwood\Provider\ServiceOperationMeter($dir.'/operations',$scope);check($operation->status($put)['state']==='COMPLETE','Completed receipt is inspectable without replaying I/O');
+ $operation->begin(hash('sha256','uncertain'));rejects(fn()=>$storage->snapshot($manifest),'Uncertain storage I/O blocks evidence export');unset($operation);
+ echo json_encode(['status'=>'PASS','checks'=>$checks,'actual_local_file_io'=>true,'hardware_device_fixture'=>true,'independent_verification'=>false,'live_transactions'=>0],JSON_PRETTY_PRINT)."\n";
+}finally{unset($alloc,$x,$journal,$storage,$session,$a,$deny,$renewed);$it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);foreach($it as $file){if($file->isDir()&&!$file->isLink())rmdir($file->getPathname());else unlink($file->getPathname());}rmdir($dir);}

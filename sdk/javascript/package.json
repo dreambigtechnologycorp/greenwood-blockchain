@@ -1,0 +1,10 @@
+{
+  "name": "@greenwood/resource-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {".": "./resource-client.mjs", "./signing": "./signing.mjs"},
+  "engines": {"node": ">=22"},
+  "dependencies": {"blakejs": "1.2.1"}
+}

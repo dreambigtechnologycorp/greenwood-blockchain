@@ -14,6 +14,7 @@ final class Policy
     public static function validateProduction(array $p): array
     {
         $p=self::validate($p);
+        if(!array_key_exists('recovery_policy',$p)||$p['recovery_policy']===null)throw new \InvalidArgumentException('Explicit production recovery decision required');
         if ($p['profile']!=='production' || ($p['service_trust_policy']??null)!=='explicit_profiles_v1'
             || CanonicalJson::encode($p['allocations'])!==CanonicalJson::encode(self::PRODUCTION_ALLOCATION))
             throw new \InvalidArgumentException('Fresh production requires selected allocation and explicit service trust profiles');
@@ -37,6 +38,7 @@ final class Policy
         $guardians = $p['guardians'] ?? [];
         if (!is_array($guardians) || count($guardians) < 1 || count($guardians) > 5 || count(array_unique($guardians)) !== count($guardians)) throw new \InvalidArgumentException('Explicit guardian keys required');
         foreach ($guardians as $key) self::hex($key);
+        RecoveryPolicy::validate($p['recovery_policy']??null,$keys,$guardians);
         if (!is_int($p['pause_blocks'] ?? null) || $p['pause_blocks'] < 1 || $p['pause_blocks'] > 20160) throw new \InvalidArgumentException('Invalid bounded guardian pause');
         $allocation = $p['allocations'] ?? []; $names = array_keys($allocation); sort($names, SORT_STRING);
         if ($names !== self::RESERVES) throw new \InvalidArgumentException('Required reserve allocations missing');

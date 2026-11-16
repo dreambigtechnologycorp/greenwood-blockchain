@@ -126,3 +126,31 @@ Local Markdown file links and section anchors have been checked across the
 first-party PHP and CLI documentation sets. This does not validate external URLs or establish the
 correctness of unreviewed third-party specifications. The inaccessible repository
 review remains outside this operating-guide reconciliation.
+
+## Universal resource implementation
+
+The metering service accepts signed frames bound to the funded scope, exact
+resource manifest, runtime identity and source incarnation. It enforces sequence,
+monotonic time, sampling gaps and counter conservation. All 36 catalog definitions
+have typed reservation or consumption accounting; Linux collectors measure CPU,
+RAM limits, attributed block I/O and owned workload network counters. Accelerator
+and storage-capacity reservations use explicit allocation leases and runtime
+availability. NAS/object/backup counters require instrumented service receipts.
+Device discovery alone never establishes billable utilization or independence.
+
+Closed evidence, terminal outbox entries and stopped installation audits can be
+archived durably while retaining replay guards. Long checkpoint histories roll
+out of hot SQLite rows. Total evidence storage still grows and needs capacity
+planning and consistent backups. Recovery is a genesis-configured council quorum,
+timelock and veto mechanism that can replace custody, not withdraw treasury funds;
+no production council is installed by default.
+
+The in-repository Node SDK verifies provider offers, discloses exact GWD amounts
+and accepted trust policy, and prepares signed funding/recovery transactions.
+It does not automatically submit or declare finality. See the
+[self-update guide](guides/SELF_MANAGED_UPDATE.md),
+[metering guide](guides/RESOURCE_METERING.md), and
+[retention/recovery guide](guides/RETENTION_AND_RECOVERY.md).
+
+The [current source scope map](guides/SOURCE_SCOPE_STATUS.md) records the concrete
+storage I/O, allocation, host collector and Studio integration additions.

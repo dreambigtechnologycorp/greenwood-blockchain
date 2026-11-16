@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { createSigner, inspectResourceOffer, prepareFunding, recoveryAction, displayGwd, programPolicyHash, encodeEconomicAction } from '../../sdk/javascript/resource-client.mjs';
+import { protocolHash, inspectPhysicalTransaction } from '../../sdk/javascript/signing.mjs';
+const provider=createSigner(randomBytes(32)),customer=createSigner(randomBytes(32)),genesis='1'.repeat(64),chainId='resource-sdk-test';
+const manifest={version:1,rounding_policy:'ceil_line_gru_then_ceil_gwd_v1',duration_ms:'1000',lines:[]};
+const program={id:'2'.repeat(64),provider_key:provider.publicKey,service_id:'3'.repeat(64),catalog_hash:'4'.repeat(64),trust_profile:'BOOTSTRAP_OPERATOR_ATTESTED',subsidy_percent:0};
+const quote={chain:chainId,genesis,payer:customer.accountId,provider:provider.accountId,service_id:program.service_id,catalog_hash:program.catalog_hash,issued_height:1,expiry_height:100,trust_profile:program.trust_profile,program_policy_hash:programPolicyHash(program),max_gru_units:'1000',max_gwd_units:'9223372036854775807',resource_quote_version:2,resource_manifest:manifest,resource_manifest_hash:protocolHash('GREENWOOD_RESOURCE_MANIFEST_V1',encodeEconomicAction(manifest)).toString('hex')};
+const signed=provider.signResourceDocument('quote',quote);const input={...signed,program,chainId,genesis,payer:customer.accountId,finalizedHeight:5};let checks=0;
+const disclosure=inspectResourceOffer(input);assert.equal(disclosure.maxProviderGwd,'9223372036854.775807');assert.equal(disclosure.independentVerificationRequired,false);checks+=2;
+assert.equal(displayGwd('1'),'0.000001');checks++;
+for(const override of [{genesis:'0'.repeat(64)},{payer:provider.accountId},{finalizedHeight:100},{approval:{...signed.approval,signature:'0'.repeat(128)}},{program:{...program,trust_profile:'INDEPENDENT_ATTESTED'}}]){assert.throws(()=>inspectResourceOffer({...input,...override}));checks++;}
+const funding={signer:customer,offer:signed.body,approval:signed.approval,program,chainId,genesis,nonce:0,finalizedHeight:5,binding:{request_id:'5'.repeat(64),generation:1},endHeight:50,acceptedPolicyHash:disclosure.programPolicyHash};
+assert.equal(inspectPhysicalTransaction(prepareFunding(funding)).type,13);checks++;
+assert.throws(()=>prepareFunding({...funding,acceptedPolicyHash:'0'.repeat(64)}));checks++;
+assert.throws(()=>prepareFunding({...funding,binding:{request_id:'5'.repeat(64)}}));checks++;
+assert.throws(()=>recoveryAction('recovery_execute',genesis,1,{proposal:'6'.repeat(64),amount:'100'}));checks++;
+const recovery=recoveryAction('recovery_approve',genesis,1,{proposal:'6'.repeat(64)});assert.equal(inspectPhysicalTransaction(customer.prepareTreasury({chainId,nonce:1,action:recovery})).type,12);checks++;
+const frame={version:1,scope_hash:'1'.repeat(64),runtime_identity:'2'.repeat(64),source_incarnation:'3'.repeat(64),sequence:0,monotonic_ms:'10',measurements:[]};const telemetry=provider.signResourceDocument('telemetry',frame);
+const php=String.raw`require $argv[1];$r=json_decode(stream_get_contents(STDIN),true);$frame=Greenwood\Resources\Metering\TelemetryFrame::verify(['body'=>$r['body'],'signature'=>$r['approval']['signature']],$r['approval']['public_key']);echo $frame['monotonic_ms'];`;
+const result=spawnSync('php',['-r',php,'scripts/economics-bootstrap.php'],{input:JSON.stringify(telemetry),encoding:'utf8',timeout:15000});assert.equal(result.status,0,result.stderr);assert.equal(result.stdout,'10');checks+=2;
+const policy=spawnSync('php',['-r','require $argv[1];echo json_encode(["unattested_after_end_blocks"=>Greenwood\\Economics\\ServiceSettlement::EVIDENCE_BLOCKS,"dispute_refund_after_blocks"=>Greenwood\\Economics\\ServiceSettlement::DISPUTE_BLOCKS,"challenge_blocks"=>Greenwood\\Economics\\ServiceSettlement::CHALLENGE_BLOCKS]);','scripts/economics-bootstrap.php'],{encoding:'utf8',timeout:15000});
+assert.equal(policy.status,0,policy.stderr);assert.deepEqual(disclosure.refundPolicy,JSON.parse(policy.stdout));checks+=2;
+console.log(JSON.stringify({status:'PASS',checks,live_transactions:0,automatic_signing:false}));

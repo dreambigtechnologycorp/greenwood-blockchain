@@ -37,7 +37,7 @@ final class ResourceCatalog
         ksort($d,SORT_STRING);$definitions=$d;return $d;
     }
     public static function definition(mixed $id): array { if(!is_string($id))throw new \InvalidArgumentException('Invalid resource identifier');return self::definitions()[$id]??throw new \InvalidArgumentException('Undefined resource'); }
-    public static function profileSupported(string $profile): bool { return in_array($profile,['cgroup.cpu.v1','cgroup.io.v1','allocation.interval.v1'],true); }
+    public static function profileSupported(string $profile): bool { return in_array($profile,['cgroup.cpu.v1','cgroup.io.v1','allocation.interval.v1','network.workload.v1','nas.workload.v1','object.workload.v1','backup.workload.v1'],true); }
     public static function validate(array $catalog): array {
         if(($catalog['version']??null)!==2||array_diff(array_keys($catalog),['version','entries'])||!is_array($catalog['entries']??null)||!array_is_list($catalog['entries'])||!$catalog['entries']||count($catalog['entries'])>64)throw new \InvalidArgumentException('Invalid resource catalog');
         $previous='';foreach($catalog['entries'] as $entry){if(!is_array($entry))throw new \InvalidArgumentException('Invalid catalog entry');

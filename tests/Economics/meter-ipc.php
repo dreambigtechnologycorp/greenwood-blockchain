@@ -28,7 +28,20 @@ try{
  rejects(fn()=>$client->finish($commitment,$sample(80)),'Repeated IPC finish cannot mutate closed evidence');
  $bad=$sample(0);$bad['verification_level']='A';rejects(fn()=>$client->begin(str_repeat('c',64),$bad),'IPC cannot promote provider telemetry to independent');
  $peer=stream_socket_client('unix://'.$directory.'/meter.sock');fwrite($peer,CanonicalJson::encode(['action'=>'shell','secret'=>'PRIVATE_TEST_SECRET'])."\n");$reply=fgets($peer);fclose($peer);check(str_contains($reply,'UNVERIFIED')&&!str_contains($reply,'PRIVATE_TEST_SECRET'),'Protocol rejects arbitrary operations without echoing sensitive input');
+ $resourceId=str_repeat('9',64);$key=\Greenwood\Crypto\Ed25519KeyPair::generate();
+ $definition=\Greenwood\Resources\ResourceCatalog::definitions();$resource=array_key_first($definition);
+ $manifest=['version'=>1,'rounding_policy'=>'ceil_line_gru_then_ceil_gwd_v1','duration_ms'=>'1000','lines'=>[['line_id'=>'cpu','resource_id'=>$resource,'asset_id'=>str_repeat('8',64),'meter_version'=>$definition[$resource]['meter_version'],'reserved_units'=>'2','maximum_quantity'=>'2000','rate_num'=>'1','rate_den'=>'1','included_quantity'=>'0','overage_of'=>null]]];
+ $scope=['chain'=>'ipc-fixture','genesis'=>str_repeat('1',64),'provider_id'=>str_repeat('2',64),'workload_id'=>str_repeat('3',64),'assignment_generation'=>str_repeat('4',64),'commitment'=>$resourceId,'interval_start_height'=>1,'interval_end_height'=>100,'catalog_hash'=>str_repeat('5',64),'manifest_hash'=>\Greenwood\Resources\ResourceManifest::hash($manifest)];
+ $client->bindResources($scope,$manifest,bin2hex($key->getPublicKey()),1000);
+ $frame=['version'=>1,'scope_hash'=>hash('sha256',CanonicalJson::encode($scope)),'runtime_identity'=>$runtime,'source_incarnation'=>str_repeat('7',64),'sequence'=>0,'monotonic_ms'=>'0','measurements'=>[['line_id'=>'cpu','asset_id'=>str_repeat('8',64),'value'=>'2','available'=>true]]];
+ $client->appendResources($resourceId,\Greenwood\Resources\Metering\TelemetryFrame::sign($frame,$key));
+ $stop(9);$start();rejects(fn()=>$client->resourceEvidence($resourceId),'Incomplete signed interval remains unverified after service crash');
+ $frame['sequence']=1;$frame['monotonic_ms']='1000';$frame['measurements'][0]['value']='4';
+ $terminal=$client->appendResources($resourceId,\Greenwood\Resources\Metering\TelemetryFrame::sign($frame,$key),true);
+ $evidence=$client->resourceEvidence($resourceId);$expected=$definition[$resource]['measurement_type']==='reserved'?'2000':'2';
+ check($evidence['evidence']['measurements'][0]['quantity']===$expected,'Signed resource telemetry closes through actual Unix service');
+ $client->archiveResources($resourceId,$terminal['head']);$stop();$start();check(CanonicalJson::encode($client->resourceEvidence($resourceId))===CanonicalJson::encode($evidence),'Archived signed evidence survives actual daemon restart');
  chmod($directory.'/meter.sock',0666);rejects(fn()=>$client->bundle($commitment),'Publicly accessible socket is rejected');chmod($directory.'/meter.sock',0600);
  $stop();$start();check($client->bundle($commitment)['evidence_bundle_hash']===$bundle['evidence_bundle_hash'],'Clean service restart preserves canonical evidence digest');
  echo json_encode(['status'=>'PASS','checks'=>$checks,'actual_private_unix_ipc'=>true,'actual_process_sigkill_recovery'=>true,'oci_container_executed'=>false,'physical_independence'=>false,'samples'=>'explicit_fixture_counters'],JSON_PRETTY_PRINT)."\n";
-}finally{$stop();unset($client);foreach(glob($directory.'/*')?:[] as $path)unlink($path);rmdir($directory);}
+}finally{$stop();unset($client);$it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);foreach($it as $path){if($path->isDir())rmdir($path->getPathname());else unlink($path->getPathname());}rmdir($directory);}

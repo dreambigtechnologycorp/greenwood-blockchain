@@ -30,7 +30,7 @@ function fixture(bool $strictTrust=false): array {
         $p['allocations']=['security_emissions'=>'100000000000000','grants'=>'250000000000000','subsidies'=>'300000000000000','institute_treasury'=>'340000000000000','working_operations'=>'10000000000000'];
         $p['limits']=['grants'=>'250000000000','subsidies'=>'300000000000','institute_treasury'=>'340000000000','working_operations'=>'100000000000'];
     }
-    if($strictTrust)$p['service_trust_policy']='explicit_profiles_v1';
+    if($strictTrust){$p['service_trust_policy']='explicit_profiles_v1';$p['recovery_policy']=['enabled'=>false];}
     $g=new Genesis('greenwood-mainnet-economics-disposable-test');$validators=[];
     foreach(['A','B','C'] as $name){$k=Ed25519KeyPair::generate();$validators[$name]=$k;$g->addValidator($name,$k);}
     $g->configureEconomics($p);

@@ -56,6 +56,29 @@ managed edge and Ansible staging. The Python deployment CLI is a separate
 repository; `bin/greenwood` here remains the PHP RPC/operator client. Use the
 [physical handoff](deploy/ansible/CONTROL_PLANE_HANDOFF.md) for new hardware.
 
+## Resource metering and self-managed updates
+
+Production artifact preparation, registry bootstrap and installation gates are
+documented in the [release preparation guide](deploy/production/README.md).
+
+See the [current WP0–WP10 source map](docs/guides/SOURCE_SCOPE_STATUS.md) for
+implementation evidence and the separate physical qualification gates.
+
+The source includes signed, scoped resource telemetry, Linux cgroup/block/network
+collectors, reservation-allocation adapters, NAS/object/backup operation journals,
+private meter IPC, durable evidence archives, settlement replay protection and
+explicitly configured governance recovery. The local JavaScript SDK provides
+exact-value offer disclosure and signing with explicit trust-policy consent.
+
+Start with [updating the source yourself](docs/guides/SELF_MANAGED_UPDATE.md),
+[resource metering](docs/guides/RESOURCE_METERING.md),
+[concrete source adapters](docs/guides/SOURCE_ADAPTER_INTEGRATION.md),
+[retention and recovery](docs/guides/RETENTION_AND_RECOVERY.md), and the
+[customer SDK](sdk/javascript/README.md). These guides include commands and failure
+handling. Resource catalog support does not automatically enable payment: physical
+qualification and approved service policies remain required. Operator telemetry
+is never presented as independent verification.
+
 ## Architecture
 
 ```text

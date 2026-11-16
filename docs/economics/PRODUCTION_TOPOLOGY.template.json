@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "chain_id": null,
+  "previous_chain_id": null,
+  "retired_public_keys": [],
+  "validators": {
+    "A": {"public_key": null, "endpoint": null},
+    "B": {"public_key": null, "endpoint": null},
+    "C": {"public_key": null, "endpoint": null}
+  },
+  "providers": {"A": null, "B": null, "C": null}
+}

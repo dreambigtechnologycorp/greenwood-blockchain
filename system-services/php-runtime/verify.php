@@ -1,0 +1,10 @@
+<?php
+declare(strict_types=1);
+if(PHP_VERSION!=='8.5.12'||PHP_INT_SIZE!==8||php_uname('m')!=='aarch64')throw new RuntimeException('Expected PHP 8.5.12 Linux ARM64');
+$versions=[];foreach(['sodium','pdo_sqlite','posix','pcntl','FFI'] as $extension){if(!extension_loaded($extension))throw new RuntimeException('Missing extension: '.$extension);$versions[$extension]=phpversion($extension);}
+$db=new PDO('sqlite::memory:');$db->exec('CREATE TABLE verification(value INTEGER); INSERT INTO verification VALUES(42)');if((int)$db->query('SELECT value FROM verification')->fetchColumn()!==42)throw new RuntimeException('SQLite execution failed');
+$key=sodium_crypto_sign_keypair();$signature=sodium_crypto_sign_detached('runtime-test',sodium_crypto_sign_secretkey($key));if(!sodium_crypto_sign_verify_detached($signature,'runtime-test',sodium_crypto_sign_publickey($key)))throw new RuntimeException('Sodium execution failed');
+$pid=pcntl_fork();if($pid<0)throw new RuntimeException('PCNTL fork failed');if($pid===0)exit(0);pcntl_waitpid($pid,$status);if(!pcntl_wifexited($status)||pcntl_wexitstatus($status)!==0)throw new RuntimeException('Child execution failed');
+$library=getenv('GREENWOOD_WASMTIME_LIB');if(hash_file('sha256',$library)!=='6a113cb547f181577eddd0ecc81588ad3306c747b8ba3880d5593f37d8697a74')throw new RuntimeException('Wasmtime library digest mismatch');
+$ffi=FFI::cdef('typedef struct wasm_engine_t wasm_engine_t; wasm_engine_t *wasm_engine_new(void); void wasm_engine_delete(wasm_engine_t*);',$library);$engine=$ffi->wasm_engine_new();if(FFI::isNull($engine))throw new RuntimeException('Wasmtime engine creation failed');$ffi->wasm_engine_delete($engine);
+echo json_encode(['status'=>'PASS','php'=>PHP_VERSION,'architecture'=>php_uname('m'),'integer_bytes'=>PHP_INT_SIZE,'extensions'=>$versions,'sqlite_version'=>$db->query('SELECT sqlite_version()')->fetchColumn(),'sodium_version'=>SODIUM_LIBRARY_VERSION,'wasmtime'=>'48.0.1','wasmtime_library_sha256'=>hash_file('sha256',$library),'wasmtime_engine_executed'=>true,'sqlite_executed'=>true,'pcntl_executed'=>true,'physical_qualification'=>false],JSON_PRETTY_PRINT)."\n";

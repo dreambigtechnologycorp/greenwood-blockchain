@@ -17,6 +17,7 @@ final class Ledger
     private array $paused = [];
     private array $pauseUsed = [];
     private array $nonces = [];
+    private array $recovery = ['nonce'=>0,'proposal'=>null,'last_event'=>null];
     private int $policyVersion = 1;
     private int $lastReleaseHeight = 0;
     private int $released = 0;
@@ -47,6 +48,7 @@ final class Ledger
         return ['chain'=>$this->chain,'genesis'=>bin2hex($this->genesis),'operators'=>array_map('bin2hex',$this->operators),'version'=>1,'policy'=>$this->policy,'policy_version'=>$this->policyVersion,'balances'=>$this->balances,
             'proposals'=>$this->proposals,'spent'=>$this->spent,'paused'=>$this->paused,'pause_used'=>$this->pauseUsed,'nonces'=>$this->nonces,
             'services'=>$this->services->snapshot(),'last_release_height'=>$this->lastReleaseHeight,'released'=>$this->released,'fees_distributed'=>$this->feesDistributed]
+            + (RecoveryPolicy::enabled($this->policy)?['recovery_state'=>$this->recovery]:[])
             + ($this->resourcePolicies->snapshot()?['resource_policies'=>$this->resourcePolicies->snapshot()]:[]);
     }
     /** Derived-cache restoration is checked against the finalized state root by StateSqlite. */
@@ -60,6 +62,12 @@ final class Ledger
         $ledger->policyVersion=$snapshot['policy_version'];$ledger->lastReleaseHeight=$snapshot['last_release_height'];$ledger->released=$snapshot['released'];$ledger->feesDistributed=$snapshot['fees_distributed'];
         $ledger->services=ServiceSettlement::restore($snapshot['services']??['programs'=>[],'commitments'=>[],'bindings'=>[],'quotes'=>[]]);
         $ledger->resourcePolicies=\Greenwood\Network\ResourcePolicyState::restore($snapshot['resource_policies']??[]);
+        if(RecoveryPolicy::enabled($ledger->policy)){
+            $r=$snapshot['recovery_state']??null;
+            $fields=is_array($r)?array_keys($r):[];sort($fields);
+            if(!is_array($r)||$fields!==['last_event','nonce','proposal']||!is_int($r['nonce'])||$r['nonce']<0)throw new \InvalidArgumentException('Missing or malformed recovery cache');
+            $ledger->recovery=$r;
+        }elseif(isset($snapshot['recovery_state']))throw new \InvalidArgumentException('Recovery state without genesis authority');
         return $ledger;
     }
     public function reserveAddress(string $id): string { return ProtocolHash::hash('GREENWOOD_RESERVE_V1', $id); }
@@ -133,6 +141,7 @@ final class Ledger
     public function apply(State $state, Envelope $tx, int $height): void
     {
         $a=CanonicalJson::decode($tx->getPayload());$action=$a['action']??null;if(($a['genesis']??null)!==bin2hex($this->genesis)||($a['policy_version']??null)!==$this->policyVersion)throw new \InvalidArgumentException('Treasury genesis/policy binding mismatch');$key=bin2hex($tx->getSenderPublicKey());
+        if(is_string($action)&&str_starts_with($action,'recovery_')){$this->applyRecovery($a,$key,$height);return;}
         if ($action==='pause') {
             if (!in_array($key,$this->policy['guardians'],true)) throw new \InvalidArgumentException('Unauthorized guardian');
             $reserve=$a['reserve']??'';
@@ -164,6 +173,7 @@ final class Ledger
                 $p['replacement']=ServiceSettlement::validateProgram($a['program']??[],$this->policy);
             } elseif ($kind==='policy') {
                 $replacement=Policy::validate($a['replacement']??[]);
+                if(CanonicalJson::encode([$replacement['recovery_policy']??null])!==CanonicalJson::encode([$this->policy['recovery_policy']??null]))throw new \InvalidArgumentException('Recovery authority is genesis-bound');
                 // Allocation, emission/fee mechanism, operational exposure and clocks cannot be changed by this action.
                 foreach ($this->policy as $name=>$value) if (!in_array($name,['signers','guardians','recipients','limits'],true) && CanonicalJson::encode([$replacement[$name]??null])!==CanonicalJson::encode([$value])) throw new \InvalidArgumentException('Immutable economic policy');
                 $p['replacement']=$replacement;
@@ -201,6 +211,53 @@ final class Ledger
             unset($other);
         }
         $this->proposals[$id]['status']='executed';
+    }
+    /** Recovery can replace governance keys only; it has no reserve payment operation. */
+    private function applyRecovery(array $a,string $key,int $height): void
+    {
+        if(!RecoveryPolicy::enabled($this->policy))throw new \InvalidArgumentException('Recovery is not authorized by genesis');
+        $r=$this->policy['recovery_policy'];$action=$a['action'];
+        $allowed=['action','genesis','policy_version','proposal'];
+        if($action==='recovery_propose')$allowed=['action','genesis','policy_version','nonce','signers','guardians','reason_hash'];
+        if(array_diff(array_keys($a),$allowed))throw new \InvalidArgumentException('Recovery cannot alter financial policy or spend reserves');
+        if($action==='recovery_veto')$this->signer($key);
+        elseif(!in_array($key,$r['keys'],true))throw new \InvalidArgumentException('Unauthorized recovery signer');
+        $p=$this->recovery['proposal'];
+        if($action==='recovery_propose'){
+            if($p&&$p['version']===$this->policyVersion&&$p['expires']>=$height)throw new \InvalidArgumentException('Recovery proposal already active');
+            if(($a['nonce']??null)!==$this->recovery['nonce'])throw new \InvalidArgumentException('Recovery nonce mismatch');
+            Policy::hex($a['reason_hash']??null);
+            $replacement=$this->policy;$replacement['signers']=$a['signers']??[];$replacement['guardians']=$a['guardians']??[];Policy::validate($replacement);
+            if($replacement['signers']===$this->policy['signers']&&$replacement['guardians']===$this->policy['guardians'])throw new \InvalidArgumentException('Recovery must replace authority');
+            $body=['chain'=>$this->chain,'genesis'=>bin2hex($this->genesis),'version'=>$this->policyVersion,'nonce'=>$a['nonce'],
+                'signers'=>$replacement['signers'],'guardians'=>$replacement['guardians'],'reason_hash'=>$a['reason_hash'],
+                'created'=>$height,'expires'=>Amount::add($height,$r['proposal_lifetime_blocks'])];
+            $body['id']=bin2hex(ProtocolHash::hash('GREENWOOD_GOVERNANCE_RECOVERY_V1',CanonicalJson::encode($body)));
+            $this->recovery['proposal']=$body+['approvals'=>[],'vetoes'=>[],'ready'=>null];
+            $this->recovery['nonce']=Amount::add($this->recovery['nonce'],1);return;
+        }
+        if(!$p||($a['proposal']??null)!==$p['id']||$p['version']!==$this->policyVersion||$height>$p['expires'])throw new \InvalidArgumentException('Unknown, stale or expired recovery');
+        if($action==='recovery_approve'){
+            if(in_array($key,$p['approvals'],true))throw new \InvalidArgumentException('Duplicate recovery approval');
+            $p['approvals'][]=$key;
+            if(count($p['approvals'])===$r['threshold']){
+                $p['ready']=Amount::add($height,$r['timelock_blocks']);
+                if($p['ready']>$p['expires'])throw new \InvalidArgumentException('Recovery expires before timelock');
+            }
+            $this->recovery['proposal']=$p;return;
+        }
+        if($action==='recovery_veto'){
+            if(in_array($key,$p['vetoes'],true))throw new \InvalidArgumentException('Duplicate recovery veto');
+            $p['vetoes'][]=$key;
+            if(count($p['vetoes'])>=$r['veto_threshold']){$this->recovery['last_event']=['id'=>$p['id'],'status'=>'vetoed','height'=>$height];$this->recovery['proposal']=null;}
+            else $this->recovery['proposal']=$p;
+            return;
+        }
+        if($action!=='recovery_execute'||$p['ready']===null||$height<$p['ready']||count($p['approvals'])<$r['threshold'])throw new \InvalidArgumentException('Recovery quorum/timelock not satisfied');
+        $replacement=$this->policy;$replacement['signers']=$p['signers'];$replacement['guardians']=$p['guardians'];Policy::validate($replacement);
+        $this->policy=$replacement;$this->policyVersion=Amount::add($this->policyVersion,1);
+        foreach($this->proposals as &$old)if(in_array($old['status'],['pending','queued'],true))$old['status']='invalidated';unset($old);
+        $this->recovery['last_event']=['id'=>$p['id'],'status'=>'executed','height'=>$height];$this->recovery['proposal']=null;
     }
     public function chargeFee(State $state, Envelope $tx, int $height): void
     {

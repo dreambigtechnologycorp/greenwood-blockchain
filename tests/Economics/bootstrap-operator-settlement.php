@@ -10,6 +10,14 @@ use Greenwood\Contracts\ContractId;
 use Greenwood\Transaction\{DeployContract,CallContract,TransferU64};
 $f=fixture(true);$s=$f['g']->initialState();$chain=$f['g']->getChainId();$genesis=$f['g']->getGenesisHash();$provider=Ed25519KeyPair::generate();
 $cap=resourceCapability($provider,bin2hex($genesis));$catalog=resourceCatalog();foreach($catalog['entries'] as &$entry)$entry['verification_level']='C';unset($entry);$manifest=resourceManifest();
+$storageMode=getenv('GWD_STORAGE_IO')==='1';
+if($storageMode){
+ $catalog=resourceCatalog(['compute.cpu.consumed','memory.ram.reserved','storage.object.requests','storage.object.egress']);foreach($catalog['entries'] as &$entry)$entry['verification_level']='C';unset($entry);
+ $cap['assets'][2]['resources']=array_values(array_unique(array_merge($cap['assets'][2]['resources'],['storage.object.requests'])));sort($cap['assets'][2]['resources'],SORT_STRING);
+ $cap['assets'][2]['meter_versions'][]='object.workload.v1';sort($cap['assets'][2]['meter_versions'],SORT_STRING);
+ $egress=$cap['assets'][2];foreach(['asset_id','billing_group','exclusivity_group'] as $field)$egress[$field]=str_repeat('7',64);$egress['resources']=['storage.object.egress'];$egress['meter_versions']=['object.workload.v1'];$cap['assets'][]=$egress;
+ $manifest=['version'=>1,'rounding_policy'=>'ceil_line_gru_then_ceil_gwd_v1','duration_ms'=>'1000','lines'=>[resourceLine('cpu','compute.cpu.consumed','1','cpu-fixture',1000,1000,0),resourceLine('ram','memory.ram.reserved','2','ram-fixture',4,4000,0),resourceLine('requests','storage.object.requests','3','storage-fixture',1,2,500),resourceLine('transfer','storage.object.egress','7','storage-fixture',1,1000)]];
+}
 registerResources($s,$provider,$cap,1,$chain);
 $wasm=file_get_contents($argv[1]??'/tmp/greenwood-hosted-registry.wasm');$registry=ContractId::fromWasm($wasm)->bytes;
 $s->applyTransaction(resourceTx($s,$f['beneficiary'],2,(new DeployContract($wasm,'',0,1000000))->serialize(),$chain),$chain,1);
@@ -50,13 +58,36 @@ check($s->getAccount(addr($f['beneficiary']))->getBalance()===6000,'Customer fun
 check($s->economicSummary()['balances']['subsidies']===$subsidiesBefore,'Bootstrap funding cannot lock protected subsidies');
 $c=$s->economicSummary()['services']['commitments'][$ids[0]];
 $scope=['chain'=>$chain,'genesis'=>bin2hex($genesis),'provider_id'=>$cap['provider_id'],'workload_id'=>$c['request_id'],'assignment_generation'=>$c['usage_assignment_generation'],'commitment'=>$c['id'],'interval_start_height'=>20163,'interval_end_height'=>20165,'catalog_hash'=>$p['catalog_hash'],'manifest_hash'=>ResourceManifest::hash($manifest)];
+if($storageMode){
+ $dir=sys_get_temp_dir().'/greenwood-storage-settlement-'.bin2hex(random_bytes(8));mkdir($dir,0700);mkdir($dir.'/objects',0700);
+ try{
+  $authorize=static fn($bound)=>$bound===$scope&&$c['status']==='funded';
+  $storage=new \Greenwood\Provider\MeteredStorageAdapter($dir.'/objects',$dir.'/operations',$scope,str_repeat('3',64),'object',1048576,$authorize,['storage.object.egress'=>str_repeat('7',64)]);
+  $telemetry=new \Greenwood\Provider\ResourceTelemetryJournal($dir.'/telemetry');$time=1000;$runtime=str_repeat('a',64);
+  $observe=static function()use(&$time,$runtime,$scope){return ['boot_id'=>str_repeat('b',64),'sample'=>['runtime_identity'=>$runtime,'monotonic_ms'=>(string)$time,'cpu_ms'=>'0','memory_limit_bytes'=>'4194304'],'runtime'=>['runtime_identity'=>$runtime,'workload_id'=>$scope['workload_id'],'assignment_generation'=>$scope['assignment_generation'],'ready'=>true]];};
+  $alloc=new \Greenwood\Provider\ResourceAllocationJournal($dir.'/allocations',[['asset_id'=>str_repeat('2',64),'resource_id'=>'memory.ram.reserved','capacity'=>'4','exclusive'=>false,'identity_hash'=>str_repeat('d',64),'profile_hash'=>str_repeat('e',64)]]);$alloc->reserve($scope,$manifest,$runtime,str_repeat('b',64),1000,2000);
+  $collector=new \Greenwood\Provider\ResourceCollectionSession($telemetry,$provider,$scope,$manifest,1000,$observe,$authorize,$alloc,[$storage]);$collector->sample();
+  $object=hash('sha256','funded-object');$storage->execute(hash('sha256','put'),'put',$object,str_repeat('x',750));$storage->execute(hash('sha256','get'),'get',$object);
+  $time=2000;$collector->sample(true);$e=$telemetry->evidence($c['id']);
+  check(array_column($e['measurements'],'quantity')===['0','4000','2','750'],'Actual file I/O produces exact funded resource evidence');
+ }finally{unset($storage,$telemetry,$collector,$alloc);$it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);foreach($it as $file){if($file->isDir())rmdir($file->getPathname());else unlink($file->getPathname());}rmdir($dir);}
+}else{
 $dir=sys_get_temp_dir().'/greenwood-bootstrap-meter-'.bin2hex(random_bytes(8));
 try{
  $meter=new MeteringService($dir);$meter->bind($scope);$sample=['version'=>1,'verification_level'=>'C','source'=>'local_cgroup_v2','runtime_identity'=>str_repeat('a',64),'cpu_ms'=>'10','monotonic_ms'=>'1000','memory_limit_bytes'=>'4194304'];
  $meter->begin($c['id'],$sample);$sample['cpu_ms']='760';$sample['monotonic_ms']='2000';$meter->finish($c['id'],$sample);unset($meter);$meter=new MeteringService($dir);
  $candidate=LocalResourceEvidence::prepare($meter->bundle($c['id']),$c,$p,$chain,bin2hex($genesis));
 }finally{unset($meter);foreach(glob($dir.'/*')?:[] as $file)unlink($file);if(is_dir($dir))rmdir($dir);}
-advance($s,20165);$e=$candidate['evidence'];$approvals=[ServiceAuthorization::approval('resource-usage',$e,$provider)['approval']];
+$telemetryDir=sys_get_temp_dir().'/greenwood-native-telemetry-'.bin2hex(random_bytes(8));
+try{
+ $telemetry=new \Greenwood\Provider\ResourceTelemetryJournal($telemetryDir);$telemetry->bind($scope,$manifest,bin2hex($provider->getPublicKey()),1000);
+ $frame=['version'=>1,'scope_hash'=>hash('sha256',CanonicalJson::encode($scope)),'runtime_identity'=>str_repeat('a',64),'source_incarnation'=>str_repeat('c',64),'sequence'=>0,'monotonic_ms'=>'1000','measurements'=>array_map(fn($line)=>['line_id'=>$line['line_id'],'asset_id'=>$line['asset_id'],'value'=>$line['resource_id']==='compute.cpu.consumed'?'10':$line['reserved_units'],'available'=>true],$manifest['lines'])];
+ $telemetry->append($c['id'],\Greenwood\Resources\Metering\TelemetryFrame::sign($frame,$provider));$frame['sequence']=1;$frame['monotonic_ms']='2000';$frame['measurements'][0]['value']='760';
+ $telemetry->append($c['id'],\Greenwood\Resources\Metering\TelemetryFrame::sign($frame,$provider),true);$e=$telemetry->evidence($c['id']);
+ check(array_column($e['measurements'],'quantity')===array_column($candidate['evidence']['measurements'],'quantity'),'Signed multi-resource telemetry agrees with direct cgroup bundle valuation');
+}finally{unset($telemetry);if(is_dir($telemetryDir)){$it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($telemetryDir,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);foreach($it as $file){if($file->isDir())rmdir($file->getPathname());else unlink($file->getPathname());}rmdir($telemetryDir);}}
+}
+advance($s,20165);$approvals=[ServiceAuthorization::approval('resource-usage',$e,$provider)['approval']];
 rejects(fn()=>ResourceSettlementWorkflow::usageAction($s,$c['id'],$e,$approvals,$chain,$genesis,20166),'Independent coordinator never falls back to founder telemetry');
 $prepared=ResourceSettlementWorkflow::bootstrapUsageAction($s,$c['id'],$e,$approvals,$chain,$genesis,20166);
 check(!$prepared['independent_verification']&&!$prepared['subsidy_eligible']&&$prepared['preview']['subsidy_units']===0,'Explicit bootstrap preparation discloses trust and zero subsidy');
@@ -67,4 +98,4 @@ check($s->getAccount(addr($provider))->getBalance()===1750,'Founder earns accept
 check($s->getAccount(addr($f['beneficiary']))->getBalance()===8250,'Unused escrow and unclaimed renewal refund exactly');
 check($s->economicSummary()['balances']['subsidies']===$subsidiesBefore&&$s->economicSummary()['services']['programs'][$p['id']]['spent']===0,'No bootstrap subsidy spent during complete journey');
 $root=$s->getStateRoot();rejects(fn()=>resourceFinance($s,$provider,['action'=>'settle','commitment'=>$ids[0]],24488,$chain),'No duplicate founder payment');check($s->getStateRoot()===$root,'Rejected duplicate payment is atomic');
-echo json_encode(['status'=>'PASS','checks'=>$checks,'allocation'=>getenv('GWD_ALLOCATION_CANDIDATE')?:'15-25-30-25-5','actual_registry_wasm'=>true,'physical_execution'=>false,'trust_profile'=>'BOOTSTRAP_OPERATOR_ATTESTED','subsidy_spent'=>0,'live_transactions'=>0],JSON_PRETTY_PRINT)."\n";
+echo json_encode(['status'=>'PASS','checks'=>$checks,'allocation'=>getenv('GWD_ALLOCATION_CANDIDATE')?:'15-25-30-25-5','actual_registry_wasm'=>true,'actual_local_storage_io'=>$storageMode,'physical_execution'=>false,'trust_profile'=>'BOOTSTRAP_OPERATOR_ATTESTED','subsidy_spent'=>0,'live_transactions'=>0],JSON_PRETTY_PRINT)."\n";
