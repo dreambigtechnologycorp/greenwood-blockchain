@@ -1,5 +1,7 @@
 # Fresh production release and four-node replacement
 
+See [post-merge preparation findings](PRODUCTION_PREPARATION_2026-11-15.md) for current read-only physical evidence and public genesis-candidate tooling.
+
 The November 14, 2026 user direction supersedes the earlier disposable-cluster
 requirement. The destination is the existing four-node physical cluster. Its
 testnet genesis, validator/provider identities, blocks and ledger are not migrated.
