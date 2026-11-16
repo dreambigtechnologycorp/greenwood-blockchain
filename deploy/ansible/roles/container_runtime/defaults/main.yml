@@ -1,0 +1,8 @@
+---
+worker_uid: 999
+worker_gid: 988
+worker_username: gw-worker
+containerd_version: ''
+runc_version: ''
+erofs_utils_version: ''
+containerd_snapshotter: erofs

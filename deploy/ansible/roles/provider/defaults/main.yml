@@ -56,3 +56,9 @@ provider_data_dir: "/var/lib/greenwood-provider"
 provider_archive_dir: "{{ provider_data_dir }}/archive"
 provider_output_dir: "{{ provider_data_dir }}/output"
 provider_workers_dir: "{{ provider_data_dir }}/workers"
+
+# Loopback is permitted only when a validator is actually colocated.
+provider_rpc_endpoint: "{{ 'http://127.0.0.1:9201' if inventory_hostname in groups.get('validators', []) else '' }}"
+provider_cpu_fraction: 0.60
+provider_memory_fraction: 0.60
+provider_max_concurrent: 3

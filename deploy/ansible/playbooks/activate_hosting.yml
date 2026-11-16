@@ -16,7 +16,7 @@
           - not (greenwood_control_configs.edge.managed_reconciliation_enabled | default(false) | bool)
 
 - name: Import approved offline seed images and start registry services
-  hosts: application_providers
+  hosts: registry_hosts
   become: true
   gather_facts: false
   any_errors_fatal: true

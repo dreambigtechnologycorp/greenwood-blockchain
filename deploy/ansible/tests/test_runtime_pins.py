@@ -35,7 +35,8 @@ class RuntimePinTests(unittest.TestCase):
     def test_preflight_precedes_mutations_and_erofs_is_pinned(self):
         tasks = yaml.safe_load((ROOT / 'roles/provider/tasks/main.yml').read_text())
         self.assertEqual('runtime_preflight.yml', tasks[0]['ansible.builtin.import_tasks'])
-        erofs = next(task for task in tasks if task['name'] == 'Install EROFS tools')
+        shared = yaml.safe_load((ROOT / 'roles/container_runtime/tasks/main.yml').read_text())
+        erofs = next(task for task in shared if task['name'] == 'Install EROFS tools')
         self.assertEqual(['erofs-utils={{ erofs_utils_version }}'], erofs['ansible.builtin.apt']['name'])
         defaults = yaml.safe_load((ROOT / 'roles/provider/defaults/main.yml').read_text())
         for pin in ('containerd_version', 'runc_version', 'erofs_utils_version'):

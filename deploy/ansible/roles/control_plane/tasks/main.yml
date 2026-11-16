@@ -8,6 +8,7 @@
       - greenwood_hosting_release is match('^/opt/[A-Za-z0-9_/-]+$')
       - "'..' not in greenwood_hosting_release"
       - greenwood_control_services | difference(['receiver', 'observer', 'controller', 'edge']) | length == 0
+      - "('controller' not in greenwood_control_services and 'observer' not in greenwood_control_services) or inventory_hostname in groups.get('providers', [])"
       - greenwood_control_configs is mapping
       - greenwood_control_files is sequence
 

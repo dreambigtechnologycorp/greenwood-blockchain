@@ -1,0 +1,69 @@
+---
+# Separate from installation; the agent independently enforces chain policy.
+- name: Validate explicit governed activation on every selected host
+  hosts: governed_service_hosts
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require reviewed production consent
+      ansible.builtin.assert:
+        that:
+          - not ansible_check_mode
+          - greenwood_governed_activation_approved | default(false) | bool
+          - greenwood_governed_activation_config.enabled == true
+          - greenwood_governed_activation_config.mode in ['verified_snapshot', 'pinned_node']
+          - greenwood_governed_activation_config.chain_id == provider_chain_id
+          - greenwood_governed_activation_config.genesis_hash == greenwood_expected_genesis_hash
+          - greenwood_governed_activation_config.consents | length > 0
+          - greenwood_governed_activation_sha256 is match('^[a-f0-9]{64}$')
+          - ((greenwood_governed_activation_config | to_nice_json ~ '\n') | hash('sha256')) == greenwood_governed_activation_sha256
+      no_log: true
+    - name: Inspect protected staged consent metadata
+      ansible.builtin.stat:
+        path: /etc/greenwood/system-services/governed-agent.json
+      register: staged_consent
+    - name: Require a private regular consent file
+      ansible.builtin.assert:
+        that:
+          - staged_consent.stat.isreg | default(false)
+          - not (staged_consent.stat.islnk | default(true))
+          - staged_consent.stat.uid == 0
+          - staged_consent.stat.mode == '0600'
+    - name: Read previously staged consent
+      ansible.builtin.slurp:
+        src: /etc/greenwood/system-services/governed-agent.json
+      register: prior_consent
+      no_log: true
+    - name: Refuse replacement of active consent
+      ansible.builtin.assert:
+        that: (prior_consent.content | b64decode | from_json).enabled == false
+      no_log: true
+
+- name: Apply consent after the all-host gate
+  hosts: governed_service_hosts
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Install reviewed consent with private rollback copy
+      ansible.builtin.copy:
+        content: "{{ greenwood_governed_activation_config | to_nice_json }}\n"
+        dest: /etc/greenwood/system-services/governed-agent.json
+        owner: root
+        group: root
+        mode: '0600'
+        backup: true
+      no_log: true
+      diff: false
+    - name: Start existing policy-verifying agent
+      ansible.builtin.systemd_service:
+        name: greenwood-governed-service-agent
+        state: started
+        daemon_reload: true
+        no_block: true
+    - name: Inspect activation result without claiming workload acceptance
+      ansible.builtin.command: systemctl show greenwood-governed-service-agent --property=Result --value
+      register: governed_agent_result
+      changed_when: false
+      failed_when: governed_agent_result.stdout | trim != 'success'

@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "profiles": {
+    "four": {
+      "nodes": {
+        "node-1": {
+          "roles": [
+            "validator",
+            "provider"
+          ],
+          "validator_label": "A",
+          "provider_label": "A",
+          "controller": true,
+          "gateway": false
+        },
+        "node-2": {
+          "roles": [
+            "validator",
+            "provider"
+          ],
+          "validator_label": "B",
+          "provider_label": "B",
+          "controller": false,
+          "gateway": false
+        },
+        "node-3": {
+          "roles": [
+            "validator",
+            "provider"
+          ],
+          "validator_label": "C",
+          "provider_label": "C",
+          "controller": false,
+          "gateway": false
+        },
+        "node-4": {
+          "roles": [],
+          "validator_label": null,
+          "provider_label": null,
+          "controller": false,
+          "gateway": true
+        }
+      },
+      "groups": {
+        "validators": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ],
+        "providers": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ],
+        "controller": [
+          "node-1"
+        ],
+        "gateway": [
+          "node-4"
+        ],
+        "control_plane": [
+          "node-1",
+          "node-4"
+        ],
+        "application_providers": [
+          "node-1"
+        ],
+        "application_edges": [
+          "node-4"
+        ],
+        "registry_hosts": [
+          "node-1"
+        ],
+        "system_runtime_hosts": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ],
+        "governed_service_hosts": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ],
+        "rpc_hosts": [
+          "node-1",
+          "node-2",
+          "node-3",
+          "node-4"
+        ],
+        "production_rebuild": [
+          "node-1",
+          "node-2",
+          "node-3",
+          "node-4"
+        ]
+      }
+    },
+    "seven": {
+      "nodes": {
+        "node-1": {
+          "roles": [
+            "validator",
+            "provider"
+          ],
+          "validator_label": "A",
+          "provider_label": "A",
+          "controller": true,
+          "gateway": false
+        },
+        "node-2": {
+          "roles": [
+            "validator",
+            "provider"
+          ],
+          "validator_label": "B",
+          "provider_label": "B",
+          "controller": false,
+          "gateway": false
+        },
+        "node-3": {
+          "roles": [
+            "validator",
+            "provider"
+          ],
+          "validator_label": "C",
+          "provider_label": "C",
+          "controller": false,
+          "gateway": false
+        },
+        "node-4": {
+          "roles": [],
+          "validator_label": null,
+          "provider_label": null,
+          "controller": false,
+          "gateway": true
+        },
+        "node-5": {
+          "roles": [],
+          "validator_label": null,
+          "provider_label": null,
+          "controller": false,
+          "gateway": false
+        },
+        "node-6": {
+          "roles": [
+            "provider"
+          ],
+          "validator_label": null,
+          "provider_label": "D",
+          "controller": false,
+          "gateway": false
+        },
+        "node-7": {
+          "roles": [
+            "provider"
+          ],
+          "validator_label": null,
+          "provider_label": "E",
+          "controller": false,
+          "gateway": false
+        }
+      },
+      "groups": {
+        "validators": [
+          "node-1",
+          "node-2",
+          "node-3"
+        ],
+        "providers": [
+          "node-1",
+          "node-2",
+          "node-3",
+          "node-6",
+          "node-7"
+        ],
+        "controller": [
+          "node-1"
+        ],
+        "gateway": [
+          "node-4"
+        ],
+        "control_plane": [
+          "node-1",
+          "node-2",
+          "node-3",
+          "node-5",
+          "node-6",
+          "node-7"
+        ],
+        "application_providers": [
+          "node-6",
+          "node-7"
+        ],
+        "application_edges": [
+          "node-5"
+        ],
+        "registry_hosts": [
+          "node-5"
+        ],
+        "system_runtime_hosts": [
+          "node-1",
+          "node-2",
+          "node-3",
+          "node-5",
+          "node-6",
+          "node-7"
+        ],
+        "governed_service_hosts": [
+          "node-1",
+          "node-2",
+          "node-3",
+          "node-5",
+          "node-6",
+          "node-7"
+        ],
+        "rpc_hosts": [
+          "node-1",
+          "node-2",
+          "node-3",
+          "node-5"
+        ],
+        "production_rebuild": [
+          "node-1",
+          "node-2",
+          "node-3",
+          "node-4",
+          "node-5",
+          "node-6",
+          "node-7"
+        ]
+      }
+    }
+  }
+}

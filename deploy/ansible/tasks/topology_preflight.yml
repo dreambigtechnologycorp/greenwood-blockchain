@@ -1,0 +1,30 @@
+---
+- name: Load the reviewed topology profile
+  ansible.builtin.set_fact:
+    greenwood_topology: "{{ (lookup('file', playbook_dir ~ '/../../topology/profiles.json') | from_json).profiles[greenwood_topology_profile | default('four')] }}"
+
+- name: Require exact role membership before any host mutation
+  ansible.builtin.assert:
+    that:
+      - groups.get(item.key, []) | sort == item.value | sort
+    fail_msg: Inventory membership differs from the selected reviewed topology profile
+  loop: "{{ greenwood_topology.groups | dict2items }}"
+
+- name: Reject omitted or undeclared physical targets
+  ansible.builtin.assert:
+    that:
+      - groups['all'] | sort == greenwood_topology.nodes.keys() | list | sort
+      - groups['all'] | map('extract', hostvars, 'greenwood_expected_machine_id') | unique | length == groups['all'] | length
+      - groups['all'] | map('extract', hostvars, 'ansible_host') | unique | length == groups['all'] | length
+      - greenwood_expected_machine_id is match('^[a-f0-9]{32}$')
+      - greenwood_recovery_access_confirmed | default(false) | bool
+      - greenwood_expected_address == ansible_host
+
+- name: Check actual machine identity before installation
+  ansible.builtin.command: cat /etc/machine-id
+  register: topology_machine_identity
+  changed_when: false
+
+- name: Reject address reuse
+  ansible.builtin.assert:
+    that: topology_machine_identity.stdout | trim == greenwood_expected_machine_id

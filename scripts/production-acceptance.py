@@ -8,6 +8,9 @@ import ssl
 import urllib.parse
 import urllib.request
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cluster_topology import profile, validate_members
 
 
 def fetch(origin, path):
@@ -29,13 +32,19 @@ def check(config, read=fetch):
     if not re.fullmatch('[a-f0-9]{64}', config.get('genesis_hash') or '') or not config.get('chain_id'):
         raise ValueError('Exact approved genesis and chain required')
     hosts = config.get('hosts', [])
-    if len(hosts) != 4 or {h['name'] for h in hosts} != {'node-1','node-2','node-3','node-4'} or len({h['rpc_origin'] for h in hosts}) != 4:
-        raise ValueError('Exactly four distinct installation endpoints required')
+    validate_members(config, hosts)
+    rpc_names=set(profile(config.get('topology_profile','four'))['groups']['rpc_hosts'])
+    rpc_hosts=[h for h in hosts if h['name'] in rpc_names]
+    if len({h.get('rpc_origin') for h in rpc_hosts})!=len(rpc_hosts) or any(not h.get('rpc_origin') for h in rpc_hosts):
+        raise ValueError('Distinct pinned RPC endpoints required')
+    for host in hosts:
+        if host['name'] not in rpc_names and not re.fullmatch('[a-f0-9]{64}', host.get('service_acceptance_sha256','')):
+            raise ValueError('Non-RPC host requires separate service acceptance evidence')
     keys = config.get('validator_public_keys', {})
     if set(keys) != {'A','B','C'} or len(set(keys.values())) != 3 or any(not re.fullmatch('[a-f0-9]{64}', k) for k in keys.values()):
         raise ValueError('Three pinned fresh validator identities required')
     heads = []
-    for host in hosts:
+    for host in rpc_hosts:
         head = read(host['rpc_origin'], '/v1/chain/status')
         if head['chain_id'] != config['chain_id'] or head['genesis_hash'] != config['genesis_hash'] or head.get('syncing') is not False or type(head.get('finalized_height')) is not int or head['finalized_height'] < 1:
             raise ValueError('Wrong chain/genesis or unfinalized endpoint: '+host['name'])
@@ -44,7 +53,7 @@ def check(config, read=fetch):
             raise ValueError('Validator identity/power mismatch')
         heads.append(head)
     height = min(h['finalized_height'] for h in heads)
-    blocks = [read(host['rpc_origin'], '/v1/blocks/'+str(height)) for host in hosts]
+    blocks = [read(host['rpc_origin'], '/v1/blocks/'+str(height)) for host in rpc_hosts]
     pins = [(b['height'], b['block_hash'], b['state_root']) for b in blocks]
     if len(set(pins)) != 1 or pins[0][0] != height or any(b.get('finality_certificate_present') is not True for b in blocks):
         raise ValueError('Cross-node finalized state mismatch')

@@ -146,3 +146,7 @@ Physical readiness requires target-host validation of units, PHP 8.5.12, EROFS,
 SFTP/mTLS, policy renewal, actual registry authorization, and reboot recovery.
 Maintain the resulting acceptance scripts and evidence only in ignored
 `docs/acceptance/`. Local source/syntax tests do not establish those outcomes.
+
+## Expanded topology
+
+The `seven` profile and its private-input requirements are documented in [the installation guide](../../docs/operations/SEVEN_NODE_INSTALLATION.md). The default `four` profile is retained. Inventory generation alone does not authorize installation or service activation.

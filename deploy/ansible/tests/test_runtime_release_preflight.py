@@ -95,7 +95,7 @@ class RuntimeReleasePreflightTest(unittest.TestCase):
             self.assertIn('runtime_release', play['tags'])
             self.assertTrue(play['any_errors_fatal'])
         self.assertEqual(str(TASKS.name), Path(plays[2]['tasks'][0]['ansible.builtin.import_tasks']).name)
-        self.assertEqual('stopped', plays[3]['tasks'][0]['ansible.builtin.systemd_service']['state'])
+        self.assertEqual('stopped', plays[3]['tasks'][1]['ansible.builtin.systemd_service']['state'])
         self.assertNotIn('runtime_release_preflight', plays[3]['tags'])
 
 

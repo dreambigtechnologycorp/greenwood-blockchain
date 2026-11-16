@@ -1,0 +1,23 @@
+---
+# Preparation only: eligible roles do not confer spending/attestation authority.
+- name: Stage consented governed-service hosts
+  hosts: governed_service_hosts
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Require explicitly disabled per-host consent for preparation
+      ansible.builtin.assert:
+        that:
+          - greenwood_governed_service_agent_config is defined
+          - greenwood_governed_service_agent_config.enabled == false
+          - greenwood_governed_service_agent_config.chain_id == provider_chain_id
+          - greenwood_governed_service_agent_config.genesis_hash == greenwood_expected_genesis_hash
+      when: greenwood_governed_services_prepare | default(false) | bool
+    - name: Stage the existing governed agent and protected configuration
+      ansible.builtin.import_role:
+        name: control_plane
+        tasks_from: system_services
+      vars:
+        greenwood_system_services: []
+        greenwood_governed_service_agent_stage: true
+      when: greenwood_governed_services_prepare | default(false) | bool

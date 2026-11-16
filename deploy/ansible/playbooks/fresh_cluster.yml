@@ -2,7 +2,7 @@
 # One-shot initial installation on already booted Ubuntu ARM64 hosts with SSH.
 # No existing chain may be overwritten. All hosts preflight before mutations.
 - name: Preflight the complete fresh cluster
-  hosts: "validators:control_plane"
+  hosts: all
   become: true
   gather_facts: false
   any_errors_fatal: true
@@ -16,13 +16,14 @@
   any_errors_fatal: true
   tasks:
     - ansible.builtin.import_tasks: ../tasks/fresh_network.yml
+      when: not (greenwood_preserve_gateway | default(false) | bool)
 
 # This precedes the build controller: its PHP packages need the approved repo.
 - ansible.builtin.import_playbook: bootstrap_greenwood.yml
 - ansible.builtin.import_playbook: deploy_greenwood.yml
 
 - name: Provision and validate all protocol identities before starting any node
-  hosts: validators
+  hosts: "validators:providers"
   become: true
   gather_facts: false
   any_errors_fatal: true
@@ -49,6 +50,19 @@
       until: fresh_rpc.status == 200 and fresh_rpc.json.chain_id == provider_chain_id and fresh_rpc.json.finalized_height | int > 0
       retries: 60
       delay: 5
+- name: Start approved provider identities independently of validator placement
+  hosts: providers
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Verify the configured chain endpoint before provider start
+      ansible.builtin.uri:
+        url: "{{ provider_rpc_endpoint | default('http://127.0.0.1:9201' if inventory_hostname in groups['validators'] else '') }}/v1/chain/status"
+        return_content: true
+        validate_certs: true
+      register: provider_chain_status
+      failed_when: provider_chain_status.json.chain_id != provider_chain_id or provider_chain_status.json.genesis_hash != greenwood_expected_genesis_hash
     - name: Enable and start providers
       ansible.builtin.systemd_service:
         name: greenwood-provider
@@ -56,7 +70,7 @@
         state: started
 
 - name: Install runtime release on the non-validator edge
-  hosts: application_edges
+  hosts: "control_plane:system_runtime_hosts:!validators:!providers"
   become: true
   gather_facts: false
   any_errors_fatal: true
@@ -73,6 +87,7 @@
   tasks:
     - ansible.builtin.import_tasks: ../roles/common/tasks/converge_release_tree.yml
     - ansible.builtin.import_tasks: ../tasks/fresh_edge.yml
+      when: inventory_hostname in groups['application_edges']
 
 - name: Install application hosting without publishing an application route
   hosts: application_providers
@@ -90,4 +105,5 @@
         state: restarted
 
 - ansible.builtin.import_playbook: control_plane.yml
+- ansible.builtin.import_playbook: governed_services.yml
 - ansible.builtin.import_playbook: activate_hosting.yml

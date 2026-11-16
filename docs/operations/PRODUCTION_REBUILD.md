@@ -1,4 +1,4 @@
-# Fresh production release and four-node replacement
+# Fresh production release and profile-based replacement
 
 See [post-merge preparation findings](PRODUCTION_PREPARATION_2026-11-15.md) for current read-only physical evidence and public genesis-candidate tooling.
 
@@ -7,6 +7,8 @@ requirement. The destination is the existing four-node physical cluster. Its
 testnet genesis, validator/provider identities, blocks and ledger are not migrated.
 No additional host or independent operator is a prerequisite for software completion
 or explicitly approved Epoch 0 customer-funded service activation.
+
+The implemented four/seven-node tooling is described in [the installation guide](SEVEN_NODE_INSTALLATION.md). For the proposed expansion to seven machines, see the [node-4 responsibilities and cluster assessment](NODE4_AND_SEVEN_NODE_ASSESSMENT_2026-11-16.md). The additional machines and role allocation are proposals pending identity/storage preflight; this does not silently change the installation inventory or authorize cutover.
 
 ## Ordered release gates
 
