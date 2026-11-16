@@ -16,12 +16,12 @@ output "validator_node_count" {
 }
 
 output "provider_node_count" {
-  description = "Number of provider nodes (A/B/C on nodes 1/2/3)"
+  description = "Number of provider nodes (selected profile)"
   value       = length([for k, v in local.nodes : k if contains(try(v.roles, []), "provider")])
 }
 
 output "controller_node_count" {
-  description = "Number of controller/operations nodes (exactly node-1)"
+  description = "Number of controller/operations nodes (selected build controller)"
   value       = length([for k, v in local.nodes : k if v.controller])
 }
 
@@ -41,7 +41,7 @@ output "validator_addresses" {
 }
 
 output "provider_addresses" {
-  description = "List of provider node IP addresses (A/B/C on nodes 1/2/3)"
+  description = "List of provider node IP addresses (selected profile)"
   value       = [for v in local.providers : v.address]
 }
 
@@ -88,7 +88,7 @@ output "topology_validation" {
     status            = local.topology_ok ? "TOPOLOGY_OK" : "TOPOLOGY_INVALID"
     failure           = local.topology_failure
     validator_set     = local.validator_set_ok ? "A,B,C" : "INVALID"
-    provider_set      = local.provider_set_ok ? "node-1:A,node-2:B,node-3:C" : "INVALID"
+    provider_set      = local.provider_set_ok ? join(",", [for p in local.providers : "${p.hostname}:${p.provider_label}"]) : "INVALID"
     controller_set    = local.controller_ok ? "node-1" : "INVALID"
     gateway_set       = local.gateway_ok ? "node-4" : "INVALID"
     node4_has_no_role = local.node4_clean

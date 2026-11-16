@@ -4,6 +4,9 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cluster_topology import profile, validate_members
 import re
 
 SERVICES=('registry','registry-auth','metering','attestor','metering-coordinator')
@@ -27,8 +30,9 @@ def assess(config, source, images=None):
     for field in ['allocation_ratification_sha256','spending_limits_ratification_sha256','bootstrap_funding_ratification_sha256','fee_policy_ratification_sha256','signer_custody_review_sha256','recovery_policy_ratification_sha256','related_party_policy_ratification_sha256']:
         if not digest(governance.get(field)):blockers.append('Governance: '+field)
     hosts=config.get('hosts',[])
-    if len(hosts)!=4 or {h.get('name') for h in hosts}!={'node-1','node-2','node-3','node-4'}:blockers.append('Exact four-node installation inventory missing')
-    elif any(not re.fullmatch('[a-f0-9]{32}',h.get('machine_id') or '') for h in hosts):blockers.append('Freshly verified machine identities missing')
+    try:validate_members(config, hosts)
+    except ValueError as error:blockers.append(str(error))
+    if any(not re.fullmatch('[a-f0-9]{32}',h.get('machine_id') or '') for h in hosts) or len({h.get('machine_id') for h in hosts})!=len(hosts):blockers.append('Freshly verified unique machine identities missing')
     definitions={e['resource_id']:e for e in json.loads((Path(__file__).resolve().parents[1]/'docs/economics/RESOURCE_CATALOG_V2.disabled.json').read_text())['entries']}
     seen=set()
     for profile in config.get('payable_profiles',[]):

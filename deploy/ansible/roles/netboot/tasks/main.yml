@@ -1,0 +1,40 @@
+---
+- name: Require explicit client preparation approval and server identity
+  ansible.builtin.assert:
+    that:
+      - not ansible_check_mode
+      - greenwood_netboot_prepare_approved | default(false) | bool
+      - greenwood_expected_machine_id is match('^[a-f0-9]{32}$')
+      - greenwood_netboot_client.name is match('^node-[5-7]$')
+      - greenwood_netboot_evidence_dir is match('^/var/lib/greenwood-netboot/[a-zA-Z0-9_-]+$')
+- name: Verify boot server identity
+  ansible.builtin.command: cat /etc/machine-id
+  register: boot_server_identity
+  changed_when: false
+  failed_when: boot_server_identity.stdout | trim != greenwood_expected_machine_id
+- name: Inspect required existing boot services
+  ansible.builtin.command: "systemctl is-active {{ item }}"
+  loop: [nfs-server, dnsmasq, tftpd-hpa]
+  changed_when: false
+- name: Create private staging parent
+  ansible.builtin.file:
+    path: /var/lib/greenwood-netboot
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+- name: Stage reviewed client declaration
+  ansible.builtin.copy:
+    content: "{{ greenwood_netboot_client | to_nice_json }}\n"
+    dest: /var/lib/greenwood-netboot/client.json
+    owner: root
+    group: root
+    mode: '0600'
+- name: Prepare isolated directories and reviewable configuration fragments
+  ansible.builtin.script:
+    cmd: "{{ playbook_dir }}/../../../scripts/prepare-netboot-client.py /var/lib/greenwood-netboot/client.json --output {{ greenwood_netboot_evidence_dir }} --prepare"
+    executable: /usr/bin/python3
+  register: netboot_preparation
+- name: Report prepared client without reloading boot services
+  ansible.builtin.debug:
+    msg: "{{ netboot_preparation.stdout }}"

@@ -1,15 +1,13 @@
 ---
+- ansible.builtin.import_tasks: topology_preflight.yml
+
 - name: Require explicit fresh installation approval and immutable inputs
   ansible.builtin.assert:
     that:
       - greenwood_fresh_cluster_approved | default(false) | bool
       - not ansible_check_mode
-      - groups['validators'] | sort == ['node-1', 'node-2', 'node-3']
-      - groups['providers'] | sort == ['node-1', 'node-2', 'node-3']
-      - groups['control_plane'] | sort == ['node-1', 'node-4']
-      - groups['application_providers'] == ['node-1']
-      - groups['application_edges'] == ['node-4']
       - greenwood_source_sha is match('^[a-f0-9]{40}$')
+      - greenwood_expected_genesis_hash is match('^[a-f0-9]{64}$')
       - greenwood_genesis_sha256 is match('^[a-f0-9]{64}$')
       - greenwood_chain_config_sha256 is match('^[a-f0-9]{64}$')
       - provider_chain_id is match('^[A-Za-z0-9_-]{1,64}$')
@@ -36,6 +34,7 @@
 
 - name: Require runtime pins before any mutation
   ansible.builtin.import_tasks: ../roles/provider/tasks/runtime_preflight.yml
+  when: inventory_hostname in groups.get('system_runtime_hosts', [])
 
 - name: Inspect existing installation and durable state
   ansible.builtin.stat:
@@ -58,6 +57,7 @@
     that: not item.stat.exists
     fail_msg: Existing Greenwood state detected; reconcile it rather than rerunning fresh installation
   loop: "{{ fresh_existing.results }}"
+  when: not (inventory_hostname in groups.get('gateway', []) and greenwood_preserve_gateway | default(false) | bool)
   loop_control:
     label: "{{ item.item }}"
 
@@ -87,11 +87,10 @@
   delegate_to: localhost
   become: false
   loop:
-    - "{{ greenwood_validator_key_src }}"
     - "{{ greenwood_provider_key_src }}"
     - "{{ greenwood_operator_token_src }}"
   register: fresh_secrets
-  when: inventory_hostname in groups['validators']
+  when: inventory_hostname in groups['providers']
   no_log: true
 
 - name: Require complete hosting composition on its designated hosts
@@ -100,16 +99,27 @@
       - greenwood_control_configs is mapping
       - greenwood_control_files | length > 0
       - greenwood_policy_mode in ['renew', 'pull']
-      - greenwood_control_services | sort == (['controller', 'observer', 'receiver'] if inventory_hostname == 'node-1' else ['edge', 'receiver'])
+      - greenwood_control_services | difference(['controller', 'observer', 'receiver', 'edge']) | length == 0
+      - "('controller' not in greenwood_control_services and 'observer' not in greenwood_control_services) or inventory_hostname in groups['providers']"
+      - "('edge' not in greenwood_control_services) or inventory_hostname in groups['application_edges']"
       - greenwood_https_frontends is sequence
       - not (greenwood_control_configs.controller.deployment_enabled | default(false) | bool)
       - not (greenwood_control_configs.edge.managed_reconciliation_enabled | default(false) | bool)
   when: inventory_hostname in groups['control_plane']
   no_log: true
 
+- name: Validate provider-only endpoint declaration before mutation
+  ansible.builtin.assert:
+    that:
+      - provider_rpc_endpoint is defined
+      - provider_rpc_endpoint is match('^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?$')
+  when: inventory_hostname in groups['providers'] and inventory_hostname not in groups['validators']
+
 - name: Require explicit genesis-bound provider identity
   ansible.builtin.assert:
-    that: greenwood_provider_public_key is match('^[a-f0-9]{64}$')
+    that:
+      - greenwood_provider_public_key is match('^[a-f0-9]{64}$')
+      - groups['providers'] | map('extract', hostvars, 'greenwood_provider_public_key') | unique | length == groups['providers'] | length
   when: inventory_hostname in groups['providers']
 
 - name: Require complete offline seed declarations before provisioning
@@ -117,7 +127,7 @@
     that:
       - greenwood_seed_images | map(attribute='id') | sort == ['greenwood-registry', 'greenwood-registry-auth']
       - greenwood_system_services | map(attribute='id') | sort == ['greenwood-registry', 'greenwood-registry-auth']
-  when: inventory_hostname in groups['application_providers']
+  when: inventory_hostname in groups['registry_hosts']
 
 - name: Inspect offline seed archives on the Ansible controller
   ansible.builtin.stat:
@@ -127,7 +137,7 @@
   become: false
   loop: "{{ greenwood_seed_images | default([]) }}"
   register: fresh_seeds
-  when: inventory_hostname in groups['application_providers']
+  when: inventory_hostname in groups['registry_hosts']
 
 - name: Refuse absent or altered offline seed archives
   ansible.builtin.assert:
@@ -137,7 +147,7 @@
       - item.stat.checksum == item.item.sha256
       - item.item.image_ref == (greenwood_system_services | selectattr('id', 'equalto', item.item.id) | first).imageRef
   loop: "{{ fresh_seeds.results | default([]) }}"
-  when: inventory_hostname in groups['application_providers']
+  when: inventory_hostname in groups['registry_hosts']
 
 - name: Require private regular source files
   ansible.builtin.assert:
@@ -146,5 +156,23 @@
       - not (item.stat.islnk | default(true))
       - item.stat.mode == '0600'
   loop: "{{ fresh_secrets.results | default([]) }}"
+  when: inventory_hostname in groups['providers']
+  no_log: true
+
+- name: Check separately provisioned validator signing key
+  ansible.builtin.stat:
+    path: "{{ greenwood_validator_key_src }}"
+  delegate_to: localhost
+  become: false
+  register: fresh_validator_secret
+  when: inventory_hostname in groups['validators']
+  no_log: true
+
+- name: Require a protected validator key source
+  ansible.builtin.assert:
+    that:
+      - fresh_validator_secret.stat.isreg | default(false)
+      - not (fresh_validator_secret.stat.islnk | default(true))
+      - fresh_validator_secret.stat.mode == '0600'
   when: inventory_hostname in groups['validators']
   no_log: true

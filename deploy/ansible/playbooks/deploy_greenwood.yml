@@ -147,3 +147,11 @@
   roles:
     - role: provider
       tags: [provider]
+
+- name: Install OCI runtime on infrastructure-only hosts
+  hosts: "system_runtime_hosts:!providers"
+  become: true
+  gather_facts: false
+  roles:
+    - common
+    - container_runtime

@@ -89,13 +89,36 @@
     src: "/tmp/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api.tar.xz"
     dest: "{{ Greenwood_BASE_DIR }}"
     remote_src: true
+    owner: root
+    group: root
     creates: "{{ Greenwood_BASE_DIR }}/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api/lib/libwasmtime.so"
+
+- name: Protect Wasmtime directories retained from earlier deployments
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ Greenwood_BASE_DIR }}/wasmtime-{{ Greenwood_WASMTIME_VERSION }}"
+    - "{{ Greenwood_BASE_DIR }}/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api"
+    - "{{ Greenwood_BASE_DIR }}/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api/lib"
+
+- name: Protect the extracted Wasmtime library on existing installations
+  ansible.builtin.file:
+    path: "{{ Greenwood_BASE_DIR }}/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api/lib/libwasmtime.so"
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Copy Wasmtime library to expected location
   ansible.builtin.copy:
     src: "{{ Greenwood_BASE_DIR }}/wasmtime-v{{ Greenwood_WASMTIME_VERSION }}-aarch64-linux-c-api/lib/libwasmtime.so"
     dest: "{{ Greenwood_BASE_DIR }}/wasmtime-{{ Greenwood_WASMTIME_VERSION }}/lib/libwasmtime.so"
     remote_src: true
+    owner: root
+    group: root
     mode: '0755'
     force: yes
 

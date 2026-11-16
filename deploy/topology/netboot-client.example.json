@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "name": "node-6",
+  "mac": "REPLACE_VERIFIED_MAC",
+  "boot_id": "REPLACE_PI_SERIAL",
+  "address": "REPLACE_VERIFIED_IPV4",
+  "nfs_server": "REPLACE_NFS_SERVER",
+  "root_parent": "/mnt/greenwood/nodes",
+  "tftp_parent": "REPLACE_VERIFIED_TFTP_ROOT",
+  "rootfs_archive": "/private/clean-rootfs.tar",
+  "rootfs_sha256": "REPLACE_REVIEWED_SHA256",
+  "boot_archive": "/private/node-6-boot.tar",
+  "boot_sha256": "REPLACE_REVIEWED_SHA256"
+}

@@ -47,15 +47,26 @@
     mode: '0600'
     force: false
   loop:
-    - {src: "{{ greenwood_validator_key_src }}", name: validator.key}
     - {src: "{{ greenwood_provider_key_src }}", name: provider.key}
     - {src: "{{ greenwood_operator_token_src }}", name: operator.token}
   no_log: true
   diff: false
 
+- name: Copy validator key only onto validators
+  ansible.builtin.copy:
+    src: "{{ greenwood_validator_key_src }}"
+    dest: /etc/greenwood/validator.key
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+  when: inventory_hostname in groups['validators']
+  no_log: true
+  diff: false
+
 - name: Validate cryptographic identity against the approved genesis
   ansible.builtin.script:
-    cmd: "{{ playbook_dir }}/../files/validate_cluster_identity.php /opt/greenwood {{ validator_label }} {{ provider_chain_id }} {{ greenwood_provider_public_key }}"
+    cmd: "{{ playbook_dir }}/../files/validate_cluster_identity.php /opt/greenwood {{ validator_label | default('-') }} {{ provider_chain_id }} {{ greenwood_provider_public_key }}"
     executable: /usr/bin/php
   changed_when: false
   no_log: true

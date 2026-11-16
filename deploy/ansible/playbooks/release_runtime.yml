@@ -62,7 +62,7 @@
           source_sha: "{{ release_facts.source_sha }}"
 
 - name: Preflight canonical artifact on every deployment target before any stop
-  hosts: validators
+  hosts: "validators:providers:control_plane:system_runtime_hosts"
   become: false
   gather_facts: false
   any_errors_fatal: true
@@ -76,7 +76,7 @@
 
 - name: Deploy runtime to validator nodes (runtime-only upgrade)
   tags: [runtime_release]
-  hosts: validators
+  hosts: "validators:providers:control_plane:system_runtime_hosts"
   become: true
   gather_facts: false
   any_errors_fatal: true
@@ -86,17 +86,27 @@
     - "{{ playbook_dir }}/../roles/common/defaults/main.yml"
     - "{{ playbook_dir }}/../roles/validator/defaults/main.yml"
   tasks:
-    - name: Stop protocol services before runtime replacement
+    - name: Discover active installed Greenwood runtime consumers
+      ansible.builtin.command: "systemctl show {{ item }} --property=ActiveState --value"
+      loop: [greenwoodd, greenwood-provider, greenwood-registry-auth, greenwood-registry, greenwood-receiver, greenwood-observer, greenwood-controller, greenwood-edge, greenwood-governed-service-agent]
+      register: runtime_consumers
+      changed_when: false
+      failed_when: false
+
+    - name: Stop only previously active runtime consumers
       ansible.builtin.systemd_service:
-        name: "{{ item }}"
+        name: "{{ item.item }}"
         state: stopped
-      loop: [greenwoodd, greenwood-provider]
+      loop: "{{ runtime_consumers.results }}"
+      when: item.stdout | trim in ['active', 'activating']
 
     - name: Apply canonical release tree convergence
       ansible.builtin.import_tasks: "{{ playbook_dir }}/../roles/common/tasks/converge_release_tree.yml"
 
-    - name: Start protocol services after runtime replacement
+    - name: Restore previously active runtime consumers
       ansible.builtin.systemd_service:
-        name: "{{ item }}"
+        name: "{{ item.item }}"
         state: started
-      loop: [greenwoodd, greenwood-provider]
+        no_block: "{{ item.item == 'greenwood-governed-service-agent' }}"
+      loop: "{{ runtime_consumers.results }}"
+      when: item.stdout | trim in ['active', 'activating']

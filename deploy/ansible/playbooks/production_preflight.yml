@@ -6,10 +6,10 @@
   become: false
   any_errors_fatal: true
   tasks:
-    - name: Require four explicitly identified machines and recovery access
+    - name: Require explicitly identified profile machines and recovery access
       ansible.builtin.assert:
         that:
-          - groups['production_rebuild'] | length == 4
+          - groups['production_rebuild'] | sort == ((lookup('file', playbook_dir ~ '/../../topology/profiles.json') | from_json).profiles[greenwood_topology_profile | default('four')].groups.production_rebuild | sort)
           - greenwood_expected_machine_id is match('^[a-f0-9]{32}$')
           - greenwood_expected_architecture in ['aarch64', 'x86_64']
           - greenwood_recovery_access_confirmed | default(false) | bool

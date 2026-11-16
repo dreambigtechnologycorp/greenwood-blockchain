@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect read-only facts from four explicitly pinned SSH hosts; never install/reset."""
+"""Collect read-only facts from explicitly pinned SSH hosts; never install/reset."""
 import argparse
 import concurrent.futures
 import datetime
@@ -7,6 +7,9 @@ import hashlib
 import ipaddress
 import json
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cluster_topology import profile, validate_members
 import re
 import subprocess
 
@@ -29,16 +32,17 @@ CHECKS = {
 
 
 def validate_inventory(data):
-    if not isinstance(data, dict) or set(data) != {'version', 'hosts'} or data['version'] != 1:
+    if not isinstance(data, dict) or ((data.get('version') == 1 and set(data) != {'version','hosts'}) or (data.get('version') == 2 and set(data) != {'version','hosts','topology_profile'}) or data.get('version') not in (1,2)):
         raise ValueError('Versioned explicit host inventory required')
     hosts = data['hosts']
-    if not isinstance(hosts, list) or len(hosts) != 4:
-        raise ValueError('Exactly four hosts required')
+    if not isinstance(hosts, list):
+        raise ValueError('Explicit hosts required')
+    validate_members(data, hosts)
     names, addresses, identities = set(), set(), set()
     for host in hosts:
         if not isinstance(host, dict) or set(host) != {'name', 'address', 'user', 'machine_id', 'architecture', 'host_key_sha256'}:
             raise ValueError('Exact host identity fields required')
-        if not re.fullmatch(r'node-[1-4]', host['name']) or not re.fullmatch(r'[a-z_][a-z0-9_-]{0,31}', host['user']):
+        if not re.fullmatch(r'node-[1-9][0-9]*', host['name']) or not re.fullmatch(r'[a-z_][a-z0-9_-]{0,31}', host['user']):
             raise ValueError('Invalid host name/user')
         ipaddress.IPv4Address(host['address'])
         if not re.fullmatch(r'[a-f0-9]{32}', host['machine_id']) or host['architecture'] not in ('aarch64', 'x86_64'):
@@ -64,7 +68,7 @@ def verify_host_keys(hosts, path):
         blob = base64.b64decode(fields[2], validate=True)
         records[fields[0]] = 'SHA256:' + base64.b64encode(hashlib.sha256(blob).digest()).decode().rstrip('=')
     if set(records) != {h['address'] for h in hosts}:
-        raise ValueError('Host key file must match exactly the four confirmed addresses')
+        raise ValueError('Host key file must match exactly the confirmed addresses')
     for host in hosts:
         if records[host['address']] != host['host_key_sha256']:
             raise ValueError('Host fingerprint mismatch')

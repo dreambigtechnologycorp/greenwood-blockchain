@@ -1,0 +1,180 @@
+# Non-deployable template: replace identities and supply reviewed private inputs.
+all:
+  vars:
+    greenwood_topology_profile: seven
+    greenwood_fresh_cluster_approved: false
+    greenwood_activate_protocol: false
+    greenwood_activate_hosting: false
+    greenwood_governed_services_prepare: false
+    greenwood_governed_activation_approved: false
+    greenwood_recovery_access_confirmed: false
+    greenwood_hosting_release: /opt/greenwood
+    ansible_ssh_common_args: -o StrictHostKeyChecking=yes
+  hosts:
+    node-1:
+      ansible_host: REPLACE_VERIFIED_IPV4
+      ansible_user: REPLACE_SSH_ACCOUNT
+      architecture: aarch64
+      greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+      greenwood_expected_address: REPLACE_VERIFIED_IPV4
+      validator_label: A
+      provider_label: A
+      provider_rpc_endpoint: http://127.0.0.1:9201
+      greenwood_provider_public_key: REPLACE_PROVIDER_PUBLIC_KEY
+      greenwood_provider_key_src: /private/REPLACE/provider.key
+      greenwood_operator_token_src: /private/REPLACE/operator.token
+      greenwood_validator_key_src: /private/REPLACE/validator.key
+      greenwood_control_services:
+      - controller
+      - observer
+      - receiver
+      greenwood_policy_mode: renew
+    node-2:
+      ansible_host: REPLACE_VERIFIED_IPV4
+      ansible_user: REPLACE_SSH_ACCOUNT
+      architecture: aarch64
+      greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+      greenwood_expected_address: REPLACE_VERIFIED_IPV4
+      validator_label: B
+      provider_label: B
+      provider_rpc_endpoint: http://127.0.0.1:9201
+      greenwood_provider_public_key: REPLACE_PROVIDER_PUBLIC_KEY
+      greenwood_provider_key_src: /private/REPLACE/provider.key
+      greenwood_operator_token_src: /private/REPLACE/operator.token
+      greenwood_validator_key_src: /private/REPLACE/validator.key
+      greenwood_control_services:
+      - observer
+      - receiver
+      greenwood_policy_mode: pull
+    node-3:
+      ansible_host: REPLACE_VERIFIED_IPV4
+      ansible_user: REPLACE_SSH_ACCOUNT
+      architecture: aarch64
+      greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+      greenwood_expected_address: REPLACE_VERIFIED_IPV4
+      validator_label: C
+      provider_label: C
+      provider_rpc_endpoint: http://127.0.0.1:9201
+      greenwood_provider_public_key: REPLACE_PROVIDER_PUBLIC_KEY
+      greenwood_provider_key_src: /private/REPLACE/provider.key
+      greenwood_operator_token_src: /private/REPLACE/operator.token
+      greenwood_validator_key_src: /private/REPLACE/validator.key
+      greenwood_control_services:
+      - observer
+      - receiver
+      greenwood_policy_mode: pull
+    node-4:
+      ansible_host: REPLACE_VERIFIED_IPV4
+      ansible_user: REPLACE_SSH_ACCOUNT
+      architecture: aarch64
+      greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+      greenwood_expected_address: REPLACE_VERIFIED_IPV4
+      greenwood_preserve_gateway: true
+    node-5:
+      ansible_host: REPLACE_VERIFIED_IPV4
+      ansible_user: REPLACE_SSH_ACCOUNT
+      architecture: aarch64
+      greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+      greenwood_expected_address: REPLACE_VERIFIED_IPV4
+      greenwood_control_services:
+      - edge
+      - receiver
+      greenwood_policy_mode: pull
+    node-6:
+      ansible_host: REPLACE_VERIFIED_IPV4
+      ansible_user: REPLACE_SSH_ACCOUNT
+      architecture: aarch64
+      greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+      greenwood_expected_address: REPLACE_VERIFIED_IPV4
+      provider_label: D
+      provider_rpc_endpoint: https://REPLACE_APPROVED_RPC
+      greenwood_provider_public_key: REPLACE_PROVIDER_PUBLIC_KEY
+      greenwood_provider_key_src: /private/REPLACE/provider.key
+      greenwood_operator_token_src: /private/REPLACE/operator.token
+      greenwood_control_services:
+      - observer
+      - receiver
+      greenwood_policy_mode: pull
+    node-7:
+      ansible_host: REPLACE_VERIFIED_IPV4
+      ansible_user: REPLACE_SSH_ACCOUNT
+      architecture: aarch64
+      greenwood_expected_machine_id: REPLACE_VERIFIED_MACHINE_ID
+      greenwood_expected_address: REPLACE_VERIFIED_IPV4
+      provider_label: E
+      provider_rpc_endpoint: https://REPLACE_APPROVED_RPC
+      greenwood_provider_public_key: REPLACE_PROVIDER_PUBLIC_KEY
+      greenwood_provider_key_src: /private/REPLACE/provider.key
+      greenwood_operator_token_src: /private/REPLACE/operator.token
+      greenwood_control_services:
+      - observer
+      - receiver
+      greenwood_policy_mode: pull
+  children:
+    validators:
+      hosts:
+        node-1: {}
+        node-2: {}
+        node-3: {}
+    providers:
+      hosts:
+        node-1: {}
+        node-2: {}
+        node-3: {}
+        node-6: {}
+        node-7: {}
+    controller:
+      hosts:
+        node-1: {}
+    gateway:
+      hosts:
+        node-4: {}
+    control_plane:
+      hosts:
+        node-1: {}
+        node-2: {}
+        node-3: {}
+        node-5: {}
+        node-6: {}
+        node-7: {}
+    application_providers:
+      hosts:
+        node-6: {}
+        node-7: {}
+    application_edges:
+      hosts:
+        node-5: {}
+    registry_hosts:
+      hosts:
+        node-5: {}
+    system_runtime_hosts:
+      hosts:
+        node-1: {}
+        node-2: {}
+        node-3: {}
+        node-5: {}
+        node-6: {}
+        node-7: {}
+    governed_service_hosts:
+      hosts:
+        node-1: {}
+        node-2: {}
+        node-3: {}
+        node-5: {}
+        node-6: {}
+        node-7: {}
+    rpc_hosts:
+      hosts:
+        node-1: {}
+        node-2: {}
+        node-3: {}
+        node-5: {}
+    production_rebuild:
+      hosts:
+        node-1: {}
+        node-2: {}
+        node-3: {}
+        node-4: {}
+        node-5: {}
+        node-6: {}
+        node-7: {}

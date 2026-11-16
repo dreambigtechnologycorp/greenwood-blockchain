@@ -263,3 +263,7 @@ Original Greenwood code is licensed under the [Apache License 2.0](LICENSE).
 Copyright 2026 DreamBIG Technology Corporation. See [NOTICE](NOTICE) and
 [third-party notices](THIRD_PARTY_NOTICES.md) for attribution, and the
 [trademark policy](TRADEMARKS.md) for Greenwood name and logo usage.
+
+### Four- and seven-node deployment
+
+See [the seven-node installation guide](docs/operations/SEVEN_NODE_INSTALLATION.md) for shared topology profiles, provider-only provisioning, separate registry placement, controlled netboot preparation and gated metering activation. Templates contain no production identities or activation approval.

@@ -1,7 +1,7 @@
 ---
 # OS/runtime preparation only; fresh_cluster.yml owns identity and activation.
 - name: Prepare approved Greenwood runtimes
-  hosts: "validators:providers:control_plane"
+  hosts: "validators:providers:control_plane:controller:system_runtime_hosts"
   become: true
   gather_facts: false
   roles:

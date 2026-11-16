@@ -1,0 +1,86 @@
+---
+# A separate maintenance action; preparation never reloads the existing gateway.
+- name: Activate previously reviewed client fragments
+  hosts: gateway
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require explicit boot-server maintenance approval
+      ansible.builtin.assert:
+        that:
+          - not ansible_check_mode
+          - greenwood_netboot_activation_approved | default(false) | bool
+          - greenwood_recovery_access_confirmed | default(false) | bool
+          - greenwood_netboot_client_name is match('^node-[5-7]$')
+          - greenwood_netboot_evidence_dir is match('^/var/lib/greenwood-netboot/[a-zA-Z0-9_-]+$')
+          - greenwood_netboot_exports_sha256 is match('^[a-f0-9]{64}$')
+          - greenwood_netboot_dnsmasq_sha256 is match('^[a-f0-9]{64}$')
+    - name: Verify expected boot-server identity
+      ansible.builtin.command: cat /etc/machine-id
+      register: netboot_server_id
+      changed_when: false
+      failed_when: netboot_server_id.stdout | trim != greenwood_expected_machine_id
+    - name: Inspect reviewed prepared fragments
+      ansible.builtin.stat:
+        path: "{{ greenwood_netboot_evidence_dir }}/{{ item }}"
+        checksum_algorithm: sha256
+      loop: [exports, dnsmasq.conf]
+      register: netboot_fragments
+    - name: Require protected exact fragment content
+      ansible.builtin.assert:
+        that:
+          - item.stat.isreg | default(false)
+          - not (item.stat.islnk | default(true))
+          - item.stat.uid == 0
+          - item.stat.checksum == (greenwood_netboot_exports_sha256 if item.item == 'exports' else greenwood_netboot_dnsmasq_sha256)
+      loop: "{{ netboot_fragments.results }}"
+    - name: Require new per-client configuration names
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "/etc/exports.d/greenwood-{{ greenwood_netboot_client_name }}.exports"
+        - "/etc/dnsmasq.d/greenwood-{{ greenwood_netboot_client_name }}.conf"
+      register: netboot_destinations
+    - name: Refuse replacement of existing client configuration
+      ansible.builtin.assert:
+        that: not item.stat.exists
+      loop: "{{ netboot_destinations.results }}"
+    - name: Stage and validate new fragments transactionally
+      block:
+        - name: Install reviewed export and DHCP reservation fragments
+          ansible.builtin.copy:
+            src: "{{ greenwood_netboot_evidence_dir }}/{{ item.src }}"
+            dest: "{{ item.dest }}"
+            remote_src: true
+            owner: root
+            group: root
+            mode: '0644'
+            force: false
+          loop:
+            - {src: exports, dest: "/etc/exports.d/greenwood-{{ greenwood_netboot_client_name }}.exports"}
+            - {src: dnsmasq.conf, dest: "/etc/dnsmasq.d/greenwood-{{ greenwood_netboot_client_name }}.conf"}
+        - name: Validate DNS DHCP configuration before activation
+          ansible.builtin.command: dnsmasq --test
+          changed_when: false
+      rescue:
+        - name: Remove only this newly staged client configuration
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "/etc/exports.d/greenwood-{{ greenwood_netboot_client_name }}.exports"
+            - "/etc/dnsmasq.d/greenwood-{{ greenwood_netboot_client_name }}.conf"
+        - ansible.builtin.fail:
+            msg: New client configuration rejected; running boot services were not reloaded
+    - name: Reload exports without stopping NFS
+      ansible.builtin.command: exportfs -ra
+      changed_when: true
+    - name: Restart dnsmasq in the explicitly approved maintenance window
+      ansible.builtin.systemd_service:
+        name: dnsmasq
+        state: restarted
+    - name: Verify boot services after activation
+      ansible.builtin.command: "systemctl is-active {{ item }}"
+      loop: [nfs-server, dnsmasq, tftpd-hpa]
+      changed_when: false

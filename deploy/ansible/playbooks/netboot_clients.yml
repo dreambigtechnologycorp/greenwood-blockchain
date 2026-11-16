@@ -1,0 +1,9 @@
+---
+# Add isolated client directories only; preserve the working gateway services.
+- name: Prepare explicitly approved new netboot client
+  hosts: gateway
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  roles:
+    - netboot

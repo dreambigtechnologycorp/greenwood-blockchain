@@ -19,7 +19,7 @@ class PhpSecurityVersionTest(unittest.TestCase):
 
     def test_provisioning_entrypoints_include_security_runtime(self):
         paths = [f"roles/{role}/tasks/main.yml" for role in
-                 ("common", "controller", "provider", "control_plane")]
+                 ("common", "controller", "container_runtime", "control_plane")]
         for path in paths:
             with self.subTest(path=path):
                 self.assertIn("../tasks/php_runtime.yml", (ROOT / path).read_text())
