@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "source_commit": null,
+  "runtime_digest": null,
+  "image_manifest_file": null,
+  "configuration_manifest_file": null,
+  "chain_id": null,
+  "genesis_hash": null,
+  "validator_public_keys": {},
+  "registry": {
+    "service": "GREENWOOD_REGISTRY_V1",
+    "endpoint": null,
+    "tls_identity": null,
+    "issuer_public_key_sha256": null,
+    "system_publisher_authorization_sha256": null,
+    "bootstrap": "offline_verified_artifacts"
+  },
+  "hosts": [
+    {"name":"node-1","role":"validator_provider_controller","machine_id":null,"rpc_origin":null},
+    {"name":"node-2","role":"validator_provider","machine_id":null,"rpc_origin":null},
+    {"name":"node-3","role":"validator_provider","machine_id":null,"rpc_origin":null},
+    {"name":"node-4","role":"gateway_boot_network_edge","machine_id":null,"rpc_origin":null}
+  ],
+  "governance": {
+    "allocation_ratification_sha256": null,
+    "spending_limits_ratification_sha256": null,
+    "bootstrap_funding_ratification_sha256": null,
+    "fee_policy_ratification_sha256": null,
+    "signer_custody_review_sha256": null,
+    "recovery_policy_ratification_sha256": null,
+    "related_party_policy_ratification_sha256": null
+  },
+  "payable_profiles": [],
+  "physical_acceptance": {
+    "consensus": null,
+    "fresh_identities": null,
+    "registry_authorization": null,
+    "system_service_lifecycle": null,
+    "funded_compute": null,
+    "hosted_application": null,
+    "resource_measurements": null,
+    "settlement_conservation": null,
+    "refund_dispute_expiry": null,
+    "restart_renewal_recovery": null,
+    "governance_registration": null
+  },
+  "recovery_access_verified": false,
+  "destructive_installation_authorization_sha256": null,
+  "production_activation_authorized": false
+}

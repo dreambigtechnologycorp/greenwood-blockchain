@@ -100,6 +100,15 @@ function respond(
 }
 
 try {
+    if ($method === 'POST' && $path === '/system/token') {
+        $policyPath = getenv('GREENWOOD_SYSTEM_PUBLISHER_POLICY') ?: '';
+        if ($policyPath === '') respond(403, ['error'=>'Network publishing is disabled']);
+        $input = body();
+        $publisher = new \Greenwood\SystemServices\RegistryAuth\SystemServicePublisher($db, $issuer,
+            \Greenwood\SystemServices\RegistryAuth\SystemServicePublisher::loadPolicy($policyPath),
+            $config['chain_id'], getenv('GREENWOOD_GENESIS_HASH') ?: '');
+        respond(200, $publisher->authorize($input['request'] ?? [], $input['public_key'] ?? '', $input['signature'] ?? '', time()));
+    }
     if (
         $method === 'GET'
         && $path === '/health'

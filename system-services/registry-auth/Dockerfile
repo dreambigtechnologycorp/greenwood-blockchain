@@ -1,10 +1,5 @@
-FROM php:8.5.12-cli
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        libsqlite3-dev \
-    && docker-php-ext-install pdo_sqlite \
-    && rm -rf /var/lib/apt/lists/*
+ARG GREENWOOD_PHP_RUNTIME
+FROM ${GREENWOOD_PHP_RUNTIME}
 
 WORKDIR /srv/greenwood-registry-auth
 
@@ -20,7 +15,8 @@ COPY src ./greenwood-src
 COPY system-services/deployment-controller/src/Registry ./deployment-controller-src/Registry
 COPY system-services/deployment-controller/src/Auth/DeploymentIdentity.php ./deployment-controller-src/Auth/DeploymentIdentity.php
 
-RUN mkdir -p /var/lib/greenwood/registry-auth
+RUN mkdir -p /var/lib/greenwood/registry-auth && chown 65532:65532 /var/lib/greenwood/registry-auth && chmod 0700 /var/lib/greenwood/registry-auth
+USER 65532:65532
 
 EXPOSE 8080
 

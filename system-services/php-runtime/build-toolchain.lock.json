@@ -1,0 +1,26 @@
+[
+  {
+    "name": "buildkit",
+    "version": "v0.35.0",
+    "url": "https://github.com/moby/buildkit/releases/download/v0.35.0/buildkit-v0.35.0.linux-amd64.tar.gz",
+    "sha256": "37b3befbed28fb72a44d72bf42362c268610386c42feafa27cb45ee0b531369c"
+  },
+  {
+    "name": "rootlesskit",
+    "version": "v3.3.0",
+    "url": "https://github.com/rootless-containers/rootlesskit/releases/download/v3.3.0/rootlesskit-x86_64.tar.gz",
+    "sha256": "0e757c8f80510d764df8c9a5f169805580b48d02329f0a200900e261ecec27ed"
+  },
+  {
+    "name": "buildx",
+    "version": "v0.39.0",
+    "url": "https://github.com/docker/buildx/releases/download/v0.39.0/buildx-v0.39.0.linux-amd64",
+    "sha256": "5fb31a097304fbf6dd4038649a0decf32c2b9510e4047acd7d68b9d700c46194"
+  },
+  {
+    "name": "wasmtime",
+    "version": "v48.0.1",
+    "url": "https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.1/wasmtime-v48.0.1-aarch64-linux-c-api.tar.xz",
+    "sha256": "1c521a9be661644541158b360df8f7c7ec5bc2d88d23ff4dbbc12f639247c266"
+  }
+]

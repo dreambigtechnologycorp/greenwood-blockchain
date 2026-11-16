@@ -10,6 +10,7 @@ use Greenwood\Node\Chain;
 final class SettlementOutbox
 {
     private \PDO $db;
+    private readonly JournalArchive $archive;
     public function __construct(string $directory,private readonly string $chain,private readonly string $genesis)
     {
         Policy::hex($genesis);if($chain===''||strlen($chain)>128)throw new \InvalidArgumentException('Pinned outbox chain required');
@@ -17,9 +18,11 @@ final class SettlementOutbox
         if(realpath($directory)!==$directory||is_link($directory)||fileowner($directory)!==posix_geteuid()||(fileperms($directory)&0077)!==0)throw new \RuntimeException('Private outbox directory required');
         $path=$directory.'/settlement-outbox.sqlite';
         foreach(['','-wal','-shm'] as $suffix)if(is_link($path.$suffix)||(file_exists($path.$suffix)&&(!is_file($path.$suffix)||fileowner($path.$suffix)!==posix_geteuid()||(fileperms($path.$suffix)&0077)!==0)))throw new \RuntimeException('Unsafe outbox file');
+        $this->archive=new JournalArchive($directory.'/archive');
         $this->db=new \PDO('sqlite:'.$path,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);chmod($path,0600);
         $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=1000');
         if($this->db->query('PRAGMA quick_check')->fetchColumn()!=='ok')throw new \RuntimeException('Corrupt outbox requires operator recovery');
+        $this->db->exec('CREATE TABLE IF NOT EXISTS archived_outbox(id TEXT PRIMARY KEY,sender TEXT NOT NULL,nonce INTEGER NOT NULL,digest TEXT NOT NULL,UNIQUE(sender,nonce))');
         $this->db->exec('CREATE TABLE IF NOT EXISTS identity(chain TEXT NOT NULL,genesis TEXT NOT NULL)');
         $this->db->exec('CREATE TABLE IF NOT EXISTS outbox(id TEXT PRIMARY KEY,sender TEXT NOT NULL,nonce INTEGER NOT NULL,bytes TEXT NOT NULL,state TEXT NOT NULL,attempts INTEGER NOT NULL,next_attempt INTEGER NOT NULL,cursor INTEGER NOT NULL,UNIQUE(sender,nonce))');
         $this->db->exec('BEGIN IMMEDIATE');
@@ -34,7 +37,9 @@ final class SettlementOutbox
         $tx->verify($this->chain);
         if(!in_array($tx->getType(),[13,14],true)||(CanonicalJson::decode($tx->getPayload())['genesis']??null)!==$this->genesis)throw new \InvalidArgumentException('Only genesis-pinned native financial/resource actions supported');
         $id=bin2hex($tx->getHash());$bytes=bin2hex($tx->getCanonicalBytes());$this->db->exec('BEGIN IMMEDIATE');
-        try{$q=$this->db->prepare('SELECT bytes FROM outbox WHERE id=?');$q->execute([$id]);$existing=$q->fetchColumn();
+        try{if($old=$this->archived($id)){if($old['bytes']!==$bytes)throw new \RuntimeException('Archived outbox hash collision');$this->db->exec('COMMIT');return $id;}
+            $guard=$this->db->prepare('SELECT id FROM archived_outbox WHERE sender=? AND nonce=?');$guard->execute([bin2hex($tx->getSender()),$tx->getNonce()]);if($guard->fetchColumn()!==false)throw new \InvalidArgumentException('Archived sender nonce already consumed');
+            $q=$this->db->prepare('SELECT bytes FROM outbox WHERE id=?');$q->execute([$id]);$existing=$q->fetchColumn();
             if($existing!==false){if($existing!==$bytes)throw new \RuntimeException('Outbox hash collision');}
             else{if((int)$this->db->query('SELECT COUNT(*) FROM outbox')->fetchColumn()>=10000)throw new \RuntimeException('Outbox retention bound reached');
                 $q=$this->db->prepare("INSERT INTO outbox VALUES(?,?,?,?,'PENDING',0,0,0)");$q->execute([$id,bin2hex($tx->getSender()),$tx->getNonce(),$bytes]);}
@@ -43,7 +48,7 @@ final class SettlementOutbox
     }
     public function status(string $id): array
     {
-        Policy::hex($id);$q=$this->db->prepare('SELECT id,sender,nonce,state,attempts,next_attempt,cursor FROM outbox WHERE id=?');$q->execute([$id]);$row=$q->fetch(\PDO::FETCH_ASSOC);if(!$row)throw new \InvalidArgumentException('Unknown outbox item');return $row;
+        Policy::hex($id);if($old=$this->archived($id))return array_intersect_key($old,array_flip(['id','sender','nonce','state','attempts','next_attempt','cursor']));$q=$this->db->prepare('SELECT id,sender,nonce,state,attempts,next_attempt,cursor FROM outbox WHERE id=?');$q->execute([$id]);$row=$q->fetch(\PDO::FETCH_ASSOC);if(!$row)throw new \InvalidArgumentException('Unknown outbox item');return $row;
     }
     public function due(int $now,int $limit=16): array
     {
@@ -75,4 +80,22 @@ final class SettlementOutbox
         // A consumed nonce is ambiguous/conflicting; NEVER sign a replacement automatically.
         $q=$this->db->prepare('UPDATE outbox SET state=?,cursor=? WHERE id=? AND cursor=?');$q->execute([$state,$end,$id,$cursor]);return $this->status($id);
     }
+    private function archived(string $id): ?array
+    {
+        Policy::hex($id);$q=$this->db->prepare('SELECT digest FROM archived_outbox WHERE id=?');$q->execute([$id]);$digest=$q->fetchColumn();return $digest===false?null:$this->archive->get($digest)['record'];
+    }
+    public function archiveTerminal(string $id,string $expectedState): string
+    {
+        Policy::hex($id);if(!in_array($expectedState,['FINALIZED','NONCE_CONFLICT'],true))throw new \InvalidArgumentException('Only reconciled terminal outbox items may archive');
+        $this->db->exec('BEGIN IMMEDIATE');
+        try{
+            $q=$this->db->prepare('SELECT * FROM outbox WHERE id=?');$q->execute([$id]);$r=$q->fetch(\PDO::FETCH_ASSOC);
+            if(!$r)$r=$this->archived($id);
+            if(!$r||$r['state']!==$expectedState)throw new \InvalidArgumentException('Terminal outbox state mismatch');
+            $digest=$this->archive->put(['version'=>1,'kind'=>'outbox','chain'=>$this->chain,'genesis'=>$this->genesis,'record'=>$r]);
+            $q=$this->db->prepare('INSERT OR IGNORE INTO archived_outbox VALUES(?,?,?,?)');$q->execute([$id,$r['sender'],$r['nonce'],$digest]);
+            $q=$this->db->prepare('DELETE FROM outbox WHERE id=?');$q->execute([$id]);$this->db->exec('COMMIT');return $digest;
+        }catch(\Throwable $e){$this->db->exec('ROLLBACK');throw $e;}
+    }
+
 }

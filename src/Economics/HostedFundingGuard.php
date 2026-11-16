@@ -31,7 +31,7 @@ final class HostedFundingGuard
                 'catalog_hash'=>$catalog,'manifest_hash'=>($c['resource_manifest']??null)===null?$catalog:\Greenwood\Resources\ResourceManifest::hash($c['resource_manifest'])]];
         }
         return ['commitment_id'=>$id,'assignment_generation'=>$generation,'start_height'=>$h['start_height'],'end_height'=>$c['end_height'],
-            'cpu_budget_ms'=>$h['cpu_budget_ms'],'financial_status'=>$c['status'],'payment_finalized'=>false,'finalized_height'=>$height]+$scope;
+            'cpu_budget_ms'=>$h['cpu_budget_ms'],'resource_manifest'=>$c['resource_manifest']??null,'financial_status'=>$c['status'],'payment_finalized'=>false,'finalized_height'=>$height]+$scope;
     }
     /** Restrict first, then stop using the existing operator. Failure to read funding denies continuation. */
     public function reconcile(array $document,\Closure $restrict,\Closure $stop): array {

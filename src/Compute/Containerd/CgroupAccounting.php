@@ -36,12 +36,17 @@ final readonly class CgroupAccounting
         clearstatcache(true,$this->path);$before=@stat($this->path);$boot=@file_get_contents('/proc/sys/kernel/random/boot_id');
         if($before===false||$boot===false)throw new \RuntimeException('Cgroup runtime identity unavailable');
         $cpu=@file_get_contents($this->path.'/cpu.stat');if($cpu===false||!preg_match('/^usage_usec ([0-9]+)$/m',$cpu,$match))throw new \RuntimeException('CPU observation unavailable');$cpuMs=self::cpuMillis($match[1]);$peak=@file_get_contents($this->path.'/memory.peak');$current=@file_get_contents($this->path.'/memory.current');$io=@file_get_contents($this->path.'/io.stat');
+        $cpuMax=@file_get_contents($this->path.'/cpu.max');$cpuLimit=null;
+        if($cpuMax!==false&&preg_match('/^([0-9]+) ([0-9]+)\s*$/D',$cpuMax,$limit)){
+            $period=self::counter($limit[2]);if($period<1)throw new \RuntimeException('Invalid CPU quota period');
+            $cpuLimit=\Greenwood\Economics\Amount::mulDiv(self::counter($limit[1]),1000,$period,false);
+        }
         $memoryMax=@file_get_contents($this->path.'/memory.max');
         $monotonicMs=intdiv(hrtime(true),1000000);
         clearstatcache(true,$this->path);$after=@stat($this->path);
         if($after===false||$before['ino']!==$after['ino']||$before['dev']!==$after['dev'])throw new \RuntimeException('Cgroup incarnation changed while sampling');
         return ['version'=>1,'verification_level'=>'C','source'=>'local_cgroup_v2','runtime_identity'=>hash('sha256',trim($boot).':'.$before['dev'].':'.$before['ino'].':'.$this->path),
-            'monotonic_ms'=>(string)$monotonicMs,
+            'monotonic_ms'=>(string)$monotonicMs,'cpu_limit_millicores'=>$cpuLimit===null?null:(string)$cpuLimit,
             'memory_limit_bytes'=>$memoryMax===false||trim($memoryMax)==='max'?null:(string)self::counter(trim($memoryMax)),
             'cpu_ms'=>(string)$cpuMs,'memory_peak_bytes'=>$peak===false?null:(string)self::counter(trim($peak)),
             'memory_current_bytes'=>$current===false?null:(string)self::counter(trim($current)),

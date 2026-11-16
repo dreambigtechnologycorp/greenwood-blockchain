@@ -1,0 +1,140 @@
+{
+  "status": "PASS",
+  "runs": [
+    {
+      "command": [
+        "php",
+        "tests/Economics/resource-adapters.php"
+      ],
+      "cwd": "/home/djordanjones/Apps/greenwood-php",
+      "environment_overrides": {},
+      "seconds": 0.3,
+      "exit_code": 0,
+      "stdout": "{\n    \"status\": \"PASS\",\n    \"checks\": 24,\n    \"actual_local_file_io\": true,\n    \"hardware_device_fixture\": true,\n    \"independent_verification\": false,\n    \"live_transactions\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/Economics/hosted-boundaries.php"
+      ],
+      "cwd": "/home/djordanjones/Apps/greenwood-php",
+      "environment_overrides": {},
+      "seconds": 0.109,
+      "exit_code": 0,
+      "stdout": "{\n    \"status\": \"PASS\",\n    \"checks\": 18,\n    \"actual_receiver_sqlite\": true,\n    \"actual_operator_guard\": true,\n    \"container_execution_tested\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/Economics/meter-checkpoints.php"
+      ],
+      "cwd": "/home/djordanjones/Apps/greenwood-php",
+      "environment_overrides": {},
+      "seconds": 0.083,
+      "exit_code": 0,
+      "stdout": "{\n    \"status\": \"PASS\",\n    \"checks\": 13,\n    \"physical_qualification\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/hosted.php"
+      ],
+      "cwd": "/home/djordanjones/Apps/greenwood-php",
+      "environment_overrides": {},
+      "seconds": 3.359,
+      "exit_code": 0,
+      "stdout": "{\n    \"status\": \"PASS\",\n    \"checks\": 32,\n    \"actual_registry_wasm\": true,\n    \"distributed_execution_tested\": false,\n    \"independent_metering_qualified\": false,\n    \"mainnet_activation\": false,\n    \"seconds\": 3.319\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "-d",
+        "ffi.enable=true",
+        "tests/Economics/bootstrap-operator-settlement.php"
+      ],
+      "cwd": "/home/djordanjones/Apps/greenwood-php",
+      "environment_overrides": {
+        "GWD_STORAGE_IO": "1"
+      },
+      "seconds": 2.839,
+      "exit_code": 0,
+      "stdout": "{\n    \"status\": \"PASS\",\n    \"checks\": 24,\n    \"allocation\": \"15-25-30-25-5\",\n    \"actual_registry_wasm\": true,\n    \"actual_local_storage_io\": true,\n    \"physical_execution\": false,\n    \"trust_profile\": \"BOOTSTRAP_OPERATOR_ATTESTED\",\n    \"subsidy_spent\": 0,\n    \"live_transactions\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "tests/Economics/resource-client.mjs"
+      ],
+      "cwd": "/home/djordanjones/Apps/greenwood-php",
+      "environment_overrides": {},
+      "seconds": 0.104,
+      "exit_code": 0,
+      "stdout": "{\"status\":\"PASS\",\"checks\":17,\"live_transactions\":0,\"automatic_signing\":false}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/hosted-settlement-view.php"
+      ],
+      "cwd": "/home/djordanjones/Apps/greenwood-studio",
+      "environment_overrides": {},
+      "seconds": 0.023,
+      "exit_code": 0,
+      "stdout": "{\n    \"status\": \"PASS\",\n    \"checks\": 9,\n    \"transport\": \"explicit_read_adapter_fixtures\",\n    \"live_network\": false,\n    \"private_keys_loaded\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "tests/settlement-view.cjs"
+      ],
+      "cwd": "/home/djordanjones/Apps/greenwood-studio",
+      "environment_overrides": {},
+      "seconds": 0.023,
+      "exit_code": 0,
+      "stdout": "{\"status\":\"PASS\",\"checks\":20,\"browser_render_tested\":false,\"chain_finality_established\":false}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "php",
+        "tests/Economics/resource-adapters.php"
+      ],
+      "note": "After final runtime identity comparison hardening",
+      "exit_code": 0,
+      "stdout": "{\n    \"status\": \"PASS\",\n    \"checks\": 24,\n    \"actual_local_file_io\": true,\n    \"hardware_device_fixture\": true,\n    \"independent_verification\": false,\n    \"live_transactions\": 0\n}\n",
+      "stderr": ""
+    }
+  ],
+  "source_sha256": {
+    "greenwood-php/src/Provider/ResourceTelemetryJournal.php": "58bb857372ef5951313d585ecb666653e8feb6bf984fbaa2dd10a85a83077c49",
+    "greenwood-php/src/Provider/ResourceAllocationJournal.php": "bf850bb7bf80743df6cf4ceb227ae686bd8fe2edaffa56d5b0db81f82bde4fc5",
+    "greenwood-php/src/Provider/ResourcePolicyView.php": "79244bef1d9c0a57f9ff5b79be20ca77c485885deedcb48522b40ae9ccc8dff9",
+    "greenwood-php/src/Provider/ResourceSettlementWorkflow.php": "63b3b24d98213a63169308d42f98e676fe56e9c415cfb54ed359abba6a819e3b",
+    "greenwood-php/src/Provider/ResourceHostCollector.php": "82ca746bd697335561b68c91c8630725db7a7c7ac230058469e8c2a8e2861ada",
+    "greenwood-php/src/Provider/LocalResourceEvidence.php": "5e021608224d9802b15711dcc2a8398f708fa00a23eb1d19bf3ca543d852b114",
+    "greenwood-php/src/Provider/ResourcePolicyHttpReader.php": "8a4e21cd11da5544e163dca8a0d62c975348bad4852de393d704aeeeea37b373",
+    "greenwood-php/src/Provider/ResourceCollectionSession.php": "bf96c057dda72c56141e97c4299fd7a43977769bcbbb2ed79471c365dd388be8",
+    "greenwood-php/src/Provider/MeteredStorageAdapter.php": "5f8dff6af9940efa3580c06fbf00f9fcac04b0814a62a79a22aafaafe3e8a817",
+    "greenwood-php/src/Provider/ServiceOperationMeter.php": "7f545e557e2719acfe18aeb6f7e095c2bffaf0c88267cb76ba1e250b34b8c165",
+    "greenwood-php/src/Provider/HostedMeteringMonitor.php": "5eaa57a2e8a27d74bc12eff9972b0ced5b39db3a8efe798b2e6e4bbe44c05139",
+    "greenwood-php/src/Resources/Metering/DeviceReservationCollector.php": "eb651e316709d1bcba2821855e16fe923e50ae62a2d8282fec16cd3721aaeb49",
+    "greenwood-php/src/Rpc/HttpApi.php": "e43d59d0c39376553f9f32ee28cb18588869c37799cda2325f19b6c3dbb20571",
+    "greenwood-php/src/Economics/ServicePresentation.php": "14e1bbb0a632f122f109f479290eb0da22fbb8cc75b4b29333f80159dfe7897a",
+    "greenwood-php/src/Economics/HostedFundingGuard.php": "2f73ebffe9f00693fd5b1e9e5428ec887473d2b23cf893d64357914504bb589c",
+    "greenwood-php/sdk/javascript/resource-client.mjs": "7618b6071dcbe2689eade6c5a61e638bb325cc4fefc9fd2911d362fcd4e8e511",
+    "greenwood-studio/app/Libraries/Application/Deployment/HostedSettlementView.php": "e91011bc78ae65c228d4991b58f57f272f5cf577fedc3f64f0f646f2ab639971",
+    "greenwood-studio/public/js/settlement-view.js": "741203b8f82b8ba18162bdf0fb9fd2c3ab828db83453aa7afb32b005e0b81245",
+    "greenwood-studio/public/js/studio.js": "4bfe41bcefb93ea2ac65745433b05113b32ad071f0db356cd49fd1a95a3f81bb"
+  },
+  "production_touched": false,
+  "physical_qualification": false
+}

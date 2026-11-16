@@ -86,3 +86,6 @@ deploy/ansible/inventory/hosts
 
 # Keep OS metadata excluded even when an example filename is allowed above.
 ._*
+
+# Local resource SDK dependencies
+/sdk/javascript/node_modules/

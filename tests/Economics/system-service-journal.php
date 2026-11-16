@@ -43,5 +43,12 @@ try{
  $auditKey=\Greenwood\Crypto\Ed25519KeyPair::generate();$signed=$journal->signedAudit($hash,$auditKey);check(sodium_crypto_sign_verify_detached(hex2bin($signed['signature']),\Greenwood\Crypto\ProtocolHash::hash('GREENWOOD_SYSTEM_SERVICE_AUDIT_EXPORT_V1',$signed['body']),$auditKey->getPublicKey()),'Operator-supplied fixture key signs canonical installation audit without reading a wallet');
  rejects(fn()=>new SystemServiceInstallJournal($dir,'wrong-chain',$genesis),'Restart cannot repin installation journal');
  $second=$manifest;$second['revision']=2;$secondHash=ResourcePolicyState::hash($second);rejects(fn()=>$journal->stage($secondHash,$second,'greenwood-attestor-r1',23),'New manifest cannot take over an existing task identity');
+ rejects(fn()=>$journal->archiveStopped($hash,$audit['head']),'Uncertain installation cannot be archived as stopped');
+ $journal->transition($replacementHash,'READY','STOPPING',24);$journal->transition($replacementHash,'STOPPING','STOPPED',25);$retained=$journal->audit($replacementHash);
+ $archived=$journal->archiveStopped($replacementHash,$retained['head']);check($journal->get($replacementHash)['state']==='STOPPED','Archived ownership remains terminal');
+ check(\Greenwood\Economics\CanonicalJson::encode($journal->audit($replacementHash))===\Greenwood\Economics\CanonicalJson::encode($retained),'Archived installation audit remains retrievable');
+ check($journal->archiveStopped($replacementHash,$retained['head'])===$archived,'Stopped archival is idempotent');
+ check(count($journal->all())===1,'Retired installation leaves active reconciliation capacity');
+ $third=$manifest;$third['revision']=3;rejects(fn()=>$journal->stage(ResourcePolicyState::hash($third),$third,'greenwood-attestor-r2',26),'Archived runtime identity cannot be adopted by another manifest');
  echo json_encode(['status'=>'PASS','checks'=>$checks,'actual_sqlite'=>true,'containerd_execution_tested'=>false,'runtime_handles'=>'fixture_values_only'],JSON_PRETTY_PRINT)."\n";
-}finally{unset($journal);foreach(glob($dir.'/*')?:[] as $p)unlink($p);if(is_dir($dir))rmdir($dir);}
+}finally{unset($journal);$it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);foreach($it as $p){if($p->isDir())rmdir($p->getPathname());else unlink($p->getPathname());}rmdir($dir);}

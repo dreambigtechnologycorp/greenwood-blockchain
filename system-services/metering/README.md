@@ -19,8 +19,14 @@ acceptance remains pending on the authorized four-node production destination.
 See `../runtime/RESOURCE_WORKFLOWS.md` for reproducible source packaging and the
 separate attestor/coordinator services.
 
-CPU and raw block counters are provider-origin diagnostics. Memory peaks are bytes,
-not time integrals. NAS/object/network/vendor accelerator collectors remain
-unsupported and cannot become payable by sending JSON to this process. GPU/NPU
-reservation evidence still requires actual allocation authority and qualified
-availability, not the device's advertised model or TOPS.
+CPU and raw block counters remain provider-origin observations. Memory peaks are
+bytes, not time integrals. The universal telemetry path additionally accepts
+signed, scoped allocation and instrumented service observations. It supports
+network, NAS/object/backup and accelerator reservation accounting without treating
+operator assertions as independent hardware proof. Missing adapters remain
+unavailable; all catalog entries remain disabled until qualified and governed.
+
+Use [the metering guide](../../docs/guides/RESOURCE_METERING.md) for the
+`resource-bind`, `resource-append`, `resource-close`, `resource-evidence` and
+`resource-archive` protocol and collector commands. See
+[retention](../../docs/guides/RETENTION_AND_RECOVERY.md) before pruning hot records.

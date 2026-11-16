@@ -4,7 +4,7 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import path from 'node:path';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
-const sdk=process.env.GREENWOOD_SDK_DIR||path.resolve(root,'../intown-metaverse-naf-main/greenwood-avatar-protocol/sdk/typescript');
+const sdk=process.env.GREENWOOD_SDK_DIR||path.resolve(root,'sdk/javascript');
 const {createSigner,inspectPhysicalTransaction,encodeEconomicAction}=await import(pathToFileURL(path.join(sdk,'signing.mjs')));
 const seed=randomBytes(32),signer=createSigner(seed),recipient='a'.repeat(64),chainId='greenwood-mainnet-economic-codec-test',genesis='0'.repeat(64);
 const prepared=[signer.prepareTransfer({chainId,nonce:0,recipient,amount:'6000000000'}),signer.prepareTreasury({chainId,nonce:1,action:{reserve:'grants',action:'pause',genesis:'0'.repeat(64),policy_version:1}})];

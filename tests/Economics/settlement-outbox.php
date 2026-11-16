@@ -34,6 +34,11 @@ try{
  $coordinator=new \Greenwood\Provider\SettlementCoordinator($outbox,static function(string $bytes)use(&$broadcasts){$broadcasts[]=$bytes;});
  $coordinator->tick($node,2000);check($broadcasts===[$relayTx->getCanonicalBytes()]&&$outbox->status($relayId)['state']==='UNCERTAIN','Coordinator relays exact existing signature after actual history reconciliation');
  $coordinator->tick($node,2001);check(count($broadcasts)===1,'Coordinator respects durable backoff without signing another nonce');
+ rejects(fn()=>$outbox->archiveTerminal($relayId,'FINALIZED'),'Pending relay cannot archive as final');
+ $archived=$outbox->archiveTerminal($id,'FINALIZED');check($outbox->archiveTerminal($id,'FINALIZED')===$archived,'Finalized archive is idempotent');
+ check($outbox->status($id)['state']==='FINALIZED'&&$outbox->enqueue($tx)===$id,'Archived finality and exact-envelope replay guard survive');
+ rejects(fn()=>$outbox->enqueue($replacement),'Archived sender nonce cannot carry a replacement payload');
+ $outbox->archiveTerminal($conflict,'NONCE_CONFLICT');check($outbox->status($conflict)['state']==='NONCE_CONFLICT','Archived nonce conflict is never reclassified as payment');
  $node->index->close();unset($node);$restart=new Chain($g,new BlockFilesystem($dir.'/blocks'),new StateSqlite($dir.'/state.sqlite'),$verify);check($restart->tip->getHeight()===3,'Outbox journey uses actual native capability history and certified replay');
  echo json_encode(['status'=>'PASS','checks'=>$checks,'certified_blocks'=>3,'live_broadcasts'=>0,'permanent_keys'=>0],JSON_PRETTY_PRINT)."\n";
 }finally{if(isset($node))$node->index->close();if(isset($restart))$restart->index->close();unset($outbox);$it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);foreach($it as $file){if($file->isDir())rmdir($file->getPathname());else unlink($file->getPathname());}rmdir($dir);}

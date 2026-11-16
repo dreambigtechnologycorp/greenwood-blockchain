@@ -91,11 +91,15 @@ copy_runtime() {
     # Package only the pinned commit, excluding untracked or ignored experiments.
     local source_sha
     source_sha="$(git -C "${PROJECT_ROOT}" rev-parse HEAD)"
-    git -C "${PROJECT_ROOT}" -c core.filemode=false diff --quiet HEAD -- src bin runtime system-services deploy/application-recovery scripts/economics-bootstrap.php scripts/economics-cli.php scripts/resource-operations.php composer.json composer.lock || {
+    git -C "${PROJECT_ROOT}" -c core.filemode=false diff --quiet HEAD -- src bin runtime system-services deploy/application-recovery scripts/economics-bootstrap.php scripts/economics-cli.php scripts/resource-operations.php scripts/resource-metering.php composer.json composer.lock || {
         echo "ERROR: Release source contains tracked local changes" >&2
         exit 1
     }
-    git -C "${PROJECT_ROOT}" archive "${source_sha}" src bin runtime system-services deploy/application-recovery composer.json composer.lock LICENSE NOTICE TRADEMARKS.md LICENSES THIRD_PARTY_NOTICES.md scripts/economics-bootstrap.php scripts/economics-cli.php scripts/resource-operations.php | tar -x -C "${STAGING_DIR}"
+    [[ -z "$(git -C "${PROJECT_ROOT}" ls-files --others --exclude-standard -- src bin runtime system-services deploy/application-recovery scripts/resource-metering.php)" ]] || {
+        echo "ERROR: Review and commit new release source before building" >&2
+        exit 1
+    }
+    git -C "${PROJECT_ROOT}" archive "${source_sha}" src bin runtime system-services deploy/application-recovery composer.json composer.lock LICENSE NOTICE TRADEMARKS.md LICENSES THIRD_PARTY_NOTICES.md scripts/economics-bootstrap.php scripts/economics-cli.php scripts/resource-operations.php scripts/resource-metering.php | tar -x -C "${STAGING_DIR}"
     printf '{"source_sha":"%s"}\n' "${source_sha}" > "${STAGING_DIR}/release-source.json"
     echo "[OK] Runtime files copied"
 }

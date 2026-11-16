@@ -22,6 +22,10 @@ final class MeteringSocketClient implements MeterJournal
             if(($r['status']??null)!=='OK'||!is_array($r['result']??null))throw new \RuntimeException('Meter evidence is UNVERIFIED');return $r['result'];
         }finally{fclose($peer);}
     }
+    public function bindResources(array $scope,array $manifest,string $sourceKey,int $maximumGapMs): void {$this->request(['action'=>'resource-bind','scope'=>$scope,'manifest'=>$manifest,'source_key'=>$sourceKey,'maximum_gap_ms'=>$maximumGapMs]);}
+    public function appendResources(string $commitment,array $signed,bool $close=false): array {return $this->request(['action'=>$close?'resource-close':'resource-append','commitment'=>$commitment,'signed'=>$signed]);}
+    public function resourceEvidence(string $commitment): array {return $this->request(['action'=>'resource-evidence','commitment'=>$commitment]);}
+    public function archiveResources(string $commitment,string $head): array {return $this->request(['action'=>'resource-archive','commitment'=>$commitment,'head'=>$head]);}
     public function bind(array $scope): void {$this->request(['action'=>'bind','scope'=>$scope]);}
     public function segmentState(string $commitment,string $runtime): ?string {$r=$this->request(['action'=>'segment-state','commitment'=>$commitment,'runtime'=>$runtime]);return $r['state'];}
     public function openSegments(string $runtime): array {return $this->request(['action'=>'open-segments','runtime'=>$runtime])['segments'];}
@@ -29,5 +33,6 @@ final class MeteringSocketClient implements MeterJournal
     public function begin(string $commitment,array $sample): void {$this->request(['action'=>'begin','commitment'=>$commitment,'sample'=>$sample]);}
     public function checkpoint(string $commitment,array $sample): array {return $this->request(['action'=>'checkpoint','commitment'=>$commitment,'sample'=>$sample]);}
     public function finish(string $commitment,array $sample): void {$this->request(['action'=>'finish','commitment'=>$commitment,'sample'=>$sample]);}
+    public function archiveClosed(string $commitment,string $expectedBundleHash): string {return $this->request(['action'=>'archive-closed','commitment'=>$commitment,'bundle_hash'=>$expectedBundleHash])['archive_hash'];}
     public function bundle(string $commitment): array {return $this->request(['action'=>'bundle','commitment'=>$commitment]);}
 }

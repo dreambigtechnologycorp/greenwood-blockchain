@@ -16,7 +16,7 @@ final class ProductionPreparation
             $allowed=['version','profile','service_trust_policy','block_seconds','decimals','burn_percent','operator_percent',
                 'signers','guardians','pause_blocks','allocations','limits','large_threshold','operations_balance',
                 'operations_payment','operations_window','bootstrap_units','operations_account','clock','window_blocks',
-                'emission_distribution','exhaustion','failed_transaction_fee','fees','recipients'];
+                'emission_distribution','exhaustion','failed_transaction_fee','fees','recipients','recovery_policy'];
             if(array_diff(array_keys($policy),$allowed))throw new \InvalidArgumentException('Unknown public economic policy fields');
             Policy::validateProduction($policy);
         }

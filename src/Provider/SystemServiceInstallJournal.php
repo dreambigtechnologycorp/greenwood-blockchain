@@ -9,6 +9,7 @@ use Greenwood\Compute\Containerd\SystemServiceHandle;
 final class SystemServiceInstallJournal
 {
     private \PDO $db;
+    private readonly JournalArchive $archive;
     private const EDGES=[
         'STAGED'=>['STARTING'], 'STARTING'=>['RUNNING','UNCERTAIN'],
         'RUNNING'=>['READY','STOPPING','UNCERTAIN'], 'READY'=>['DRAINING','STOPPING','UNCERTAIN'],
@@ -22,9 +23,11 @@ final class SystemServiceInstallJournal
         if(realpath($directory)!==$directory||is_link($directory)||fileowner($directory)!==posix_geteuid()||(fileperms($directory)&0077)!==0)throw new \RuntimeException('Private service journal required');
         $path=$directory.'/system-service-installs.sqlite';
         foreach(['','-wal','-shm'] as $suffix)if(is_link($path.$suffix)||(file_exists($path.$suffix)&&(!is_file($path.$suffix)||fileowner($path.$suffix)!==posix_geteuid()||(fileperms($path.$suffix)&0077)!==0)))throw new \RuntimeException('Unsafe service journal file');
+        $this->archive=new JournalArchive($directory.'/archive');
         $this->db=new \PDO('sqlite:'.$path,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);chmod($path,0600);
         $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=1000');
         if($this->db->query('PRAGMA quick_check')->fetchColumn()!=='ok')throw new \RuntimeException('Service journal corrupt');
+        $this->db->exec('CREATE TABLE IF NOT EXISTS archived_installs(policy_hash TEXT PRIMARY KEY,container_id TEXT UNIQUE NOT NULL,digest TEXT NOT NULL)');
         $this->db->exec('CREATE TABLE IF NOT EXISTS identity(chain TEXT NOT NULL,genesis TEXT NOT NULL)');
         $this->db->exec('CREATE TABLE IF NOT EXISTS installs(policy_hash TEXT PRIMARY KEY,container_id TEXT UNIQUE NOT NULL,body TEXT NOT NULL)');
         $this->db->exec('CREATE TABLE IF NOT EXISTS runtime_pin(body TEXT NOT NULL)');
@@ -38,7 +41,7 @@ final class SystemServiceInstallJournal
     }
     public function get(string $hash): ?array
     {
-        Policy::hex($hash);$q=$this->db->prepare('SELECT body FROM installs WHERE policy_hash=?');$q->execute([$hash]);$raw=$q->fetchColumn();if($raw===false)return null;$r=CanonicalJson::decode($raw);
+        Policy::hex($hash);$q=$this->db->prepare('SELECT body FROM installs WHERE policy_hash=?');$q->execute([$hash]);$raw=$q->fetchColumn();if($raw===false){$archived=$this->archived($hash);if(!$archived)return null;$r=$archived['record'];}else $r=CanonicalJson::decode($raw);
         if(($r['policy_hash']??null)!==$hash||\Greenwood\Network\ResourcePolicyState::hash($r['manifest']??[])!==$hash||!isset(self::EDGES[$r['state']??''])||!is_int($r['height']??null)||$r['height']<1)throw new \RuntimeException('Corrupt installation record');
         if(($r['handle']??null)!==null)$this->validateHandle($r,new SystemServiceHandle(...$r['handle']));return $r;
     }
@@ -59,6 +62,7 @@ final class SystemServiceInstallJournal
         if(\Greenwood\Network\ResourcePolicyState::hash($manifest)!==$hash)throw new \InvalidArgumentException('Manifest commitment mismatch');
         $this->db->exec('BEGIN IMMEDIATE');
         try{$old=$this->get($hash);if($old){if($old['container_id']!==$containerId||CanonicalJson::encode($old['manifest'])!==CanonicalJson::encode($manifest))throw new \InvalidArgumentException('Conflicting staged service');$this->db->exec('COMMIT');return $old;}
+            $guard=$this->db->prepare('SELECT policy_hash FROM archived_installs WHERE container_id=?');$guard->execute([$containerId]);if($guard->fetchColumn()!==false)throw new \InvalidArgumentException('Archived container identity cannot be reassigned');
             if((int)$this->db->query('SELECT COUNT(*) FROM installs')->fetchColumn()>=10000)throw new \RuntimeException('Installation audit retention bound reached');
             $record=['policy_hash'=>$hash,'container_id'=>$containerId,'manifest'=>$manifest,'state'=>'STAGED','height'=>$height,'handle'=>null,'drain_after'=>null,'sequence'=>0];
             $q=$this->db->prepare('INSERT INTO installs VALUES(?,?,?)');$q->execute([$hash,$containerId,CanonicalJson::encode($record)]);$this->appendAudit($record);$this->db->exec('COMMIT');return $record;
@@ -95,6 +99,7 @@ final class SystemServiceInstallJournal
     }
     public function audit(string $hash): array
     {
+        if($old=$this->archived($hash))return $old['audit'];
         $r=$this->get($hash);if(!$r)throw new \InvalidArgumentException('Unknown service audit');$q=$this->db->prepare('SELECT * FROM audit WHERE policy_hash=? ORDER BY sequence');$q->execute([$hash]);$events=[];$previous=str_repeat('0',64);
         foreach($q->fetchAll(\PDO::FETCH_ASSOC) as $row){$e=CanonicalJson::decode($row['body']);$digest=bin2hex(\Greenwood\Crypto\ProtocolHash::hash('GREENWOOD_SYSTEM_SERVICE_AUDIT_V1',$row['body']));
             if($e['sequence']!==count($events)||$e['previous_hash']!==$previous||$digest!==$row['digest']||$e['policy_hash']!==$hash)throw new \RuntimeException('Corrupt installation audit lineage');$events[]=$e;$previous=$digest;}
@@ -112,4 +117,21 @@ final class SystemServiceInstallJournal
             $r['state']='STOPPED';$r['height']=$height;$r['sequence']++;$q=$this->db->prepare('UPDATE installs SET body=? WHERE policy_hash=?');$q->execute([CanonicalJson::encode($r),$hash]);$this->appendAudit($r);$this->db->exec('COMMIT');return $r;
         }catch(\Throwable $e){$this->db->exec('ROLLBACK');throw $e;}
     }
+    private function archived(string $hash): ?array
+    {
+        Policy::hex($hash);$q=$this->db->prepare('SELECT digest FROM archived_installs WHERE policy_hash=?');$q->execute([$hash]);$digest=$q->fetchColumn();return $digest===false?null:$this->archive->get($digest);
+    }
+    public function archiveStopped(string $hash,string $expectedAuditHead): string
+    {
+        Policy::hex($hash);Policy::hex($expectedAuditHead);$this->db->exec('BEGIN IMMEDIATE');
+        try{
+            $r=$this->get($hash);$audit=$this->audit($hash);
+            if(!$r||$r['state']!=='STOPPED'||$audit['head']!==$expectedAuditHead)throw new \InvalidArgumentException('Exact stopped installation audit required');
+            $digest=$this->archive->put(['version'=>1,'kind'=>'installation','record'=>$r,'audit'=>$audit]);
+            $q=$this->db->prepare('INSERT OR IGNORE INTO archived_installs VALUES(?,?,?)');$q->execute([$hash,$r['container_id'],$digest]);
+            foreach(['audit','installs'] as $table){$q=$this->db->prepare('DELETE FROM '.$table.' WHERE policy_hash=?');$q->execute([$hash]);}
+            $this->db->exec('COMMIT');return $digest;
+        }catch(\Throwable $e){$this->db->exec('ROLLBACK');throw $e;}
+    }
+
 }

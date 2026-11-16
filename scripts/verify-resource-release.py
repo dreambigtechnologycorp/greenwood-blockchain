@@ -9,7 +9,7 @@ import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-SHARED = ['production-allocation', 'production-preparation', 'local-resource-evidence', 'meter-ipc', 'resource-worker-ipc',
+SHARED = ['resource-adapters', 'governance-recovery', 'meter-retention', 'resource-telemetry', 'production-allocation', 'production-preparation', 'local-resource-evidence', 'meter-ipc', 'resource-worker-ipc',
           'system-service-journal', 'network-metering', 'resources', 'metering',
           'meter-checkpoints', 'network-policy', 'head-watchdog', 'settlement-outbox',
           'infrastructure-cost', 'hosted-boundaries', 'deployment-identity']
@@ -22,7 +22,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--certified-history', action='store_true')
+    parser.add_argument('--require-clean', action='store_true', help='Require committed source; ignores pre-existing submodule workspace dirt')
     args = parser.parse_args()
+    if args.require_clean:
+        dirty = subprocess.check_output(['git','status','--porcelain','--untracked-files=all','--ignore-submodules=dirty'],cwd=ROOT,text=True)
+        if dirty.strip():
+            parser.error('Release qualification requires clean tracked and untracked source inputs')
     args.output_dir.mkdir(parents=True, exist_ok=False)
     env = os.environ.copy()
     php = [env.get('GREENWOOD_PHP_BINARY', 'php'), '-d', 'ffi.enable=true']
@@ -35,7 +40,7 @@ def main():
     report = {'status': 'RUNNING', 'runs': runs, 'production_touched': False,
               'physical_qualification': False, 'source_commit': subprocess.check_output(
                   ['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
-              'working_tree_may_be_dirty': True}
+              'working_tree_may_be_dirty': not args.require_clean}
 
     def persist():
         (args.output_dir / 'verification.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -60,15 +65,18 @@ def main():
 
     for name in SHARED:
         run(php + [f'tests/Economics/{name}.php'])
+    run(php + ['tests/Economics/bootstrap-operator-settlement.php'], {'GWD_STORAGE_IO': '1', 'GWD_ALLOCATION_CANDIDATE': ALLOCATIONS[0]})
     for allocation in ALLOCATIONS:
         for name in PER_ALLOCATION:
             run(php + [f'tests/Economics/{name}.php'], {'GWD_ALLOCATION_CANDIDATE': allocation})
     for directory, names in [
         ('deployment-controller', ['distribution', 'registry_authority', 'registry_identity',
           'signed_policy', 'allocation_approval', 'policy_install', 'orchestration', 'http_gate',
-          'edge_admission', 'release_content']), ('registry-auth', ['authority', 'database'])]:
+          'edge_admission', 'release_content']), ('registry-auth', ['authority', 'database', 'system-publisher'])]:
         for name in names:
             run(php + [f'system-services/{directory}/tests/{name}.php'])
+    run(['node', 'tests/Economics/signing.mjs'], timeout=120)
+    run(['node', 'tests/Economics/resource-client.mjs'], timeout=120)
     if args.certified_history:
         run(php + ['tests/Economics/hosted-certified-history.php'],
             {'GWD_ALLOCATION_CANDIDATE': ALLOCATIONS[0], 'GWD_RESOURCE_V2': '1',
