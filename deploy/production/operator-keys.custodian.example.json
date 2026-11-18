@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "name": "replace-with-approved-signer-name",
+      "format": "greenwood-ed25519"
+    }
+  ]
+}

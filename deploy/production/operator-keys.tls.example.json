@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "name": "registry-tls",
+      "format": "tls-rsa",
+      "dns_name": "registry.example.invalid"
+    }
+  ]
+}
