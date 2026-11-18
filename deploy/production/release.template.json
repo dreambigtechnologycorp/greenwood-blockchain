@@ -16,10 +16,48 @@
     "bootstrap": "offline_verified_artifacts"
   },
   "hosts": [
-    {"name":"node-1","role":"validator_provider_controller","machine_id":null,"rpc_origin":null},
-    {"name":"node-2","role":"validator_provider","machine_id":null,"rpc_origin":null},
-    {"name":"node-3","role":"validator_provider","machine_id":null,"rpc_origin":null},
-    {"name":"node-4","role":"gateway_boot_network_edge","machine_id":null,"rpc_origin":null}
+    {
+      "name": "node-1",
+      "role": "validator_provider_controller",
+      "machine_id": null,
+      "rpc_origin": null
+    },
+    {
+      "name": "node-2",
+      "role": "validator_provider",
+      "machine_id": null,
+      "rpc_origin": null
+    },
+    {
+      "name": "node-3",
+      "role": "validator_provider",
+      "machine_id": null,
+      "rpc_origin": null
+    },
+    {
+      "name": "node-4",
+      "role": "gateway_boot_network",
+      "machine_id": null,
+      "rpc_origin": null
+    },
+    {
+      "name": "node-5",
+      "role": "registry_application_edge",
+      "machine_id": null,
+      "rpc_origin": null
+    },
+    {
+      "name": "node-6",
+      "role": "provider_application_host",
+      "machine_id": null,
+      "rpc_origin": null
+    },
+    {
+      "name": "node-7",
+      "role": "provider_application_host",
+      "machine_id": null,
+      "rpc_origin": null
+    }
   ],
   "governance": {
     "allocation_ratification_sha256": null,
@@ -46,5 +84,6 @@
   },
   "recovery_access_verified": false,
   "destructive_installation_authorization_sha256": null,
-  "production_activation_authorized": false
+  "production_activation_authorized": false,
+  "topology_profile": "seven"
 }

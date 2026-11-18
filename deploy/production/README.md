@@ -1,9 +1,12 @@
 # Greenwood production release preparation
 
-The release target is the existing four-node cluster. Testnet ledger state is
+The release target is the existing seven-node cluster. Testnet ledger state is
 retired, not migrated. This directory contains public templates only; fill private
 inventory and operational configuration outside Git. No template authorizes a
 reset, permanent genesis, treasury spending or registry publication.
+
+See [operator-only key custody](OPERATOR_KEY_CUSTODY.md) before running any
+provisioning or signing command. Release preparation stops before key generation.
 
 ## Build and identify the source
 

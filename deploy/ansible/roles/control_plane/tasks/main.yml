@@ -1,4 +1,14 @@
 ---
+- name: Stop secret-bearing provisioning at the operator boundary
+  ansible.builtin.assert:
+    that:
+      - (greenwood_control_files | length == 0 and greenwood_https_frontends | length == 0) or greenwood_operator_secret_access_authorized | bool
+    fail_msg: >-
+      File provisioning and TLS pair validation can read private keys even with
+      no_log. Run these steps yourself outside the AI session; see
+      deploy/production/OPERATOR_KEY_CUSTODY.md. Public-only preparation must
+      leave greenwood_control_files and greenwood_https_frontends empty.
+
 - name: Validate HTTPS inventory before provisioning any prerequisites
   ansible.builtin.import_tasks: https_preflight.yml
 

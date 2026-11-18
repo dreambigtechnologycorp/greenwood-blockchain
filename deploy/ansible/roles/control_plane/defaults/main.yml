@@ -21,3 +21,6 @@ greenwood_control_packages:
   - ca-certificates
   - openssl
 greenwood_control_environment: {}
+
+# Only the human operator may opt in after leaving the AI-controlled workflow.
+greenwood_operator_secret_access_authorized: false
