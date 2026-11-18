@@ -48,11 +48,15 @@ final class ServiceSettlement
         if($p['start_height']<1 || $p['end_height']<=$p['start_height'] || $p['end_height']-$p['start_height']>525960
             || $p['subsidy_percent']<0 || $p['subsidy_percent']>100 || $p['gru_scale']<1 || $p['gru_scale']>1000000)
             throw new \InvalidArgumentException('Invalid bounded program');
-        foreach(array_merge(['budget_units','beneficiary_budget_units','max_gru_units'],in_array($p['adapter'],['compute_resources_v2','hosted_resources_v2'],true)?[]:['gru_per_cpu_ms_num','gru_per_cpu_ms_den']) as $name)
+        // These two budgets cap reserve subsidies, not customer payments. A fully
+        // customer-funded program may explicitly authorize zero reserve spending.
+        foreach(['budget_units','beneficiary_budget_units'] as $name)
+            if(Amount::integer($p[$name]??null)<($p['subsidy_percent']===0?0:1))throw new \InvalidArgumentException('Invalid program budget/catalog');
+        foreach(array_merge(['max_gru_units'],in_array($p['adapter'],['compute_resources_v2','hosted_resources_v2'],true)?[]:['gru_per_cpu_ms_num','gru_per_cpu_ms_den']) as $name)
             if(Amount::integer($p[$name]??null)<1)throw new \InvalidArgumentException('Invalid program budget/catalog');
         if($p['catalog_hash']!==self::catalogHash($p))throw new \InvalidArgumentException('Catalog hash does not commit resource conversion/billing policy');
         if(Amount::integer($p['beneficiary_budget_units'])>Amount::integer($p['budget_units'])
-            || Amount::integer($p['budget_units'])>Amount::integer($policy['limits']['subsidies']))throw new \InvalidArgumentException('Program exceeds subsidy ceiling');
+            || ($p['subsidy_percent']>0 && Amount::integer($p['budget_units'])>Amount::integer($policy['limits']['subsidies'])))throw new \InvalidArgumentException('Program exceeds subsidy ceiling');
         if(!is_array($p['beneficiaries']??null) || !$p['beneficiaries'] || count($p['beneficiaries'])>1000)throw new \InvalidArgumentException('Explicit beneficiaries required');
         foreach($p['beneficiaries'] as $payer){Policy::hex($payer);if(!isset($policy['recipients'][$payer]))throw new \InvalidArgumentException('Unregistered beneficiary');}
         $bootstrap=($p['trust_profile']??null)==='BOOTSTRAP_OPERATOR_ATTESTED';$minimum=$bootstrap?1:2;
