@@ -2,6 +2,12 @@
 
 This is source tooling for the existing Pis. It does not require the future PowerEdge, a datacenter move or another qualification cluster. It does not authorize destructive installation or supply production governance approvals.
 
+The [November 17 infrastructure checkpoint](SEVEN_NODE_PREFLIGHT_2026-11-17.md)
+records the completed seven-host identity and netboot checks, unused reformatted
+SD cards, actual runtime gaps, permission repairs and remaining activation gates.
+The profile placement below is the intended production layout, not a claim that
+registry, edge or provider services have already moved to the new hosts.
+
 ## Supported placement
 
 The versioned `deploy/topology/profiles.json` is shared by Terraform, inventory generation, Ansible preflight and production release/acceptance tools.
@@ -119,3 +125,7 @@ This only accepts production `verified_snapshot` or `pinned_node` modes, refuses
 `release_runtime.yml` now preflights the artifact for validators, providers, control-plane and system-runtime hosts before stopping consumers. It discovers installed active consumers and restores only those previously active. This is a maintenance rollout, not a claim of zero-downtime consensus upgrades. Keep the artifact/rollback and availability procedure reviewed.
 
 The tooling does not supply unresolved governance ratification, treasury spending authority, production keys, final service consents, private TLS configuration, new hardware identities or installation authorization. These remain operator inputs. Source preparation does not require the future PowerEdge or independent operators for approved Epoch 0 services, and it never converts operator telemetry into independent subsidy evidence.
+
+Runtime package preparation and guarded installation are documented in [Runtime prerequisites](RUNTIME_PREREQUISITES.md). Run its complete-host audit before selecting idle hosts for installation.
+
+The obsolete testnet was removed on November 17; see [the removal checkpoint](TESTNET_REMOVAL_2026-11-17.md) for retained prerequisites and verified clean-state boundaries.

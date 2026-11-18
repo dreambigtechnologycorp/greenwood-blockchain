@@ -1,9 +1,13 @@
-# Physical acceptance on the existing four nodes
+# Physical acceptance on the existing seven nodes
 
 Run after exact-target/recovery preflight, finalized governance configuration and
 explicit destructive-installation authorization. Do not execute on the disposable
 old testnet as if it were the new production network. No additional cluster is
 required. Store raw evidence privately and publish a redacted evidence manifest.
+
+Key-bearing SSH commands and all signing/provisioning steps below are for the
+human operator only. Follow [the custody boundary](OPERATOR_KEY_CUSTODY.md); do not
+run these in an AI-controlled session once production secrets are accessible.
 
 ## 1. Establish the installation identity
 
@@ -20,12 +24,15 @@ python3 scripts/production-acceptance.py /PRIVATE/release.json \
   --output /PRIVATE/consensus-first.json
 ```
 
-The RPC script requires four distinct HTTPS origins, the exact new chain/genesis
+With `topology_profile: seven`, the RPC script requires four distinct HTTPS
+origins on nodes 1–3 and node-5, the exact new chain/genesis
 and A/B/C public keys. It compares finalized blocks at a common height and rejects
 wrong identities or mismatched state roots. Run again after blocks advance and
 compare the common finalized height. These are authenticated node assertions;
 separately replay exported certified history through the existing node/workflow
-replay path and compare the exact state root. The gateway is not a fourth validator.
+replay path and compare the exact state root. Node-5 is not a fourth validator. Nodes 4, 6 and 7 require separate
+`service_acceptance_sha256` evidence references. Node-4 retains boot/network/storage
+acceptance; nodes 6 and 7 require provider/application-host acceptance.
 
 ## 2. Qualify actual runtime and system services
 

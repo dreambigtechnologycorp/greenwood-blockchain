@@ -7,15 +7,30 @@
 - name: Install PHP 8.5.12 runtime and bundled extensions
   ansible.builtin.apt:
     name:
-      - "php8.5-cli=8.5.12*"
-      - "php8.5-common=8.5.12*"
-      - "php8.5-curl=8.5.12*"
-      - "php8.5-xml=8.5.12*"
-      - "php8.5-mbstring=8.5.12*"
-      - "php8.5-sqlite3=8.5.12*"
+      - "php8.5-cli={{ greenwood_php_package_version | default('8.5.12*') }}"
+      - "php8.5-common={{ greenwood_php_package_version | default('8.5.12*') }}"
+      - "php8.5-curl={{ greenwood_php_package_version | default('8.5.12*') }}"
+      - "php8.5-xml={{ greenwood_php_package_version | default('8.5.12*') }}"
+      - "php8.5-mbstring={{ greenwood_php_package_version | default('8.5.12*') }}"
+      - "php8.5-sqlite3={{ greenwood_php_package_version | default('8.5.12*') }}"
     state: present
     update_cache: true
+    cache_valid_time: 3600
     policy_rc_d: 101
+    install_recommends: false
+
+- name: Inspect the default PHP alternative
+  ansible.builtin.command: readlink -f /usr/bin/php
+  register: greenwood_php_default_path
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Select PHP 8.5 as the default CLI
+  ansible.builtin.command: update-alternatives --set php /usr/bin/php8.5
+  when:
+    - not ansible_check_mode
+    - greenwood_php_default_path.stdout != '/usr/bin/php8.5'
+  changed_when: true
 
 - name: Require the approved PHP security runtime on the executable path
   ansible.builtin.command:

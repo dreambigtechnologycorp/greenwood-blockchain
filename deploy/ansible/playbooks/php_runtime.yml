@@ -1,0 +1,136 @@
+---
+- name: Verify every PHP installation target before changes
+  hosts: all
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require the complete approved seven-node inventory and exact pins
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | sort == ['node-1','node-2','node-3','node-4','node-5','node-6','node-7']
+          - greenwood_php_package_version is match('^8\.5\.12-[A-Za-z0-9.+:~_-]+$')
+          - greenwood_php_grpc_package_version is match('^[0-9][A-Za-z0-9.+:~_-]*$')
+    - name: Verify machine identity and supported platform
+      ansible.builtin.shell: |
+        set -eu
+        test "$(cat /etc/machine-id)" = '{{ greenwood_expected_machine_id }}'
+        test "$(uname -m)" = aarch64
+        . /etc/os-release
+        test "$ID" = ubuntu
+        test "$VERSION_ID" = 24.04
+        for service in systemd-networkd ssh; do systemctl is-active --quiet "$service"; done
+        test ! -e /usr/sbin/policy-rc.d
+        test ! -L /usr/sbin/policy-rc.d
+        dpkg --audit
+      register: php_host_audit
+      changed_when: false
+      check_mode: false
+    - name: Require clean package state
+      ansible.builtin.assert:
+        that: php_host_audit.stdout | trim | length == 0
+    - name: Record completed target audit
+      ansible.builtin.set_fact:
+        php_host_preflight_passed: true
+
+- name: Install the exact PHP runtime serially with networking protected
+  hosts: "{{ greenwood_php_install_hosts | default('all') }}"
+  become: true
+  gather_facts: false
+  serial: 1
+  any_errors_fatal: true
+  tasks:
+    - name: Require every target to have passed the audit
+      ansible.builtin.assert:
+        that: groups['all'] | map('extract', hostvars, 'php_host_preflight_passed') | map('bool') | min
+    - name: Read networkd PID before installation
+      ansible.builtin.command: systemctl show systemd-networkd -p MainPID --value
+      register: php_networkd_before
+      changed_when: false
+    - name: Create persistent networkd guard directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/systemd-networkd.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Preserve explicit networkd stop and restart protection
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/systemd-networkd.service.d/90-greenwood-nfs-root.conf
+        content: "[Unit]\n# Network access and NFS clients require controlled maintenance.\nRefuseManualStop=yes\n"
+        owner: root
+        group: root
+        mode: '0644'
+      register: php_network_guard
+    - name: Load guard without restarting networking
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      when: php_network_guard.changed
+    - name: Confirm active guard
+      ansible.builtin.command: systemctl show systemd-networkd -p RefuseManualStop --value
+      register: php_guard_status
+      changed_when: false
+    - name: Refuse installation without the guard
+      ansible.builtin.assert:
+        that: php_guard_status.stdout == 'yes'
+    - name: Install temporary package-service restart suppression
+      ansible.builtin.copy:
+        dest: /usr/sbin/policy-rc.d
+        content: "#!/bin/sh\n# Temporary PHP rollout policy; removed after installation.\nexit 101\n"
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Configure and install PHP with package restarts suppressed
+      block:
+        - name: Inspect legacy repository definitions before consolidation
+          ansible.builtin.shell: |
+            set -eu
+            if test -f /etc/apt/sources.list.d/sury-php.list; then
+              test "$(cat /etc/apt/sources.list.d/sury-php.list)" = 'deb https://packages.sury.org/php/ noble main'
+            fi
+            if test -f /etc/apt/sources.list.d/greenwood-ondrej-php.sources; then
+              grep -qx 'URIs: https://ppa.launchpadcontent.net/ondrej/php/ubuntu/' /etc/apt/sources.list.d/greenwood-ondrej-php.sources
+              grep -qx 'Suites: noble' /etc/apt/sources.list.d/greenwood-ondrej-php.sources
+              grep -qx 'Signed-By: /etc/apt/keyrings/greenwood-ondrej-php.gpg' /etc/apt/sources.list.d/greenwood-ondrej-php.sources
+            fi
+          changed_when: false
+        - name: Remove obsolete duplicate PHP repository definitions
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /etc/apt/sources.list.d/sury-php.list
+            - /etc/apt/sources.list.d/greenwood-ondrej-php.sources
+        - name: Install shared PHP security runtime and select default CLI
+          ansible.builtin.import_tasks: ../tasks/php_runtime.yml
+        - name: Install pinned gRPC extension
+          ansible.builtin.apt:
+            name: "php8.5-grpc={{ greenwood_php_grpc_package_version }}"
+            state: present
+            policy_rc_d: 101
+            install_recommends: false
+        - name: Verify default PHP and required extensions
+          ansible.builtin.command:
+            argv:
+              - /usr/bin/env
+              - php
+              - -r
+              - |
+                $required=['sodium','pdo_sqlite','posix','pcntl','FFI','grpc','curl','dom','mbstring'];
+                $missing=array_values(array_filter($required,fn($e)=>!extension_loaded($e)));
+                echo json_encode(['version'=>PHP_VERSION,'binary'=>PHP_BINARY,'missing'=>$missing]),PHP_EOL;
+                exit(PHP_VERSION_ID===80512 && !$missing ? 0 : 1);
+          changed_when: false
+        - name: Check package and network health after installation
+          ansible.builtin.shell: |
+            set -eu
+            test "$(systemctl show systemd-networkd -p MainPID --value)" = '{{ php_networkd_before.stdout }}'
+            test "$(systemctl show systemd-networkd -p RefuseManualStop --value)" = yes
+            for service in systemd-networkd ssh; do systemctl is-active --quiet "$service"; done
+            test -z "$(dpkg --audit)"
+          changed_when: false
+      always:
+        - name: Remove temporary package restart policy
+          ansible.builtin.file:
+            path: /usr/sbin/policy-rc.d
+            state: absent

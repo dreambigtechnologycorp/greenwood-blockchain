@@ -1,0 +1,99 @@
+---
+# Default invocation is read-only. This does not deploy chain state or services.
+- name: Validate runtime inputs on every runtime host before installation
+  hosts: system_runtime_hosts
+  gather_facts: false
+  become: false
+  any_errors_fatal: true
+  tags: [always]
+  tasks:
+    - name: Load explicit runtime placement
+      ansible.builtin.set_fact:
+        runtime_profile: "{{ (lookup('file', playbook_dir ~ '/../../topology/profiles.json') | from_json).profiles[greenwood_topology_profile] }}"
+    - name: Reject incomplete audit scope or changed runtime membership
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | sort == runtime_profile.groups.system_runtime_hosts | sort
+          - groups['all'] | sort == runtime_profile.nodes.keys() | list | sort
+          - groups.get('providers', []) | sort == runtime_profile.groups.providers | sort
+          - groups.get('system_runtime_hosts', []) | sort == runtime_profile.groups.system_runtime_hosts | sort
+          - groups['all'] | map('extract', hostvars, 'greenwood_expected_machine_id') | unique | length == groups['all'] | length
+          - groups['all'] | map('extract', hostvars, 'ansible_host') | unique | length == groups['all'] | length
+          - greenwood_runtime_deferred_recovery_hosts | default([]) | type_debug == 'list'
+          - greenwood_runtime_deferred_recovery_hosts | default([]) | difference(runtime_profile.groups.system_runtime_hosts) | length == 0
+          - greenwood_runtime_install_hosts | default([]) | type_debug == 'list'
+          - greenwood_runtime_install_hosts | default([]) | difference(runtime_profile.groups.system_runtime_hosts) | length == 0
+    - name: Validate identities runtime pins and controller artifacts
+      ansible.builtin.import_tasks: ../tasks/runtime_install_preflight.yml
+
+- name: Install reviewed prerequisites only on explicitly selected idle hosts
+  hosts: system_runtime_hosts
+  gather_facts: false
+  become: true
+  serial: 1
+  any_errors_fatal: true
+  tags: [runtime_install]
+  tasks:
+    - name: Apply approved runtime prerequisite installation
+      when:
+        - greenwood_runtime_install_approved | default(false) | bool
+        - inventory_hostname in (greenwood_runtime_install_hosts | default([]))
+        - not ansible_check_mode
+      block:
+        - name: Require full preparation and recovery approval before mutation
+          ansible.builtin.assert:
+            that:
+              - groups['system_runtime_hosts'] | map('extract', hostvars, 'greenwood_runtime_preflight_passed') | map('bool') | min
+              - >-
+                (greenwood_recovery_access_confirmed | default(false) | bool) or
+                (inventory_hostname in (greenwood_runtime_deferred_recovery_hosts | default([])) and
+                 (greenwood_runtime_deferred_recovery_reason | default('') | trim | length > 0))
+              - runtime_package_audit.stdout | trim | length == 0
+            fail_msg: Installation requires complete preparation, verified recovery or an explicitly documented per-host deferred-recovery authorization, and a clean dpkg audit
+        - name: Inspect active runtime consumers before prerequisite changes
+          ansible.builtin.command:
+            argv: [systemctl, list-units, '--state=active,activating', '--no-legend', '--no-pager', 'greenwood*', 'containerd.service']
+          register: runtime_active_consumers
+          changed_when: false
+        - name: Refuse live runtime replacement without a coordinated maintenance procedure
+          ansible.builtin.assert:
+            that: runtime_active_consumers.stdout | trim | length == 0
+            fail_msg: Active Greenwood or containerd units require a separate coordinated runtime maintenance procedure
+        - name: Read networkd identity and require an existing restart guard
+          ansible.builtin.shell: |
+            set -eu
+            test "$(systemctl show systemd-networkd -p RefuseManualStop --value)" = yes
+            for service in systemd-networkd ssh; do systemctl is-active --quiet "$service"; done
+            test ! -e /usr/sbin/policy-rc.d
+            test ! -L /usr/sbin/policy-rc.d
+            systemctl show systemd-networkd -p MainPID --value
+          register: runtime_networkd_before
+          changed_when: false
+        - name: Suppress package-managed service restarts during runtime installation
+          ansible.builtin.copy:
+            dest: /usr/sbin/policy-rc.d
+            content: "#!/bin/sh\n# Temporary guarded runtime installation policy.\nexit 101\n"
+            owner: root
+            group: root
+            mode: '0755'
+        - name: Install prerequisites with package restart suppression
+          block:
+            - name: Install common PHP and Wasmtime prerequisites
+              ansible.builtin.include_role:
+                name: common
+            - name: Install shared container runtime prerequisites
+              ansible.builtin.include_role:
+                name: container_runtime
+            - name: Verify networking and package health after installation
+              ansible.builtin.shell: |
+                set -eu
+                test "$(systemctl show systemd-networkd -p MainPID --value)" = '{{ runtime_networkd_before.stdout }}'
+                test "$(systemctl show systemd-networkd -p RefuseManualStop --value)" = yes
+                for service in systemd-networkd ssh containerd; do systemctl is-active --quiet "$service"; done
+                test -z "$(dpkg --audit)"
+              changed_when: false
+          always:
+            - name: Remove temporary runtime package restart policy
+              ansible.builtin.file:
+                path: /usr/sbin/policy-rc.d
+                state: absent

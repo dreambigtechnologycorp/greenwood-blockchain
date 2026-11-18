@@ -2,6 +2,7 @@
 all:
   vars:
     greenwood_topology_profile: seven
+    greenwood_expected_architecture: aarch64
     greenwood_fresh_cluster_approved: false
     greenwood_activate_protocol: false
     greenwood_activate_hosting: false

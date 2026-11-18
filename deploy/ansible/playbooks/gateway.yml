@@ -15,9 +15,8 @@
   gather_facts: false
   vars:
     ansible_python_interpreter: /usr/bin/python3
-    # node-4 is the gateway/router only; it never pulls private sources, so SSH
-    # agent forwarding (-A from ansible.cfg) is disabled to avoid hangs.
-    ansible_ssh_common_args: "-o ControlMaster=auto -o ControlPersist=60s"
+    # node-4 is the gateway/router; source retrieval does not require an SSH agent.
+    ansible_ssh_common_args: "-o ControlMaster=auto -o ControlPersist=60s -o ForwardAgent=no"
   roles:
     - role: gateway
       tags: [gateway]

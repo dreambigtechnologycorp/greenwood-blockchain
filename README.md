@@ -61,6 +61,9 @@ repository; `bin/greenwood` here remains the PHP RPC/operator client. Use the
 Production artifact preparation, registry bootstrap and installation gates are
 documented in the [release preparation guide](deploy/production/README.md).
 
+The [seven-node infrastructure checkpoint](docs/operations/SEVEN_NODE_PREFLIGHT_2026-11-17.md)
+records verified netboot, current runtime gaps and the remaining production gates.
+
 See the [current WP0–WP10 source map](docs/guides/SOURCE_SCOPE_STATUS.md) for
 implementation evidence and the separate physical qualification gates.
 

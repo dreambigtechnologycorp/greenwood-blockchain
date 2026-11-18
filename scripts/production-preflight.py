@@ -117,7 +117,7 @@ def main():
                   'hosts': results, 'recovery_access_verified': False,
                   'destructive_installation_authorized': False, 'production_acceptance': False}
         json.dump(report, output, indent=2); output.write('\n')
-    print('Identity checks:', sum(r['identity_verified'] for r in results), '/ 4; recovery and production acceptance remain unverified')
+    print('Identity checks:', sum(r['identity_verified'] for r in results), '/', len(hosts), '; recovery and production acceptance remain unverified')
     return 0 if all(r['identity_verified'] for r in results) else 1
 
 
