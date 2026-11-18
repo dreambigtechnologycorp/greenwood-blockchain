@@ -38,7 +38,7 @@ dpkg --configure --pending > "$backup/configure.log" 2>&1 || { tail -80 "$backup
 cat "$backup/configure.log"
 test "$(systemctl show systemd-networkd -p MainPID --value)" = "$network_pid"
 test "$(systemctl show systemd-networkd -p RefuseManualStop --value)" = yes
-systemctl is-active --quiet systemd-networkd ssh containerd
+for service in systemd-networkd ssh containerd; do systemctl is-active --quiet "$service"; done
 ip -j address show eth0 > "$backup/address-after.json"
 dpkg --audit > "$backup/dpkg-audit.txt"
 test ! -s "$backup/dpkg-audit.txt"

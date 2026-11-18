@@ -19,6 +19,8 @@
           - groups.get('system_runtime_hosts', []) | sort == runtime_profile.groups.system_runtime_hosts | sort
           - groups['all'] | map('extract', hostvars, 'greenwood_expected_machine_id') | unique | length == groups['all'] | length
           - groups['all'] | map('extract', hostvars, 'ansible_host') | unique | length == groups['all'] | length
+          - greenwood_runtime_deferred_recovery_hosts | default([]) | type_debug == 'list'
+          - greenwood_runtime_deferred_recovery_hosts | default([]) | difference(runtime_profile.groups.system_runtime_hosts) | length == 0
           - greenwood_runtime_install_hosts | default([]) | type_debug == 'list'
           - greenwood_runtime_install_hosts | default([]) | difference(runtime_profile.groups.system_runtime_hosts) | length == 0
     - name: Validate identities runtime pins and controller artifacts
@@ -42,9 +44,12 @@
           ansible.builtin.assert:
             that:
               - groups['system_runtime_hosts'] | map('extract', hostvars, 'greenwood_runtime_preflight_passed') | map('bool') | min
-              - greenwood_recovery_access_confirmed | default(false) | bool
+              - >-
+                (greenwood_recovery_access_confirmed | default(false) | bool) or
+                (inventory_hostname in (greenwood_runtime_deferred_recovery_hosts | default([])) and
+                 (greenwood_runtime_deferred_recovery_reason | default('') | trim | length > 0))
               - runtime_package_audit.stdout | trim | length == 0
-            fail_msg: Installation requires complete preparation, verified recovery, and a clean dpkg audit
+            fail_msg: Installation requires complete preparation, verified recovery or an explicitly documented per-host deferred-recovery authorization, and a clean dpkg audit
         - name: Inspect active runtime consumers before prerequisite changes
           ansible.builtin.command:
             argv: [systemctl, list-units, '--state=active,activating', '--no-legend', '--no-pager', 'greenwood*', 'containerd.service']
@@ -58,7 +63,7 @@
           ansible.builtin.shell: |
             set -eu
             test "$(systemctl show systemd-networkd -p RefuseManualStop --value)" = yes
-            systemctl is-active --quiet systemd-networkd ssh
+            for service in systemd-networkd ssh; do systemctl is-active --quiet "$service"; done
             test ! -e /usr/sbin/policy-rc.d
             test ! -L /usr/sbin/policy-rc.d
             systemctl show systemd-networkd -p MainPID --value
@@ -84,7 +89,7 @@
                 set -eu
                 test "$(systemctl show systemd-networkd -p MainPID --value)" = '{{ runtime_networkd_before.stdout }}'
                 test "$(systemctl show systemd-networkd -p RefuseManualStop --value)" = yes
-                systemctl is-active --quiet systemd-networkd ssh containerd
+                for service in systemd-networkd ssh containerd; do systemctl is-active --quiet "$service"; done
                 test -z "$(dpkg --audit)"
               changed_when: false
           always:

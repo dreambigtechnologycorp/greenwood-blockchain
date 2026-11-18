@@ -52,3 +52,34 @@ class RuntimePreparationTests(unittest.TestCase):
         self.assertNotEqual(result.returncode,0)
         self.assertIn('Reject incomplete audit scope',result.stdout)
         self.assertNotIn('Apply approved runtime prerequisite installation',result.stdout)
+
+    def test_deferred_recovery_requires_named_host_and_reason(self):
+        source = yaml.safe_load((ROOT/'playbooks/runtime_prerequisites.yml').read_text())
+        gate = source[1]['tasks'][0]['block'][0]
+        # Scope this test to recovery/package conditions; the full inventory barrier
+        # has a separate executable rejection test above.
+        gate['ansible.builtin.assert']['that'] = gate['ansible.builtin.assert']['that'][1:]
+        base = {'greenwood_runtime_preflight_passed': True,
+                'runtime_package_audit': {'stdout': ''},
+                'greenwood_recovery_access_confirmed': False}
+        for hosts, reason, success in [([], '', False), (['localhost'], '', False),
+                                       (['another-host'], 'explicit operator authorization', False),
+                                       (['localhost'], 'explicit operator authorization', True)]:
+            with self.subTest(hosts=hosts, reason=reason):
+                variables = dict(base, greenwood_runtime_deferred_recovery_hosts=hosts,
+                                 greenwood_runtime_deferred_recovery_reason=reason)
+                result = self.run_play([{'hosts': 'localhost', 'gather_facts': False,
+                                         'vars': variables, 'tasks': [gate]}])
+                self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
+
+    def test_idle_runtime_preparation_rejects_unapproved_or_wrong_target(self):
+        import json
+        for host, approved in [('node-1', False), ('node-4', True)]:
+            with self.subTest(host=host, approved=approved):
+                result = subprocess.run(['ansible-playbook', '-i', str(ROOT/'inventory/seven-node.example.yml'),
+                    str(ROOT/'playbooks/prepare_idle_runtime_upgrade.yml'), '--check', '-e',
+                    json.dumps({'maintenance_host': host, 'maintenance_approved': approved})],
+                    capture_output=True, text=True, timeout=60)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('Require a named legacy host', result.stdout)
+                self.assertNotIn('Verify identity and absence of workloads', result.stdout)

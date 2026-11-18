@@ -1,0 +1,42 @@
+- name: Prepare one verified empty legacy runtime for replacement
+  hosts: "{{ maintenance_host }}"
+  gather_facts: false
+  become: true
+  serial: 1
+  tasks:
+    - name: Require a named legacy host and explicit maintenance approval
+      ansible.builtin.assert:
+        that:
+          - maintenance_host in ['node-1', 'node-2', 'node-3']
+          - maintenance_approved | default(false) | bool
+    - name: Verify identity and absence of workloads immediately before stopping
+      ansible.builtin.shell: |
+        set -eu
+        test "$(cat /etc/machine-id)" = '{{ greenwood_expected_machine_id }}'
+        for service in containerd systemd-networkd ssh; do systemctl is-active --quiet "$service"; done
+        test "$(systemctl show systemd-networkd -p RefuseManualStop --value)" = yes
+        test -z "$(/usr/bin/ctr namespaces list -q)"
+        test -z "$(systemctl list-units --state=active,activating --no-legend --no-pager 'greenwood*')"
+        test -z "$(dpkg --audit)"
+        test ! -e /usr/sbin/policy-rc.d
+      changed_when: false
+    - name: Preserve only runtime binaries and service configuration for rollback
+      ansible.builtin.shell: |
+        set -eu
+        backup=$(mktemp -d /var/backups/greenwood-runtime-upgrade-XXXXXXXX)
+        chmod 700 "$backup"
+        for path in /usr/bin/containerd /usr/bin/containerd-shim-runc-v2 /usr/bin/containerd-stress /usr/bin/ctr /usr/local/sbin/runc /etc/containerd/config.toml /etc/systemd/system/containerd.service; do
+          if test -e "$path" || test -L "$path"; then printf '%s\n' "${path#/}"; fi
+        done > "$backup/files"
+        tar --acls --xattrs -C / -cpf "$backup/runtime.tar" -T "$backup/files"
+        sha256sum "$backup/runtime.tar" > "$backup/SHA256SUMS"
+        printf '%s\n' "$backup"
+      register: runtime_backup
+      changed_when: true
+    - name: Record rollback location
+      ansible.builtin.debug:
+        var: runtime_backup.stdout
+    - name: Stop only the verified empty containerd daemon
+      ansible.builtin.systemd_service:
+        name: containerd
+        state: stopped

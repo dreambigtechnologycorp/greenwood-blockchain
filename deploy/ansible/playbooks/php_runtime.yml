@@ -19,7 +19,7 @@
         . /etc/os-release
         test "$ID" = ubuntu
         test "$VERSION_ID" = 24.04
-        systemctl is-active --quiet systemd-networkd ssh
+        for service in systemd-networkd ssh; do systemctl is-active --quiet "$service"; done
         test ! -e /usr/sbin/policy-rc.d
         test ! -L /usr/sbin/policy-rc.d
         dpkg --audit
@@ -126,7 +126,7 @@
             set -eu
             test "$(systemctl show systemd-networkd -p MainPID --value)" = '{{ php_networkd_before.stdout }}'
             test "$(systemctl show systemd-networkd -p RefuseManualStop --value)" = yes
-            systemctl is-active --quiet systemd-networkd ssh
+            for service in systemd-networkd ssh; do systemctl is-active --quiet "$service"; done
             test -z "$(dpkg --audit)"
           changed_when: false
       always:

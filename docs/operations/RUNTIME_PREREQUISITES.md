@@ -105,3 +105,27 @@ Fresh evidence: ignored `build/node6-network-investigation-2026-11-17/comparison
 The controller now defaults to anonymous HTTPS retrieval from `https://github.com/dreambigtechnologycorp/greenwood-blockchain.git`. An explicitly approved full `greenwood_source_sha` remains mandatory, and the checked-out HEAD and containerd submodule commit are verified. Git prompts are disabled for checkout; SSH agent forwarding is disabled in the Ansible defaults. Public access does not authorize deploying an unreviewed branch tip. Anonymous access was verified at main revision `0baec048b764c26fbf5e01fdc9139719f57a332d`; local preparation changes must be published and reviewed before selecting their commit for a production source deployment.
 
 The runtime prerequisite playbook now requires the existing networkd restart guard before installing selected hosts, wraps package operations in a temporary restart-suppression policy, and verifies unchanged networkd PID plus clean package state afterward. Its recovery-readiness and inactive-runtime gates remain enforced. Nodes 5 and 7 are the next installation candidates; node-6 is deferred for its physical link issue. Nodes 1–3 need coordinated maintenance of their retained containerd daemons before runtime replacement. Node-4 remains the gateway and is outside the system-runtime host group.
+
+### Explicit deferred-recovery authorization
+
+The operator authorized continuing offsite on November 17, accepting that physical recovery may wait until November 18. Do not relabel this as verified recovery access. For this case only, provide the explicitly authorized hosts in `greenwood_runtime_deferred_recovery_hosts` and a nonempty `greenwood_runtime_deferred_recovery_reason`. The default remains fail-closed; all identity, package, idle-runtime and network guard checks still apply. The first batch selects nodes 5 and 7. Nodes 1–3 require inspection and coordinated handling of their retained containerd daemons; node-6 remains deferred for its physical link issue.
+
+For the retained empty runtimes on nodes 1–3, use `playbooks/prepare_idle_runtime_upgrade.yml` with `maintenance_host: node-N` and `maintenance_approved: true`, one host at a time. It rechecks identity, network guards, clean package state, zero containerd namespaces and no active Greenwood services, saves a root-only runtime/configuration rollback archive, then stops only containerd. Immediately run `runtime_prerequisites.yml` with that single host selected (but the full inventory in scope), then verify the installed versions, Wasmtime FFI engine creation, EROFS plugin readiness and networking before advancing. If installation fails, stop the sequence and inspect the recorded rollback archive; do not continue to another host. These are runtime backups, not resurrected testnet chain or key backups.
+
+## Runtime deployment result — November 17, 2026
+
+Runtime prerequisites were installed and verified on **nodes 1, 2, 3, 5 and 7** under the operator's explicit deferred-recovery authorization. Nodes 5 and 7 received fresh installations; the empty retained runtimes on nodes 1–3 were upgraded sequentially after saving root-only runtime/configuration rollback archives. Each host passed verification before the next legacy host was changed.
+
+| Component | Verified result on these five hosts |
+|---|---|
+| Default PHP | 8.5.12; required extensions retained |
+| Wasmtime | 48.0.1; PHP FFI engine create/delete passed |
+| Wasmtime library integrity | Matches the checksum-pinned upstream archive; library SHA-256 `6a113cb547f181577eddd0ecc81588ad3306c747b8ba3880d5593f37d8697a74` |
+| containerd client/server | 2.3.7 |
+| runc | 1.5.3 |
+| EROFS tools | `1.7.1-1build2`; EROFS snapshotter reports `ok` |
+| Package and networking checks | Clean package audits, unchanged networkd PIDs, active restart guards; temporary restart policies removed |
+
+Networkd PIDs remained 701/704/707/653/651 on nodes 1/2/3/5/7. The final read-only seven-host health and library-integrity play completed with no failed or unreachable hosts. Node-4 remains the gateway, outside this runtime placement; node-6 remains deferred for the 10 Mb/s Ethernet issue. Neither was subjected to runtime installation.
+
+All 50 Ansible regression tests passed. Evidence is in ignored `build/runtime-deployment-2026-11-17/`, including per-host preparation, installation and verification logs, final health, artifact hashes and the explicit authorization inputs. The runtime rollback archive locations for nodes 1–3 are recorded in their preparation logs. No production genesis, registry, validator, provider application service or customer workload was activated. EROFS plugin readiness and FFI execution are prerequisite evidence, not full container-workload or metering acceptance.
