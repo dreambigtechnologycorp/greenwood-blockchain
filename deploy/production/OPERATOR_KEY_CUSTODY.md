@@ -11,6 +11,7 @@ not production identities and must never be promoted into production.
 
 | Operation | Risk and required boundary |
 | --- | --- |
+| Fresh-cluster preflight and identity installation | `fresh_preflight.yml` stats can hash private files; `fresh_identity.yml` copies keys/tokens and invokes a validator that reads them. Even preflight is human-only. |
 | Control-plane `greenwood_control_files` | Ansible copy reads controller files and transfers them; `no_log` only suppresses output. Leave empty during AI preparation. |
 | Control-plane HTTPS validation | `https.yml` reads the target TLS private key to check its certificate pair, including in check mode. Human-only. |
 | Validator/provider services | Service processes read their installed signing files at startup. Provision and start them yourself after public configuration review. |
@@ -20,7 +21,8 @@ not production identities and must never be promoted into production.
 | Backups, support bundles, logs, core dumps | Rootfs archives, recursive copies, debug output and process environments can capture secrets. Separate public evidence from protected operator-managed backups. |
 | AI terminal with sudo or disk access | A written policy is not an access boundary. Once keys exist, revoke AI-accessible privileged access to their hosts/storage or use a separate restricted account/environment. |
 
-The control-plane role now defaults `greenwood_operator_secret_access_authorized`
+Fresh-cluster preflight and identity tasks also require the explicit human-only
+opt-in before any file inspection. The control-plane role now defaults `greenwood_operator_secret_access_authorized`
 to false and rejects nonempty file/HTTPS provisioning before any task runs. Only
 the operator should enable it in a private manual invocation. This gate does not
 sandbox other playbooks or a privileged shell.

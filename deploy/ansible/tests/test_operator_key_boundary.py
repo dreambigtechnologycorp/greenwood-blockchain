@@ -32,3 +32,17 @@ class OperatorKeyBoundaryTest(unittest.TestCase):
                         str(play), '--check'], capture_output=True, text=True, timeout=30,
                         env=dict(os.environ, ANSIBLE_LOCAL_TEMP=str(work / 'tmp')))
                     self.assertEqual(result.returncode == 0, allowed, result.stdout + result.stderr)
+
+    def test_fresh_identity_gates_deny_by_default(self):
+        for name in ['fresh_preflight.yml', 'fresh_identity.yml']:
+            gate = yaml.safe_load((ROOT / 'tasks' / name).read_text())[0]
+            with self.subTest(task=name), tempfile.TemporaryDirectory() as directory:
+                work = Path(directory)
+                play = work / 'gate.yml'
+                play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'gather_facts': False,
+                    'tasks': [gate]}]))
+                result = subprocess.run(['ansible-playbook', '-i', 'localhost,', '-c', 'local',
+                    str(play), '--check'], capture_output=True, text=True, timeout=30,
+                    env=dict(os.environ, ANSIBLE_LOCAL_TEMP=str(work / 'tmp')))
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('human operator', result.stdout)

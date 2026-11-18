@@ -1,4 +1,13 @@
 ---
+- name: Require human-operated access before inspecting or provisioning identities
+  ansible.builtin.assert:
+    that:
+      - greenwood_operator_secret_access_authorized | default(false) | bool
+    fail_msg: >-
+      This workflow can read private identity files, including through stat
+      checksums and validation scripts. The human operator must run it outside
+      the AI session. See deploy/production/OPERATOR_KEY_CUSTODY.md.
+
 - ansible.builtin.import_tasks: topology_preflight.yml
 
 - name: Require explicit fresh installation approval and immutable inputs
