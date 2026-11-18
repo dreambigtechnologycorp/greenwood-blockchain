@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "name": "node-1-validator",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-2-validator",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-3-validator",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-1-provider",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-1-operator-token",
+      "format": "token"
+    },
+    {
+      "name": "node-2-provider",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-2-operator-token",
+      "format": "token"
+    },
+    {
+      "name": "node-3-provider",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-3-operator-token",
+      "format": "token"
+    },
+    {
+      "name": "node-6-provider",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-6-operator-token",
+      "format": "token"
+    },
+    {
+      "name": "node-7-provider",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-7-operator-token",
+      "format": "token"
+    },
+    {
+      "name": "node-1-meter-source",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-2-meter-source",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-3-meter-source",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-5-meter-source",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-6-meter-source",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "node-7-meter-source",
+      "format": "greenwood-ed25519"
+    },
+    {
+      "name": "registry-issuer",
+      "format": "sodium-ed25519"
+    },
+    {
+      "name": "system-service-publisher",
+      "format": "greenwood-ed25519"
+    }
+  ]
+}

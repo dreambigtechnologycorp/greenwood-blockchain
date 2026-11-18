@@ -27,6 +27,10 @@ to false and rejects nonempty file/HTTPS provisioning before any task runs. Only
 the operator should enable it in a private manual invocation. This gate does not
 sandbox other playbooks or a privileged shell.
 
+See [the operator-run encrypted key generator](../../docs/operations/OPERATOR_KEY_GENERATION.md)
+for key formats, separate custodian plans, encrypted storage and single-key export.
+AI must not run this generator against production identities.
+
 ## Human handoff
 
 1. Finish source/artifact verification and approve governance before generating
