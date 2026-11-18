@@ -38,7 +38,8 @@
       "name": "node-4",
       "role": "gateway_boot_network",
       "machine_id": null,
-      "rpc_origin": null
+      "rpc_origin": null,
+      "service_acceptance_sha256": null
     },
     {
       "name": "node-5",
@@ -50,13 +51,15 @@
       "name": "node-6",
       "role": "provider_application_host",
       "machine_id": null,
-      "rpc_origin": null
+      "rpc_origin": null,
+      "service_acceptance_sha256": null
     },
     {
       "name": "node-7",
       "role": "provider_application_host",
       "machine_id": null,
-      "rpc_origin": null
+      "rpc_origin": null,
+      "service_acceptance_sha256": null
     }
   ],
   "governance": {
