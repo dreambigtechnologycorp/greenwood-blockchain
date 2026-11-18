@@ -1,0 +1,9 @@
+---
+# May be limited to reachable clients; never installs or activates configuration.
+- name: Prepare NFS network retention without modifying live networking
+  hosts: system_runtime_hosts
+  gather_facts: false
+  become: true
+  any_errors_fatal: true
+  roles:
+    - nfs_network_safety

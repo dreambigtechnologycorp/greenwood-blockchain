@@ -22,13 +22,14 @@
 # Worker User/Group Setup
 # =============================================================================
 
-- name: Install provider PHP gRPC extension
-  ansible.builtin.apt:
-    name: "php{{ PHP_VERSION | default('8.5') }}-grpc"
-    state: present
-
 - name: Install approved PHP security runtime
   ansible.builtin.import_tasks: "{{ playbook_dir }}/../tasks/php_runtime.yml"
+
+- name: Install provider PHP gRPC extension
+  ansible.builtin.apt:
+    name: "php{{ PHP_VERSION | default('8.5') }}-grpc{{ ('=' ~ greenwood_php_grpc_package_version) if greenwood_php_grpc_package_version is defined else '' }}"
+    state: present
+    policy_rc_d: 101
 
 - name: Create provider worker group
   ansible.builtin.group:
@@ -57,7 +58,7 @@
 - name: Download containerd
   ansible.builtin.get_url:
     url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-arm64.tar.gz"
-    dest: "/tmp/containerd.tar.gz"
+    dest: "/tmp/containerd-{{ containerd_version }}-linux-arm64.tar.gz"
     mode: "0644"
     checksum: "sha256:{{ containerd_sha256 }}"
   register: containerd_download
@@ -66,9 +67,11 @@
 
 - name: Extract containerd
   ansible.builtin.unarchive:
-    src: "/tmp/containerd.tar.gz"
+    src: "/tmp/containerd-{{ containerd_version }}-linux-arm64.tar.gz"
     dest: "/usr"
     remote_src: true
+    owner: root
+    group: root
   notify:
     - Cleanup containerd archive
 

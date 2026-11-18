@@ -1,8 +1,8 @@
 ---
 # Controller role configuration (node-1 operations role only; no protocol identity)
 
-# Canonical Greenwood source (private repository)
-greenwood_repo_url: "git@github.com:dreambigtechnologycorp/greenwood-blockchain.git"
+# Canonical public Greenwood source; no GitHub credentials or agent forwarding required
+greenwood_repo_url: "https://github.com/dreambigtechnologycorp/greenwood-blockchain.git"
 greenwood_source_sha: ""
 greenwood_containerd_submodule_sha: "301b2dac98f15c27117da5c8af12118a041a31d9"
 

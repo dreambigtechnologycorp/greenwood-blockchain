@@ -1,14 +1,14 @@
 # Fresh production release and profile-based replacement
 
-See [post-merge preparation findings](PRODUCTION_PREPARATION_2026-11-15.md) for current read-only physical evidence and public genesis-candidate tooling.
+See the [November 17 seven-node checkpoint](SEVEN_NODE_PREFLIGHT_2026-11-17.md) for current infrastructure evidence. The [November 15 preparation findings](PRODUCTION_PREPARATION_2026-11-15.md) retain historical four-node evidence and public genesis-candidate tooling.
 
 The November 14, 2026 user direction supersedes the earlier disposable-cluster
-requirement. The destination is the existing four-node physical cluster. Its
+requirement. The destination is the existing physical cluster, now expanded to seven nodes. Its
 testnet genesis, validator/provider identities, blocks and ledger are not migrated.
 No additional host or independent operator is a prerequisite for software completion
 or explicitly approved Epoch 0 customer-funded service activation.
 
-The implemented four/seven-node tooling is described in [the installation guide](SEVEN_NODE_INSTALLATION.md). For the proposed expansion to seven machines, see the [node-4 responsibilities and cluster assessment](NODE4_AND_SEVEN_NODE_ASSESSMENT_2026-11-16.md). The additional machines and role allocation are proposals pending identity/storage preflight; this does not silently change the installation inventory or authorize cutover.
+The implemented four/seven-node tooling is described in [the installation guide](SEVEN_NODE_INSTALLATION.md). All seven host identities and the six client NFS roots have now been verified. Production service placement, runtime reconciliation, recovery qualification and cutover authorization remain separate gates. The [earlier cluster assessment](NODE4_AND_SEVEN_NODE_ASSESSMENT_2026-11-16.md) documents the shared node-4 dependency.
 
 ## Ordered release gates
 
@@ -24,7 +24,7 @@ The implemented four/seven-node tooling is described in [the installation guide]
    decimals. Fresh production requires `service_trust_policy: explicit_profiles_v1`;
    historical programs without a trust profile cannot be installed. Allocation selection is not authority to spend, activate, or recover
    a lost treasury quorum. The production template leaves unresolved limits unset.
-4. Run infrastructure preflight on the exact four machines: confirm machine IDs,
+4. Run infrastructure preflight on the exact machines in the selected profile: confirm machine IDs,
    addresses, architecture, storage, routing, available runtime and recovery access.
    Present those targets and the exact destructive installation plan for explicit
    authorization. No blanket reset based solely on an IP range or inventory name.
@@ -61,9 +61,9 @@ migration remains an explicit protocol upgrade, not an automatic effect of onboa
 
 Local synthetic tests, real local processes/SQLite, certified local replay, actual
 containerd execution and independent administration are separate evidence categories.
-The source workspace currently lacks containerd/gRPC/delegated cgroups. That limits
-physical execution here, not source implementation. Physical acceptance occurs on
-the authorized rebuilt four-node destination; separate qualification hardware is
+The retained local release evidence reports unavailable native containerd/gRPC/cgroup
+prerequisites; image execution checks are not physical acceptance. Physical acceptance occurs on
+the authorized rebuilt seven-node destination; separate qualification hardware is
 not required. Production remains HOLD until the applicable gates are satisfied.
 
 The old `qualification.ini` is retained only as a disabled historical fixture.

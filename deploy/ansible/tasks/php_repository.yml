@@ -27,6 +27,9 @@
     name: [ca-certificates, gnupg, python3-apt]
     state: present
     update_cache: true
+    cache_valid_time: 3600
+    policy_rc_d: 101
+    install_recommends: false
 
 - name: Create repository keyring directory
   ansible.builtin.file:

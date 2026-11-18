@@ -56,7 +56,7 @@
   changed_when: false
 
 # =============================================================================
-# Ansible-owned source checkout (private repository via forwarded SSH agent)
+# Ansible-owned public HTTPS source checkout, pinned to the approved commit
 # =============================================================================
 
 - name: Create source workspace
@@ -109,6 +109,8 @@
     dest: "{{ greenwood_source_dir }}"
     version: "{{ greenwood_source_sha }}"
     force: false
+  environment:
+    GIT_TERMINAL_PROMPT: "0"
   become: true
   become_user: "{{ greenwood_build_user }}"
 

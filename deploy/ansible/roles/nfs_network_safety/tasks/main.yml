@@ -1,0 +1,27 @@
+---
+# Preparation only: isolated generation, no live netplan/networkd writes or reloads.
+- name: Validate NFS client identity and interface inputs
+  ansible.builtin.assert:
+    that:
+      - greenwood_expected_machine_id is match('^[a-f0-9]{32}$')
+      - greenwood_nfs_interface | default('eth0') is match('^[A-Za-z0-9_-]+$')
+      - inventory_hostname != 'node-4'
+
+- name: Generate and compare candidate network retention in disposable roots
+  ansible.builtin.script:
+    cmd: >-
+      {{ role_path }}/../../../../scripts/prepare-nfs-network-safety.py
+      --interface {{ greenwood_nfs_interface | default('eth0') }}
+      --expected-machine-id {{ greenwood_expected_machine_id }}
+    executable: /usr/bin/python3
+  register: nfs_retention_validation
+  changed_when: false
+  check_mode: false
+
+- name: Record candidate without authorizing package maintenance or restarts
+  ansible.builtin.set_fact:
+    greenwood_nfs_retention_candidate: "{{ nfs_retention_validation.stdout | from_json }}"
+
+- name: Show preparation evidence
+  ansible.builtin.debug:
+    var: greenwood_nfs_retention_candidate

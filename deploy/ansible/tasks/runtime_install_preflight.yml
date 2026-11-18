@@ -1,0 +1,90 @@
+---
+# Read-only barrier shared by the runtime preparation and installation plays.
+- name: Require exact runtime package versions
+  ansible.builtin.assert:
+    that:
+      - greenwood_php_package_version | default('') is match('^8\.5\.12-[A-Za-z0-9.+:~_-]+$')
+      - greenwood_php_grpc_package_version | default('') is match('^[0-9][A-Za-z0-9.+:~_-]*$')
+      - greenwood_php_repository_key_src is defined
+      - greenwood_php_repository_key_sha256 | default('') is match('^[a-f0-9]{64}$')
+      - greenwood_php_apt_repository | default('') is match('^deb \[signed-by=/etc/apt/keyrings/greenwood-php.asc\] https://[^ ]+ noble main$')
+      - greenwood_runtime_artifacts is defined
+      - greenwood_runtime_artifacts.keys() | list | sort == ['containerd', 'runc']
+    fail_msg: Supply exact package versions and verified runtime artifacts; wildcards are not installation inputs
+
+- name: Validate the shared runtime role inputs
+  ansible.builtin.import_tasks: ../roles/container_runtime/tasks/runtime_preflight.yml
+
+- name: Inspect local reviewed runtime inputs
+  ansible.builtin.stat:
+    path: "{{ item.path }}"
+    get_checksum: true
+    checksum_algorithm: sha256
+  delegate_to: localhost
+  become: false
+  loop:
+    - {path: "{{ greenwood_php_repository_key_src }}", sha256: "{{ greenwood_php_repository_key_sha256 }}"}
+    - {path: "{{ greenwood_runtime_artifacts.containerd }}", sha256: "{{ containerd_sha256 }}"}
+    - {path: "{{ greenwood_runtime_artifacts.runc }}", sha256: "{{ runc_sha256 }}"}
+  register: runtime_local_inputs
+
+- name: Reject missing or modified runtime inputs before touching hosts
+  ansible.builtin.assert:
+    that:
+      - item.stat.isreg | default(false)
+      - not (item.stat.islnk | default(true))
+      - item.stat.checksum | default('') == item.item.sha256
+  loop: "{{ runtime_local_inputs.results }}"
+
+- name: Read host identity platform and worker account assignments
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - -c
+      - |
+        import json,pathlib,platform,pwd,grp
+        p=pathlib.Path
+        os_release=dict(line.split('=',1) for line in p('/etc/os-release').read_text().splitlines() if '=' in line)
+        print(json.dumps({'machine_id':p('/etc/machine-id').read_text().strip(), 'architecture':platform.machine(), 'distribution':os_release.get('ID','').strip('"'), 'release':os_release.get('VERSION_ID','').strip('"'), 'users':[{ 'name':u.pw_name,'uid':u.pw_uid,'gid':u.pw_gid} for u in pwd.getpwall()], 'groups':[{ 'name':g.gr_name,'gid':g.gr_gid} for g in grp.getgrall()]}))
+  register: runtime_identity_raw
+  changed_when: false
+  check_mode: false
+
+- name: Bind verified host facts
+  ansible.builtin.set_fact:
+    runtime_identity: "{{ runtime_identity_raw.stdout | from_json }}"
+
+- name: Reject wrong machines and unsupported operating systems
+  ansible.builtin.assert:
+    that:
+      - runtime_identity.machine_id == greenwood_expected_machine_id
+      - runtime_identity.architecture == 'aarch64'
+      - runtime_identity.distribution == 'ubuntu'
+      - runtime_identity.release == '24.04'
+      - greenwood_expected_address == ansible_host
+
+- name: Reject worker UID or GID collisions before package installation
+  ansible.builtin.assert:
+    that:
+      - runtime_identity.users | selectattr('uid', 'equalto', worker_uid | default(999) | int) | rejectattr('name', 'equalto', worker_username | default('gw-worker')) | list | length == 0
+      - runtime_identity.groups | selectattr('gid', 'equalto', worker_gid | default(988) | int) | rejectattr('name', 'equalto', worker_username | default('gw-worker')) | list | length == 0
+      - runtime_identity.users | selectattr('name', 'equalto', worker_username | default('gw-worker')) | rejectattr('uid', 'equalto', worker_uid | default(999) | int) | list | length == 0
+      - runtime_identity.users | selectattr('name', 'equalto', worker_username | default('gw-worker')) | rejectattr('gid', 'equalto', worker_gid | default(988) | int) | list | length == 0
+      - runtime_identity.groups | selectattr('name', 'equalto', worker_username | default('gw-worker')) | rejectattr('gid', 'equalto', worker_gid | default(988) | int) | list | length == 0
+  when: inventory_hostname in groups.get('providers', [])
+
+- name: Record successful preparation barrier without claiming installation
+  ansible.builtin.set_fact:
+    greenwood_runtime_preflight_passed: true
+
+- name: Audit unfinished package transactions without repairing them
+  ansible.builtin.command:
+    argv: [dpkg, --audit]
+  register: runtime_package_audit
+  changed_when: false
+  check_mode: false
+
+- name: Report package maintenance required before installation
+  ansible.builtin.debug:
+    msg: "{{ runtime_package_audit.stdout }}"
+  when: runtime_package_audit.stdout | trim | length > 0
