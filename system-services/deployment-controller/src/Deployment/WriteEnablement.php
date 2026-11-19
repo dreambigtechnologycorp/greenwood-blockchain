@@ -26,8 +26,12 @@ final class WriteEnablement
         }
         $this->peer($config['edge_remote'] ?? [], 'edge-admission');
         $p = $config['provider_policy'] ?? [];
+        $providerNode = $p['provider_node'] ?? null;
+        if (!in_array($providerNode, ['node-1', 'node-2', 'node-3', 'node-6', 'node-7'], true)) {
+            throw new \RuntimeException('EXPLICIT_PROVIDER_NODE_REQUIRED');
+        }
         $this->peer(['endpoint'=>$p['provider_endpoint'] ?? null,'tls_name'=>$p['provider_tls_name'] ?? null,
-            'identity'=>$p['provider_id'] ?? null], 'provider/node-1');
+            'identity'=>$p['provider_id'] ?? null], 'provider/' . $providerNode);
         if (($p['provider_id'] ?? null) !== $config['deployment_write_scope']['provider_id']) {
             throw new \RuntimeException('WRITE_PROVIDER_SCOPE_MISMATCH');
         }

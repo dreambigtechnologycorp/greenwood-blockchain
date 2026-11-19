@@ -50,7 +50,7 @@ runtime identity rather than repeating start. READY is rechecked against authori
 runtime, effective edge generation and public content, not cached indefinitely.
 
 The current composition retains fixed `node-1` and `node-4` receiver roles and a
-`provider/node-1` role. Inventory can supply addresses and identities, but arbitrary
+`provider_policy.provider_node` selection among node-1, node-2, node-3, node-6 and node-7. Inventory can supply addresses and identities, but arbitrary
 application admission is not a claim of arbitrary receiver topology support.
 Current timer admission supports initial version-1 publication; replacement still
 requires verified withdrawal support. Do not infer general rolling updates.

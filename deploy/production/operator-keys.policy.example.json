@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "entries": [
+    {"name": "revocations", "format": "sodium-ed25519"},
+    {"name": "allocations", "format": "sodium-ed25519"}
+  ]
+}

@@ -29,7 +29,11 @@ fingerprints independently. Never commit private keys, passwords or policy
 signing material to inventory.
 
 The enabled controller composition currently requires node-1/node-4 receiver
-roles, provider/node-1 and unix:///run/greenwood-provider/operator.sock.
+roles, an explicit provider_policy.provider_node (node-1, node-2, node-3, node-6 or node-7),
+and unix:///run/greenwood-provider/operator.sock. The selected provider account
+must match the bounded write scope and its certificate must pin the same provider/node-N URI.
+The controller composition must run alongside that provider for local operator access;
+this change does not expose the operator socket remotely.
 Addresses are configurable; this is not arbitrary topology support.
 
 ## Runtime and Seed Artifacts

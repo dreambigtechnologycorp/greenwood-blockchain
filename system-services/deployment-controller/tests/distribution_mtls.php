@@ -13,7 +13,7 @@ $config=$root.'/openssl.cnf';file_put_contents($config,$base);
 $options=['private_key_bits'=>2048,'private_key_type'=>OPENSSL_KEYTYPE_RSA,'digest_alg'=>'sha256','config'=>$config];
 $caKey=openssl_pkey_new($options);$csr=openssl_csr_new(['commonName'=>'isolated distribution test CA'],$caKey,$options);
 $ca=openssl_csr_sign($csr,null,$caKey,1,$options+['x509_extensions'=>'v3_ca'],1);openssl_x509_export_to_file($ca,$root.'/ca.pem');
-$pins=[];$roles=['controller'=>'deployment-controller','node-1'=>'assignment/node-1','node-4'=>'assignment/node-4','stranger'=>'deployment-controller'];
+$pins=[];$roles=['controller'=>'deployment-controller','node-1'=>'assignment/node-1','node-4'=>'assignment/node-4','stranger'=>'deployment-controller','provider-6'=>'provider/node-6','provider-7'=>'provider/node-7'];
 try {
     foreach($roles as$name=>$role){
         file_put_contents($config,$base.'subjectAltName=DNS:'.$name.'.test,URI:spiffe://'.CONTROL_TEST_CHAIN.'/control-plane/'.$role."\n");
@@ -34,6 +34,27 @@ try {
     foreach(['node-1','node-4']as$n){mkdir($root.'/'.$n,0700);mkdir($root.'/'.$n.'/assignments',0700);}
     $channel=static function($name,$peers)use($root,$roles,$pins,$revocations,$policyKey){$identities=[];$uris=[];foreach($peers as$peer=>$identity){$identities[$pins[$peer]]=$identity;$uris[$pins[$peer]]='spiffe://'.CONTROL_TEST_CHAIN.'/control-plane/'.$roles[$peer];}return new MutualTlsChannel($root.'/ca.pem',$root.'/'.$name.'.pem',$root.'/'.$name.'.key',$identities,$uris,$revocations,
         new SignedPolicySnapshot($revocations,$root.'/'.$name.'-policies.sqlite','revocations',bin2hex(sodium_crypto_sign_publickey($policyKey)),300,CONTROL_TEST_CHAIN));};
+    // Real TLS handshakes for the expanded compute-provider roles.
+    foreach (['provider-6','provider-7'] as $provider) {
+        $server=$channel($provider,['controller'=>'deployment-controller']);
+        $listener=$server->listen('tcp://127.0.0.1:0');
+        $address='tcp://'.stream_socket_get_name($listener,false);
+        $pid=pcntl_fork(); check($pid>=0,'fork failed');
+        if($pid===0){try{$server->serveOne($listener,static fn($principal,$message)=>['principal'=>$principal]);exit(0);}catch(Throwable){exit(2);}}
+        fclose($listener);
+        try {
+            $reply=$channel('controller',[$provider=>$provider])->request($address,$provider.'.test',$provider,[]);
+            check($reply['principal']==='deployment-controller','Provider handshake identity mismatch');
+        } finally {pcntl_waitpid($pid,$status);}
+        check(pcntl_wexitstatus($status)===0,'Provider server rejected handshake');
+    }
+    foreach (['provider/node-4','provider/node-5','provider/node-8','provider/node-66','assignment/node-6'] as $badRole) {
+        $denied=false;
+        try {new MutualTlsChannel($root.'/ca.pem',$root.'/controller.pem',$root.'/controller.key',
+            [$pins['provider-6']=>'provider-6'],[$pins['provider-6']=>'spiffe://'.CONTROL_TEST_CHAIN.'/control-plane/'.$badRole],$revocations);}
+        catch(InvalidArgumentException){$denied=true;}
+        check($denied,'Unsupported topology accepted: '.$badRole);
+    }
     $clientName='controller';$wrongIdentity=false;
     $send=static function($node,$request)use($channel,$root,&$clientName,&$wrongIdentity):array {
         $server=$channel($node,['controller'=>'deployment-controller']);$listener=$server->listen('tcp://127.0.0.1:0');$address='tcp://'.stream_socket_get_name($listener,false);
