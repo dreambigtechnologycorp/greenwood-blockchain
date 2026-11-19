@@ -1,0 +1,227 @@
+{
+    "status": "DRAFT_NOT_APPROVED",
+    "days": 30,
+    "gru_scale": 1000000,
+    "gwd_price_assumed": false,
+    "scenarios": {
+        "light": {
+            "required_millicores": 4125,
+            "required_ram_mib": 16896,
+            "cloud_bundles": 3,
+            "provisioned_vcpu": 6,
+            "provisioned_ram_gib": 24,
+            "provisioned_disk_gib": 384,
+            "provider_compute_disk_usd_micros": {
+                "azure": 180432000,
+                "google": 204720000,
+                "aws": 206976000
+            },
+            "median_provider": "google",
+            "common_egress_usd_micros": 12000000,
+            "common_backup_usd_micros": 2000000,
+            "reference_total_usd_micros": 218720000,
+            "whole_gru_before_contingency": 21872,
+            "whole_gru_budget": 27340,
+            "dreambig_whole_gru_budget": 10936,
+            "clients_whole_gru_budget": 16404,
+            "dreambig_90_day_whole_gru": 32808,
+            "pricing_projection": {
+                "duration_ms": "2592000000",
+                "lines": [
+                    {
+                        "line_id": "backup",
+                        "resource_id": "backup.snapshot.capacity",
+                        "reserved_units": "102400",
+                        "maximum_quantity": "265420800000000",
+                        "rate_num": "1",
+                        "rate_den": "1327104",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "cpu_bundle",
+                        "resource_id": "compute.cpu.reserved",
+                        "reserved_units": "6000",
+                        "maximum_quantity": "15552000000000",
+                        "rate_num": "77",
+                        "rate_den": "72000",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "ram_included",
+                        "resource_id": "memory.ram.reserved",
+                        "reserved_units": "24576",
+                        "maximum_quantity": "63700992000000",
+                        "rate_num": "0",
+                        "rate_den": "1",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "storage",
+                        "resource_id": "storage.ssd.capacity",
+                        "reserved_units": "393216",
+                        "maximum_quantity": "1019215872000000",
+                        "rate_num": "5",
+                        "rate_den": "1327104",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "transfer",
+                        "resource_id": "network.egress",
+                        "reserved_units": "1",
+                        "maximum_quantity": "107374182400",
+                        "rate_num": "46875",
+                        "rate_den": "4194304",
+                        "included_quantity": "0"
+                    }
+                ]
+            },
+            "gwd_budget_base_units": null
+        },
+        "baseline": {
+            "required_millicores": 8250,
+            "required_ram_mib": 33792,
+            "cloud_bundles": 5,
+            "provisioned_vcpu": 10,
+            "provisioned_ram_gib": 40,
+            "provisioned_disk_gib": 640,
+            "provider_compute_disk_usd_micros": {
+                "azure": 300720000,
+                "google": 341200000,
+                "aws": 344960000
+            },
+            "median_provider": "google",
+            "common_egress_usd_micros": 60000000,
+            "common_backup_usd_micros": 4000000,
+            "reference_total_usd_micros": 405200000,
+            "whole_gru_before_contingency": 40520,
+            "whole_gru_budget": 50650,
+            "dreambig_whole_gru_budget": 20260,
+            "clients_whole_gru_budget": 30390,
+            "dreambig_90_day_whole_gru": 60780,
+            "pricing_projection": {
+                "duration_ms": "2592000000",
+                "lines": [
+                    {
+                        "line_id": "backup",
+                        "resource_id": "backup.snapshot.capacity",
+                        "reserved_units": "204800",
+                        "maximum_quantity": "530841600000000",
+                        "rate_num": "1",
+                        "rate_den": "1327104",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "cpu_bundle",
+                        "resource_id": "compute.cpu.reserved",
+                        "reserved_units": "10000",
+                        "maximum_quantity": "25920000000000",
+                        "rate_num": "77",
+                        "rate_den": "72000",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "ram_included",
+                        "resource_id": "memory.ram.reserved",
+                        "reserved_units": "40960",
+                        "maximum_quantity": "106168320000000",
+                        "rate_num": "0",
+                        "rate_den": "1",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "storage",
+                        "resource_id": "storage.ssd.capacity",
+                        "reserved_units": "655360",
+                        "maximum_quantity": "1698693120000000",
+                        "rate_num": "5",
+                        "rate_den": "1327104",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "transfer",
+                        "resource_id": "network.egress",
+                        "reserved_units": "1",
+                        "maximum_quantity": "536870912000",
+                        "rate_num": "46875",
+                        "rate_den": "4194304",
+                        "included_quantity": "0"
+                    }
+                ]
+            },
+            "gwd_budget_base_units": null
+        },
+        "growth": {
+            "required_millicores": 16500,
+            "required_ram_mib": 67584,
+            "cloud_bundles": 9,
+            "provisioned_vcpu": 18,
+            "provisioned_ram_gib": 72,
+            "provisioned_disk_gib": 1152,
+            "provider_compute_disk_usd_micros": {
+                "azure": 541296000,
+                "google": 614160000,
+                "aws": 620928000
+            },
+            "median_provider": "google",
+            "common_egress_usd_micros": 120000000,
+            "common_backup_usd_micros": 10000000,
+            "reference_total_usd_micros": 744160000,
+            "whole_gru_before_contingency": 74416,
+            "whole_gru_budget": 93020,
+            "dreambig_whole_gru_budget": 37208,
+            "clients_whole_gru_budget": 55812,
+            "dreambig_90_day_whole_gru": 111624,
+            "pricing_projection": {
+                "duration_ms": "2592000000",
+                "lines": [
+                    {
+                        "line_id": "backup",
+                        "resource_id": "backup.snapshot.capacity",
+                        "reserved_units": "512000",
+                        "maximum_quantity": "1327104000000000",
+                        "rate_num": "1",
+                        "rate_den": "1327104",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "cpu_bundle",
+                        "resource_id": "compute.cpu.reserved",
+                        "reserved_units": "18000",
+                        "maximum_quantity": "46656000000000",
+                        "rate_num": "77",
+                        "rate_den": "72000",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "ram_included",
+                        "resource_id": "memory.ram.reserved",
+                        "reserved_units": "73728",
+                        "maximum_quantity": "191102976000000",
+                        "rate_num": "0",
+                        "rate_den": "1",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "storage",
+                        "resource_id": "storage.ssd.capacity",
+                        "reserved_units": "1179648",
+                        "maximum_quantity": "3057647616000000",
+                        "rate_num": "5",
+                        "rate_den": "1327104",
+                        "included_quantity": "0"
+                    },
+                    {
+                        "line_id": "transfer",
+                        "resource_id": "network.egress",
+                        "reserved_units": "1",
+                        "maximum_quantity": "1073741824000",
+                        "rate_num": "46875",
+                        "rate_den": "4194304",
+                        "included_quantity": "0"
+                    }
+                ]
+            },
+            "gwd_budget_base_units": null
+        }
+    }
+}

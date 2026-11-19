@@ -1,0 +1,165 @@
+{
+  "retrieved_date": "2026-11-18",
+  "status": "draft public pricing extracts, not signed release evidence",
+  "aws": {
+    "url": "https://b0.p.awsstatic.com/pricing/2.0/meteredUnitMaps/ec2/USD/current/ec2-ondemand-without-sec-sel/US%20East%20(N.%20Virginia)/Linux/index.json",
+    "download_sha256": "4c2cea54a646035dc616ca82eff84fc2fc8208f0bbd1c799c1a6992d06aed09c",
+    "selected_rows": [
+      {
+        "rateCode": "Y4JWUCG93UEP6MPT.JRTCKXETXF.6YS6EN2CT7",
+        "price": "0.0816000000",
+        "Location": "US East (N. Virginia)",
+        "Instance Family": "General purpose",
+        "vCPU": "2",
+        "Instance Type": "m7g.large",
+        "Memory": "8 GiB",
+        "Storage": "EBS only",
+        "Network Performance": "Up to 12500 Megabit",
+        "plc:OperatingSystem": "Linux",
+        "plc:InstanceFamily": "General Purpose",
+        "Operating System": "Linux",
+        "Pre Installed S/W": "NA",
+        "License Model": "No License required"
+      }
+    ]
+  },
+  "azure": {
+    "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20armSkuName%20eq%20'Standard_D2ps_v6'%20and%20priceType%20eq%20'Consumption'",
+    "response": {
+      "BillingCurrency": "USD",
+      "CustomerEntityId": "Default",
+      "CustomerEntityType": "Retail",
+      "Items": [
+        {
+          "currencyCode": "USD",
+          "tierMinimumUnits": 0.0,
+          "retailPrice": 0.030642,
+          "unitPrice": 0.030642,
+          "armRegionName": "eastus",
+          "location": "US East",
+          "effectiveStartDate": "2026-11-01T00:00:00Z",
+          "meterId": "726b1abf-6034-56b7-9a88-3bde652389a9",
+          "meterName": "D2ps v6 Spot",
+          "productId": "DZH318Z0G1GB",
+          "skuId": "DZH318Z0G1GB/006B",
+          "productName": "Virtual Machines Dpsv6 Series",
+          "skuName": "D2ps v6 Spot",
+          "serviceName": "Virtual Machines",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceFamily": "Compute",
+          "unitOfMeasure": "1 Hour",
+          "type": "Consumption",
+          "isPrimaryMeterRegion": true,
+          "armSkuName": "Standard_D2ps_v6"
+        },
+        {
+          "currencyCode": "USD",
+          "tierMinimumUnits": 0.0,
+          "retailPrice": 0.0702,
+          "unitPrice": 0.0702,
+          "armRegionName": "eastus",
+          "location": "US East",
+          "effectiveStartDate": "2024-10-01T00:00:00Z",
+          "meterId": "f418a014-690a-521c-bd4a-f7c5d219accf",
+          "meterName": "D2ps v6",
+          "productId": "DZH318Z0G1GB",
+          "skuId": "DZH318Z0G1GB/006Z",
+          "productName": "Virtual Machines Dpsv6 Series",
+          "skuName": "D2ps v6",
+          "serviceName": "Virtual Machines",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceFamily": "Compute",
+          "unitOfMeasure": "1 Hour",
+          "type": "Consumption",
+          "isPrimaryMeterRegion": true,
+          "armSkuName": "Standard_D2ps_v6"
+        }
+      ],
+      "NextPageLink": null,
+      "Count": 2
+    }
+  },
+  "azure_disk": {
+    "query": "armRegionName eq 'eastus' and serviceName eq 'Storage' and skuName eq 'E10 LRS' and priceType eq 'Consumption'",
+    "response": {
+      "BillingCurrency": "USD",
+      "CustomerEntityId": "Default",
+      "CustomerEntityType": "Retail",
+      "Items": [
+        {
+          "currencyCode": "USD",
+          "tierMinimumUnits": 0.0,
+          "retailPrice": 0.91,
+          "unitPrice": 0.91,
+          "armRegionName": "eastus",
+          "location": "US East",
+          "effectiveStartDate": "2021-07-01T00:00:00Z",
+          "meterId": "780ffb4a-f686-5d3b-bae1-4d88ebc7736a",
+          "meterName": "E10 LRS Disk Mount",
+          "productId": "DZH318Z0BP88",
+          "skuId": "DZH318Z0BP88/0013",
+          "productName": "Standard SSD Managed Disks",
+          "skuName": "E10 LRS",
+          "serviceName": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceFamily": "Storage",
+          "unitOfMeasure": "1/Month",
+          "type": "Consumption",
+          "isPrimaryMeterRegion": true,
+          "armSkuName": ""
+        },
+        {
+          "currencyCode": "USD",
+          "tierMinimumUnits": 0.0,
+          "retailPrice": 0.002,
+          "unitPrice": 0.002,
+          "armRegionName": "eastus",
+          "location": "US East",
+          "effectiveStartDate": "2018-11-01T00:00:00Z",
+          "meterId": "ce957933-8287-4f8b-83ee-53a5cbe056d9",
+          "meterName": "E10 LRS Disk Operations",
+          "productId": "DZH318Z0BP88",
+          "skuId": "DZH318Z0BP88/0013",
+          "productName": "Standard SSD Managed Disks",
+          "skuName": "E10 LRS",
+          "serviceName": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceFamily": "Storage",
+          "unitOfMeasure": "10K",
+          "type": "Consumption",
+          "isPrimaryMeterRegion": false,
+          "armSkuName": ""
+        },
+        {
+          "currencyCode": "USD",
+          "tierMinimumUnits": 0.0,
+          "retailPrice": 9.6,
+          "unitPrice": 9.6,
+          "armRegionName": "eastus",
+          "location": "US East",
+          "effectiveStartDate": "2018-11-01T00:00:00Z",
+          "meterId": "a97f31a2-0fb1-4d64-bb43-a2399dd31f0b",
+          "meterName": "E10 LRS Disk",
+          "productId": "DZH318Z0BP88",
+          "skuId": "DZH318Z0BP88/0013",
+          "productName": "Standard SSD Managed Disks",
+          "skuName": "E10 LRS",
+          "serviceName": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceFamily": "Storage",
+          "unitOfMeasure": "1/Month",
+          "type": "Consumption",
+          "isPrimaryMeterRegion": true,
+          "armSkuName": ""
+        }
+      ],
+      "NextPageLink": null,
+      "Count": 3
+    }
+  },
+  "gcp": {
+    "url": "https://cloud.google.com/products/compute/pricing/general-purpose?hl=en",
+    "download_sha256": "b1440739e2fd3180c90c578848ec8a97cc53835582819891e9e9757e68c149b0",
+    "excerpt": "pan>          Netherlands (europe-west4)                      Iowa (us-central1)                      South Carolina (us-east1)                      Oregon (us-west1)                      Hourly        Hourly                    Monthly        Monthly                        Machine type      Virtual CPUs      Memory      Default *  (USD)        t2a-standard-1    1    4 GiB   $0.0385 / 1 hour     t2a-standard-2    2    8 GiB   $0.077 / 1 hour     t2a-standard-4    4    16 GiB   $0.154 / 1 hour     t2a-standard-8    8    32 GiB   $0.30"
+  }
+}

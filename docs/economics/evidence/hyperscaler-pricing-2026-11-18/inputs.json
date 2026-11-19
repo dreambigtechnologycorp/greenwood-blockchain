@@ -1,0 +1,28 @@
+{
+  "status": "DRAFT_NOT_APPROVED",
+  "date": "2026-11-18",
+  "apps": 25,
+  "dreambig_apps": 10,
+  "hours": 720,
+  "gru_scale": 1000000,
+  "providers": {
+    "aws": {"sku": "m7g.large", "region": "us-east-1", "vm_hour_usd": "0.0816", "disk_128_gib_month_usd": "10.24"},
+    "azure": {"sku": "Standard_D2ps_v6", "region": "eastus", "vm_hour_usd": "0.0702", "disk_128_gib_month_usd": "9.60"},
+    "google": {"sku": "t2a-standard-2", "region": "us-central1", "vm_hour_usd": "0.077", "disk_128_gib_month_usd": "12.80"}
+  },
+  "common_ancillary_reference": {
+    "egress_usd_per_gib": "0.12",
+    "backup_usd_per_gib_month": "0.02",
+    "basis": "Google North America Premium internet egress and regional Standard object storage; gross rates, no free allowances; common benchmark for all providers, NOT their individual network/backup quote",
+    "sources": ["https://cloud.google.com/vpc/pricing", "https://cloud.google.com/storage/pricing-examples"]
+  },
+  "disk_sources": ["https://docs.aws.amazon.com/prescriptive-guidance/latest/optimize-costs-microsoft-workloads/ebs-migrate-gp2-gp3.html", "https://prices.azure.com/api/retail/prices", "https://cloud.google.com/products/block-storage"],
+  "scenarios": {
+    "light": {"app_millicores": 125, "app_ram_mib": 512, "shared_millicores": 1000, "shared_ram_mib": 4096, "egress_gib": 100, "backup_gib": 100},
+    "baseline": {"app_millicores": 250, "app_ram_mib": 1024, "shared_millicores": 2000, "shared_ram_mib": 8192, "egress_gib": 500, "backup_gib": 200},
+    "growth": {"app_millicores": 500, "app_ram_mib": 2048, "shared_millicores": 4000, "shared_ram_mib": 16384, "egress_gib": 1000, "backup_gib": 500}
+  },
+  "exclusions": ["Azure disk operation charges", "Extra IOPS/throughput", "Backup requests/restore/retention growth", "Load balancer, NAT and public IP", "Managed databases and multi-zone replication", "Taxes/support", "Email, SMS and AI APIs", "Greenwood transaction fees", "Labor/transport", "Hardware qualification and Pi/cloud CPU performance equivalence"],
+  "contingency_percent": 25,
+  "gwd_quote_base_units_per_whole_gru": null
+}

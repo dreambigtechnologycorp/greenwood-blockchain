@@ -9,7 +9,7 @@ import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-SHARED = ['resource-adapters', 'governance-recovery', 'meter-retention', 'resource-telemetry', 'production-allocation', 'production-preparation', 'local-resource-evidence', 'meter-ipc', 'resource-worker-ipc',
+SHARED = ['resource-adapters', 'governance-recovery', 'zero-reserve-budgets', 'customer-funded-programs', 'meter-retention', 'resource-telemetry', 'production-allocation', 'production-preparation', 'local-resource-evidence', 'meter-ipc', 'resource-worker-ipc',
           'system-service-journal', 'network-metering', 'resources', 'metering',
           'meter-checkpoints', 'network-policy', 'head-watchdog', 'settlement-outbox',
           'infrastructure-cost', 'hosted-boundaries', 'deployment-identity']

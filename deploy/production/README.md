@@ -123,3 +123,46 @@ unresolved until approval evidence is recorded. Hardware recovery access and
 explicit destructive-installation authorization remain mandatory.
 
 See `PHYSICAL_ACCEPTANCE.md` for post-install execution and evidence requirements.
+
+## November 18 selected policy and complete bundle
+
+The operator adopted the latest Epoch 0 terms in
+`docs/economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md`. Start from
+`release.selected-2026-11-18.json`; it selects
+`https://registry.greenwoodblockchain.com` and binds the policy adoption hash.
+Actual custody, public identities, origin TLS and physical acceptance remain unset.
+The operator generates all production keys. Disposable test-only keys are permitted
+for local release qualification; they must never become production identities.
+
+After committing reviewed source, building services and passing clean qualification,
+assemble a self-contained handoff (new output directory required):
+
+```sh
+python3 scripts/package-production-bundle.py \
+  --source build/production-source \
+  --services build/production-services \
+  --runtime build/production-runtime \
+  --qualification build/release-qualification/verification.json \
+  --config deploy/production/release.selected-2026-11-18.json \
+  --output build/production-bundle
+(cd build/production-bundle && sha256sum -c SHA256SUMS)
+```
+
+This re-verifies all OCI blobs and source archive hashes, copies the exact
+qualification file to `configuration/verification.json`, checks every manifest
+reference, and records remaining activation gates. It does not sign, upload,
+install or enable services. An old runtime may be reused at its verified immutable
+digest; the five service images and qualification must bind the new source commit.
+
+A Cloudflare 502 at the selected endpoint means the origin is not serving the
+request. Before clients pull images, the operator must bootstrap Zot and registry-auth
+from the offline archives, configure the reviewed issuer/public authorization policy,
+and configure edge routing and origin TLS. Verify `/v2/` returns the expected registry
+response (typically 401 with the correct bearer challenge before authentication),
+then verify authorized and denied pushes. Public-edge TLS alone does not verify
+origin TLS or publisher authority. Do not disable TLS checks to bypass this gate.
+
+Deploy services with the prepared identities before running physical acceptance;
+record its results afterward. An unset acceptance field is pending, not a failed
+source build and not a reason to fabricate a pass. Permanent activation and payable
+resource qualification retain their explicit gates.

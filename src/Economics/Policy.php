@@ -47,7 +47,8 @@ final class Policy
         if ($sum !== Amount::ISSUANCE) throw new \InvalidArgumentException('Genesis issuance mismatch');
         foreach (['grants','subsidies','institute_treasury','working_operations'] as $name) {
             $limit = Amount::integer($p['limits'][$name] ?? null);
-            if ($limit < 1 || $limit > Amount::integer($allocation[$name])) throw new \InvalidArgumentException('Invalid reserve spending limit');
+            // Explicit zero closes discretionary funding; missing or malformed limits still fail Amount::integer.
+            if ($limit > Amount::integer($allocation[$name])) throw new \InvalidArgumentException('Invalid reserve spending limit');
         }
         foreach (['large_threshold','operations_balance','operations_payment','operations_window'] as $name) if (Amount::integer($p[$name] ?? null) < 1) throw new \InvalidArgumentException('Invalid spending limit');
         foreach(['operations_balance'=>100000,'operations_payment'=>5000,'operations_window'=>100000] as $name=>$gwd)if(Amount::integer($p[$name])>$gwd*Amount::SCALE)throw new \InvalidArgumentException('Operational exposure ceiling exceeded');

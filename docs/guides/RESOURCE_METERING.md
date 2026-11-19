@@ -5,6 +5,59 @@ in these commands approves a resource program, provisions production signing key
 changes an existing cluster, or authorizes treasury spending. All catalog entries
 remain disabled by default. Source support is not hardware qualification.
 
+## Customer-funded applications with a closed subsidy reserve
+
+A service program with `subsidy_percent: 0` may set both `budget_units` and
+`beneficiary_budget_units` to the decimal string `"0"`. These fields cap **reserve
+subsidies**, not customer expenditure. The program can be approved while the
+network's subsidy reserve limit is `"0"`. Existing zero-percent programs with
+positive unused subsidy budgets remain valid; those numbers do not grant access
+to reserves. Positive-percent subsidy programs still require positive program
+budgets within the authorized reserve ceiling.
+
+Customer escrow pays the full accepted provider price. Quotes, positive
+`max_gru_units`, per-request/hosted payment limits, resource capacity, permitted
+beneficiaries, expiry and verification requirements remain enforced. A zero reserve
+reservation makes no reserve debit and is unaffected by reserve pauses or existing
+subsidy commitments. Program installation still requires governance approval and
+its timelock; this is not permissionless registration or automatic activation.
+Refunds return unused customer escrow and successful settlement pays the provider.
+
+For your own applications, use an authorized application payer account distinct
+from the provider payout identity. For client applications, the client can be the
+payer, or your company can sponsor payment from its authorized account. The hosted
+assignment must identify that payer, and the Application Registry must grant it
+deployment authority for the current release. Paying does not confer ownership or
+permission to deploy someone else's application. Registry publishing authorization
+and immutable image/release checks still apply.
+
+Ten applications do not require ten treasury subsidy allocations. Each application's
+services still need funded intervals and adequate CPU, RAM and storage; renewals
+need continuing funds. Program GRU allowances and provider capacity may be shared
+across workloads, so application count alone does not establish cluster capacity.
+Public access to an application does not make its hosting free: the sponsor pays.
+Private client hosting uses the same funding and authorization rules.
+
+DreamBIG's hardware contribution does not automatically credit a token balance.
+It needs existing GWD from an explicitly approved bootstrap transfer, earned
+validator distributions, customer revenue or another authorized source. Its
+protected operations account can transfer approved amounts to ordinary payer
+accounts but cannot directly submit service-funding or contract transactions.
+Ordinary accounts do not inherit its protected debit caps. Corporate application
+funding and client sponsorship must have recorded purposes; a network-operations
+budget is not blanket authorization for those costs.
+
+Under an approved Epoch 0 profile, DreamBIG may operate customer-funded services
+using `BOOTSTRAP_OPERATOR_ATTESTED` evidence, explicitly disclosed as operator
+attestation. This never authorizes an independent-verification subsidy or downgrades
+an existing independent-attestation commitment. Governance and Epoch 0 approvals
+remain required; the current governance document is still a draft.
+
+Keyless regression: `php tests/Economics/customer-funded-programs.php` exercises
+policy validation, program governance, reserve checks and restored-fixture
+settlement/refunds. It does not generate keys, verify a newly signed funding
+transaction, qualify physical meters or activate production.
+
 ## Resource coverage and attribution
 
 | Resource family | Source adapter | Meaning and limits |

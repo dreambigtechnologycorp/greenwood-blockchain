@@ -288,6 +288,10 @@ final class Ledger
         return $this->policy['recipients'][$payer]??throw new \InvalidArgumentException('Unregistered service beneficiary');
     }
     public function lockSubsidy(int $amount,int $height): void {
+        if($amount<0)throw new \InvalidArgumentException('Invalid subsidy amount');
+        // Customer-only escrow is independent of reserve pauses, prior spending
+        // and commitments. No reserve authorization or debit is needed for zero.
+        if($amount===0)return;
         if(($this->paused['subsidies']??0)>=$height || $amount>$this->balances['subsidies']
             || Amount::add($this->commitments('subsidies',null,$height),$amount)>Amount::integer($this->policy['limits']['subsidies']))throw new \InvalidArgumentException('Subsidy paused/budget/balance exhausted');
         $this->balances['subsidies']-=$amount;
