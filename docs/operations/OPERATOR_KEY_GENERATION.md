@@ -58,7 +58,7 @@ File permissions do not protect secrets from root or another process under your 
 ## Governance, recovery, witnesses and other separately held identities
 
 Do **not** generate five governance signers or a recovery council in one shared
-infrastructure vault. Governance appointments and recovery policy are still pending.
+infrastructure vault. Use the selected production policy and confirmed custody appointments; generating keys does not itself appoint a signer or authorize recovery.
 Each approved custodian uses a separate private device/account, passphrase and vault.
 Copy `deploy/production/operator-keys.custodian.example.json`, replace its entry
 name with the approved identity, and run `create` with that plan and a new directory.
@@ -118,3 +118,38 @@ The plaintext public manifest is a handoff aid, not a signed authorization docum
 Compare public fingerprints through your trusted custody/approval process before
 permanent genesis. Review [the key custody boundary](../../deploy/production/OPERATOR_KEY_CUSTODY.md)
 and all unresolved governance, registry, recovery and physical acceptance gates.
+
+## Deployment policy keys, SFTP and control-plane TLS
+
+Use `deploy/production/operator-keys.policy.example.json` in a separate operator-held
+vault for `revocations` and `allocations`. Both entries use `sodium-ed25519`, the
+96-byte libsodium keypair format required by receiver-policy-publisher.php. Do not
+substitute `greenwood-ed25519` or an OpenSSH key. Export only when the human operator
+installs the publisher's protected `revocations.key` and `allocations.key` files.
+Initial signed policy snapshots are separately required; key creation does not
+approve allocations or initialize those snapshots.
+
+Generate dedicated SFTP host and per-consumer client identities with OpenSSH
+`ssh-keygen -t ed25519 -a 100` in encrypted offline storage, with passphrase prompts.
+Keep these separate from administrative SSH identities. Transfer only `.pub` files
+and SHA-256 fingerprints for review. Unattended SFTP needs operator-provisioned
+runtime credentials usable without an interactive passphrase; decrypt only a
+separate installation copy, never the cold master, and never in an AI session.
+
+Create separate TLS vault entries for each configured endpoint using `tls-rsa` and
+its reviewed DNS name. Each control-plane certificate also needs exactly one
+approved chain-specific URI SAN, `spiffe://CHAIN/control-plane/ROLE`. Allowed roles
+include deployment-controller, edge-controller, edge-admission, assignment/node-1,
+assignment/node-4, and provider/node-1, node-2, node-3, node-6 or node-7. DNS names,
+chain identity, CA trust and fingerprint-to-principal mappings must be reviewed
+before certificate issuance. The vault CSR carries a CN only: the authorized issuer
+must add DNS and URI SANs and suitable key usages. Do not self-assign CA trust.
+Do not deploy any of these new topology roles using older pre-fix release images.
+
+## Offline Tails runbook
+
+Download the [complete offline key custody guide](GREENWOOD_TAILS_KEY_CUSTODY.pdf)
+before disconnecting. It covers tool preparation, all deployment key families,
+backups, public-only handoff and the operator-only provisioning boundary.
+The pinned key-generator revision in the guide remains valid for key generation;
+seven-node service deployment requires release artifacts containing the topology fixes.

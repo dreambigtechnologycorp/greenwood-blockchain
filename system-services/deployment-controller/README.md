@@ -74,7 +74,7 @@ readiness closures. Missing adapters fail closed. There are no
 example provider/observer/edge ports treated as deployed defaults. The observer's
 role pins and release-content evidence must match the protected configuration.
 Generic reconciliation has no fixed application-ID allowlist. Write enablement
-still requires `node-1`/`node-4` receiver roles and `provider/node-1`; arbitrary
+still requires `node-1`/`node-4` receiver roles and an explicit `provider_policy.provider_node` (node-1, node-2, node-3, node-6 or node-7); arbitrary
 applications do not imply arbitrary control-plane topology. Do not borrow another
 service's identity.
 
@@ -91,6 +91,7 @@ From the greenwood-php root with its existing Composer dependencies installed:
 php system-services/deployment-controller/tests/orchestration.php
 php system-services/deployment-controller/tests/distribution.php
 php system-services/deployment-controller/tests/distribution_mtls.php
+php system-services/deployment-controller/tests/write_enablement.php
 php system-services/deployment-controller/tests/http_gate.php
 php system-services/deployment-controller/tests/registry_authority.php
 ```

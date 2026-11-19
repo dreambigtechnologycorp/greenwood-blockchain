@@ -7,6 +7,9 @@ return [
     // Disposable-cluster candidate switch only; leave false until integrated qualification.
     'hosted_settlement_candidate_enabled'=>false,
     'hosted_provider_public_key'=>'REPLACE_PROVIDER_PUBLIC_KEY',
+    // Controller composition additionally requires provider_policy.provider_node
+    // selected explicitly from node-1, node-2, node-3, node-6 or node-7.
+    // Its pinned provider URI and bounded provider account must match.
     'node_id' => 'OPERATOR_SELECTED_NODE',
     'listen' => 'OPERATOR_SELECTED_PRIVATE_TCP_ENDPOINT',
     'rpc_endpoint' => 'OPERATOR_VERIFIED_RPC_ORIGIN',

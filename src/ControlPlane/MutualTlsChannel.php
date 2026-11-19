@@ -26,7 +26,7 @@ final class MutualTlsChannel
         foreach ($peerIdentities as $fingerprint => $identity) {
             if (!preg_match('/^[a-f0-9]{64}$/D', $fingerprint) || !is_string($identity) || $identity === ''
                 || !isset($peerUris[$fingerprint])
-                || !preg_match('~^spiffe://([A-Za-z0-9][A-Za-z0-9._-]{0,127})/control-plane/(deployment-controller|edge-controller|edge-admission|assignment/node-[14]|provider/node-[123])$~D', $peerUris[$fingerprint],$uriMatch)) {
+                || !preg_match('~^spiffe://([A-Za-z0-9][A-Za-z0-9._-]{0,127})/control-plane/(deployment-controller|edge-controller|edge-admission|assignment/node-[14]|provider/node-[12367])$~D', $peerUris[$fingerprint],$uriMatch)) {
                 throw new \InvalidArgumentException('Invalid pinned service identity');
             }
             if($namespace!==null&&$namespace!==$uriMatch[1])throw new \InvalidArgumentException('Mixed control-plane chain namespaces');
