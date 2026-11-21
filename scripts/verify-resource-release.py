@@ -72,9 +72,11 @@ def main():
     for directory, names in [
         ('deployment-controller', ['distribution', 'registry_authority', 'registry_identity',
           'signed_policy', 'allocation_approval', 'policy_install', 'orchestration', 'http_gate',
-          'edge_admission', 'release_content', 'write_enablement', 'distribution_mtls']), ('registry-auth', ['authority', 'database', 'system-publisher'])]:
+          'edge_admission', 'release_content', 'write_enablement', 'receiver_topology', 'distribution_mtls']), ('registry-auth', ['authority', 'database', 'system-publisher'])]:
         for name in names:
             run(php + [f'system-services/{directory}/tests/{name}.php'])
+    for name in ['distribution', 'orchestration', 'distribution_mtls']:
+        run(php + [f'system-services/deployment-controller/tests/{name}.php'], {'GWD_SEVEN_NODE_TEST': '1'})
     run(['node', 'tests/Economics/signing.mjs'], timeout=120)
     run(['node', 'tests/Economics/resource-client.mjs'], timeout=120)
     if args.certified_history:

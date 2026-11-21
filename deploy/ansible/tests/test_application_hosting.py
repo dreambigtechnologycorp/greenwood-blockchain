@@ -22,6 +22,16 @@ class HostingTests(unittest.TestCase):
         self.assertIn('ServerName app-7.greenwoodblockchain.com', result)
         self.assertNotIn('18089', result)
 
+    def test_base_provider_listener_is_private_and_distinct(self):
+        template = jinja2.Environment(undefined=jinja2.StrictUndefined).from_string(
+            (ROOT / 'roles/provider/templates/provider.service.j2').read_text())
+        result = template.render()
+        self.assertIn('--operator-socket=/run/greenwood-provider/operator.sock', result)
+        self.assertIn('--operator-token-file=/etc/greenwood/operator.token', result)
+        self.assertIn('RuntimeDirectoryMode=0700', result)
+        self.assertNotIn('--application-listen', result)
+        self.assertNotIn('--operator-socket=/run/greenwood/operator.sock', result)
+
     def test_provider_unit_ordering(self):
         template = jinja2.Environment(undefined=jinja2.StrictUndefined).from_string(
             (ROOT / 'roles/provider/templates/application-hosting.conf.j2').read_text())

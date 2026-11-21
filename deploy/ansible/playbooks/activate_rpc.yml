@@ -1,0 +1,35 @@
+---
+# Operator-only startup phase. Staging and all-node identity validation precede it.
+# Separate from policy/registry activation: RPC is a provider startup prerequisite.
+- name: Require explicit RPC startup authority on all RPC hosts
+  hosts: rpc_hosts
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require operator authority and one staged RPC frontend
+      ansible.builtin.assert:
+        that:
+          - greenwood_operator_secret_access_authorized | default(false) | bool
+          - greenwood_activate_protocol | default(false) | bool
+          - greenwood_activate_hosting | default(false) | bool
+          - not ansible_check_mode
+          - greenwood_https_frontends | selectattr('name', 'equalto', 'rpc') | list | length == 1
+          - provider_chain_id | length > 0
+          - greenwood_expected_genesis_hash is match('^[a-f0-9]{64}$')
+
+- name: Activate validator RPC origins before edge relays
+  hosts: validators
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/start_rpc.yml
+
+- name: Activate non-validator RPC relays after validator origins
+  hosts: "rpc_hosts:!validators"
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/start_rpc.yml

@@ -36,7 +36,7 @@ final class Bootstrap {
                 $document=$services->assignmentPreflight($operation,$plan,$proof);
                 return ['document'=>$document];
             },static fn(array $a):string=>$c['public_urls'][$a['application_id'].'-'.$a['service']]??'https://gw-'.$a['application_id'].'-'.$a['service'].'.greenwoodblockchain.com/',
-            $distributor->distribute(...),$physical['fundedInterval']);
+            $distributor->distribute(...),$physical['fundedInterval'],\Greenwood\DeploymentController\Assignment\ReceiverTopology::fromConfig($c));
         $api=new DeveloperRoutes($store,new ChallengeService($store->db),new SignedRequestVerifier($store->db,$c['audience']),$coordinator,new RateLimiter($store->db),$enabled);
         return ['api'=>$api,'coordinator'=>$coordinator,'store'=>$store];
     }

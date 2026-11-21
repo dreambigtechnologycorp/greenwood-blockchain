@@ -120,10 +120,11 @@ ansible-playbook -i deploy/ansible/inventory/generated.ini -i /secure/inventory 
 Do not use check mode to simulate activation: this workflow explicitly rejects it.
 No broad tag skipping is supported. It preflights all hosts, provisions the gateway,
 prepares PHP/Wasmtime before the build controller, distributes a single release,
-installs/validates identities, starts validators, waits for chain-specific finalized
-height, then starts providers. The edge receives the same release. Application
-networking, recovery timer, control-plane staging, seed import and authenticated
-service activation follow. The edge starts with the runtime-rendered deny-all
+installs/validates identities and stages edge/application/control-plane configuration.
+It starts validators, verifies chain-specific finalized height, starts validator
+HTTPS origins before RPC relays, installs provider-only public CA trust and checks
+provider chain/genesis/finality before starting providers. Seed import and
+authenticated policy/service activation follow. The edge starts with the runtime-rendered deny-all
 loopback listener on port 8081; the distribution placeholder site is disabled.
 Application routes are not published by this sequence.
 

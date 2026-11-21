@@ -1,4 +1,8 @@
 ---
+- name: Validate frontend transport and identity before provisioning
+  ansible.builtin.assert:
+    that: greenwood_https_frontends | greenwood_https_valid
+
 - name: Require unique HTTPS service names
   ansible.builtin.assert:
     that:
@@ -12,7 +16,7 @@
       - item.port | int >= 1024
       - item.port | int <= 65535
       - item.tls_name is match('^[A-Za-z0-9.-]+$')
-      - item.backend is match('^http://127\.0\.0\.1:[0-9]+$')
+      - item.backend is match('^http://127\.0\.0\.1:[0-9]+$') or (item.name == 'rpc' and item.backend is match('^https://[A-Za-z0-9.-]+:[0-9]+$'))
       - item.request_limit | int >= 0
       - item.certificate is match('^/etc/greenwood/[A-Za-z0-9_./-]+$')
       - item.private_key is match('^/etc/greenwood/[A-Za-z0-9_./-]+$')

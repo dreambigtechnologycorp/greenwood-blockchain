@@ -21,6 +21,15 @@ SSLSessionCache shmcb:/run/greenwood-{{ item.name }}-https/sslcache(512000)
     SSLProtocol -all +TLSv1.2 +TLSv1.3
     SSLCertificateFile {{ item.certificate }}
     SSLCertificateKeyFile {{ item.private_key }}
+{% if item.backend.startswith('https://') %}
+    SSLProxyEngine on
+    SSLProxyProtocol -all +TLSv1.2 +TLSv1.3
+    SSLProxyVerify require
+    SSLProxyVerifyDepth 3
+    SSLProxyCheckPeerName on
+    SSLProxyCheckPeerExpire on
+    SSLProxyCACertificateFile {{ item.ca }}
+{% endif %}
     ProxyRequests Off
     ProxyPass / {{ item.backend }}/ connectiontimeout=3 timeout=300
     ProxyPassReverse / {{ item.backend }}/

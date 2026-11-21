@@ -1,0 +1,44 @@
+---
+- name: Select the staged RPC frontend
+  ansible.builtin.set_fact:
+    greenwood_rpc_frontend: "{{ greenwood_https_frontends | selectattr('name', 'equalto', 'rpc') | first }}"
+
+- name: Enable the staged RPC frontend only
+  ansible.builtin.systemd_service:
+    name: greenwood-rpc-https
+    daemon_reload: true
+    enabled: true
+    state: started
+
+# Resolve the local origin explicitly. Public tunnel availability must not gate
+# origin startup, and curl still verifies certificate hostname and CA trust.
+- name: Wait for certificate-verified origin RPC readiness
+  ansible.builtin.command:
+    argv:
+      - curl
+      - --fail
+      - --silent
+      - --show-error
+      - --noproxy
+      - '*'
+      - --connect-timeout
+      - '3'
+      - --max-time
+      - '10'
+      - --cacert
+      - "{{ greenwood_rpc_frontend.ca }}"
+      - --resolve
+      - "{{ greenwood_rpc_frontend.tls_name }}:{{ greenwood_rpc_frontend.port }}:{{ greenwood_rpc_frontend.address }}"
+      - "https://{{ greenwood_rpc_frontend.tls_name }}:{{ greenwood_rpc_frontend.port }}/v1/chain/status"
+  register: greenwood_rpc_probe
+  changed_when: false
+  until: greenwood_rpc_probe.rc == 0
+  retries: 30
+  delay: 2
+
+- name: Reject a wrong chain genesis or unfinalized RPC origin
+  ansible.builtin.assert:
+    that:
+      - (greenwood_rpc_probe.stdout | from_json).chain_id == provider_chain_id
+      - (greenwood_rpc_probe.stdout | from_json).genesis_hash == greenwood_expected_genesis_hash
+      - (greenwood_rpc_probe.stdout | from_json).finalized_height | int > 0

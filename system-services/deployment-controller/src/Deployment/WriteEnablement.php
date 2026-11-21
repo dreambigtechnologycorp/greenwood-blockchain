@@ -18,10 +18,11 @@ final class WriteEnablement
         if (($config['provider_http'] ?? null) !== 'unix:///run/greenwood-provider/operator.sock') {
             throw new \RuntimeException('LOCAL_AUTHENTICATED_OPERATOR_REQUIRED');
         }
-        foreach (['node-1','node-4'] as $node) {
+        $nodes = \Greenwood\DeploymentController\Assignment\ReceiverTopology::fromConfig($config);
+        foreach ($nodes as $node) {
             $this->peer($config['assignment_receivers'][$node] ?? [], 'assignment/' . $node);
         }
-        if ($config['assignment_receivers']['node-1']['endpoint'] === $config['assignment_receivers']['node-4']['endpoint']) {
+        if (count(array_unique(array_column($config['assignment_receivers'], 'endpoint'))) !== count($nodes)) {
             throw new \RuntimeException('DISTINCT_RECEIVERS_REQUIRED');
         }
         $this->peer($config['edge_remote'] ?? [], 'edge-admission');
