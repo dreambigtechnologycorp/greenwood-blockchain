@@ -8,5 +8,5 @@
     "B": {"public_key": null, "endpoint": null},
     "C": {"public_key": null, "endpoint": null}
   },
-  "providers": {"A": null, "B": null, "C": null}
+  "providers": {"A": null, "B": null, "C": null, "D": null, "E": null}
 }
