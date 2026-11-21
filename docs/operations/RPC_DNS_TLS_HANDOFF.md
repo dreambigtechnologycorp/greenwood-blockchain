@@ -227,3 +227,11 @@ Use the [public HTTPS/Certbot runbook](PUBLIC_HTTPS_CERTBOT.md) for DNS-01
 validation, certificate chain integration and renewal. DNS/ingress changes belong
 to this network workflow, not the offline CA ceremony. Secret API-token entry and
 private-key installation remain operator-only.
+
+For static public-CA certificates, set `intermediates` to the separately supplied
+chain and keep `ca` pinned to the reviewed root. For managed renewal, omit static
+certificate/key/intermediate paths and configure `renewal` instead. Both paths
+verify intermediates as untrusted chain-building material. The renewal helper
+publishes an atomic Apache include referencing a validated immutable generation
+and reloads only an already-active matching HTTPS service. Operator authorization
+is required; see the Certbot runbook for initial import and renewal.

@@ -1,0 +1,37 @@
+---
+# Staging only: never invokes Certbot, accesses an ACME key, or reloads HTTPS.
+- name: Stage the reviewed operator renewal helper
+  ansible.builtin.copy:
+    src: "{{ role_path }}/../../../../scripts/renew-https.py"
+    dest: /usr/local/sbin/greenwood-renew-https
+    owner: root
+    group: root
+    mode: '0755'
+  when: greenwood_https_frontends | selectattr('renewal', 'defined') | list | length > 0
+
+- name: Stage public renewal configuration
+  ansible.builtin.copy:
+    content: "{{ {'service': item.name, 'tls_name': item.tls_name, 'ca': item.ca, 'ca_sha256': item.ca_sha256, 'source_dir': item.renewal.source_dir, 'minimum_validity_seconds': item.renewal.minimum_validity_seconds} | to_nice_json }}\n"
+    dest: "/etc/greenwood/control-plane/{{ item.name }}-renewal.json"
+    owner: root
+    group: root
+    mode: '0600'
+  loop: "{{ greenwood_https_frontends | selectattr('renewal', 'defined') | list }}"
+
+- name: Create the explicitly selected local Certbot deploy-hook directory
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: greenwood_https_frontends | selectattr('renewal', 'defined') | selectattr('renewal.certbot_hook', 'equalto', true) | list | length > 0
+
+- name: Stage explicitly approved local Certbot renewal hooks
+  ansible.builtin.template:
+    src: certbot-deploy-hook.sh.j2
+    dest: "/etc/letsencrypt/renewal-hooks/deploy/greenwood-{{ item.name }}"
+    owner: root
+    group: root
+    mode: '0700'
+  loop: "{{ greenwood_https_frontends | selectattr('renewal', 'defined') | selectattr('renewal.certbot_hook', 'equalto', true) | list }}"

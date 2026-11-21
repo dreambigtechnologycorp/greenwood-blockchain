@@ -63,12 +63,27 @@ def validate_frontends(frontends):
         require(isinstance(entry.get('request_limit'), int) and not isinstance(entry['request_limit'], bool)
                 and 0 <= entry['request_limit'] <= 2147483647,
                 'integer request limit required')
-        for field in ('certificate', 'private_key', 'ca'):
+        for field in (('ca',) if 'renewal' in entry else ('certificate', 'private_key', 'ca')) + (('intermediates',) if 'intermediates' in entry else ()):
             path = entry.get(field)
             require(isinstance(path, str) and re.fullmatch(r'/etc/greenwood/[A-Za-z0-9_./-]+', path), 'protected TLS path required')
             require(str(PurePosixPath(path)) == path and '..' not in PurePosixPath(path).parts,
                     'canonical TLS path required')
         require(isinstance(entry.get('ca_sha256'), str) and re.fullmatch(r'[a-f0-9]{64}', entry['ca_sha256']), 'CA fingerprint required')
+        renewal = entry.get('renewal')
+        if 'renewal' in entry:
+            require(isinstance(renewal, dict) and set(renewal) == {'source_dir', 'minimum_validity_seconds', 'certbot_hook'},
+                    'explicit renewal settings required')
+            require(renewal['source_dir'] in ('/etc/letsencrypt/live/' + identity,
+                    '/etc/greenwood/acme-incoming/' + name), 'approved renewal source required')
+            require(type(renewal['minimum_validity_seconds']) is int and
+                    3600 <= renewal['minimum_validity_seconds'] <= 2592000, 'bounded renewal validity required')
+            require(type(renewal['certbot_hook']) is bool, 'explicit Certbot hook flag required')
+            require(not renewal['certbot_hook'] or renewal['source_dir'].startswith('/etc/letsencrypt/live/'),
+                    'Certbot hook requires local lineage')
+            require(not re.fullmatch(r'[0-9.]+', identity), 'renewal requires DNS identity')
+            require(not any(field in entry for field in ('certificate', 'private_key', 'intermediates')),
+                    'managed renewal uses generated include, not static certificate paths')
+            require(not entry['ca'].startswith('/etc/greenwood/tls-managed/'), 'root trust must be outside renewal directory')
     return True
 
 

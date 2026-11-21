@@ -1,0 +1,10 @@
+#!/bin/sh
+# Installed only by the operator-approved secret-provisioning role.
+# Certbot calls deploy hooks only after successful issuance/renewal.
+set -eu
+[ "${RENEWED_LINEAGE:-}" = '{{ item.renewal.source_dir }}' ] || exit 0
+# Never activate a stopped service. Its certificate can be imported manually.
+/usr/bin/systemctl is-active --quiet greenwood-{{ item.name }}-https.service || exit 0
+exec /usr/local/sbin/greenwood-renew-https \
+  --config /etc/greenwood/control-plane/{{ item.name }}-renewal.json \
+  --approve-private-key-access --install --reload-active

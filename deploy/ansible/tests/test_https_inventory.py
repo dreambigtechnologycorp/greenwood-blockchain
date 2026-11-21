@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 import yaml
+import jinja2
 
 from ansible.errors import AnsibleFilterError
 
@@ -78,6 +79,28 @@ class HttpsInventoryTest(unittest.TestCase):
             self.assertIn(setting, rendered)
         local = env.get_template('https.conf.j2').render(item=self.frontend)
         self.assertNotIn('SSLProxyEngine', local)
+
+    def test_intermediates_and_explicit_managed_renewal(self):
+        f = dict(self.frontend, intermediates='/etc/greenwood/tls/chain.pem')
+        self.assertTrue(MODULE.validate_frontends([f]))
+        f['intermediates']='/etc/greenwood/../chain.pem'
+        with self.assertRaises(AnsibleFilterError): MODULE.validate_frontends([f])
+        f = {k:v for k,v in self.frontend.items() if k not in ('certificate','private_key')}
+        f['renewal'] = {'source_dir':'/etc/letsencrypt/live/controller.example.test',
+                        'minimum_validity_seconds':86400, 'certbot_hook':False}
+        self.assertTrue(MODULE.validate_frontends([f]))
+        env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(PLUGIN.parent.parent/'templates')), undefined=jinja2.StrictUndefined)
+        rendered=env.get_template('https.conf.j2').render(item=f)
+        self.assertIn('Include /etc/greenwood/tls-managed/controller/active.conf',rendered)
+        self.assertNotIn('SSLCertificateKeyFile',rendered)
+        wrong=copy.deepcopy(f);wrong['renewal']=None
+        with self.assertRaises(AnsibleFilterError): MODULE.validate_frontends([wrong])
+        for field, value in [('source_dir','/tmp/foreign'), ('minimum_validity_seconds',True),
+                              ('certbot_hook','true')]:
+            wrong=copy.deepcopy(f);wrong['renewal'][field]=value
+            with self.assertRaises(AnsibleFilterError): MODULE.validate_frontends([wrong])
+        wrong=copy.deepcopy(f);wrong['certificate']='/etc/greenwood/other.pem'
+        with self.assertRaises(AnsibleFilterError): MODULE.validate_frontends([wrong])
 
     def test_duplicate_service_or_listener(self):
         other = copy.deepcopy(self.frontend)
