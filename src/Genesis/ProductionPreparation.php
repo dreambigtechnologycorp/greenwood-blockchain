@@ -53,11 +53,15 @@ final class ProductionPreparation
         if(!is_array($t['retired_public_keys'])||!array_is_list($t['retired_public_keys'])||!$t['retired_public_keys']||count($t['retired_public_keys'])>128)
             throw new \InvalidArgumentException('Retired public identity list required');
         foreach($t['retired_public_keys'] as $key)Policy::hex($key);
-        foreach(['validators','providers'] as $field){
-            if(!is_array($t[$field]))throw new \InvalidArgumentException('Three explicit validator/provider identities required');
-            $ids=array_keys($t[$field]);sort($ids);
-            if($ids!==['A','B','C'])throw new \InvalidArgumentException('Fixed A/B/C topology required');
-        }
+        if(!is_array($t['validators'])||!is_array($t['providers']))
+            throw new \InvalidArgumentException('Explicit validator and provider maps required');
+        $validatorIds=array_keys($t['validators']);sort($validatorIds);
+        if($validatorIds!==['A','B','C'])throw new \InvalidArgumentException('Exactly A/B/C validators required');
+        $providerIds=array_keys($t['providers']);sort($providerIds);
+        // Retain the original four-node profile; the seven-node profile adds D/E
+        // providers on nodes 6/7, without adding consensus validators.
+        if($providerIds!==['A','B','C']&&$providerIds!==['A','B','C','D','E'])
+            throw new \InvalidArgumentException('Exactly A/B/C or A/B/C/D/E providers required');
         $keys=[];$endpoints=[];
         foreach($t['validators'] as $validator){
             if(!is_array($validator))throw new \InvalidArgumentException('Public validator fields required');
@@ -70,8 +74,8 @@ final class ProductionPreparation
             $endpoints[]=$endpoint;
         }
         foreach($t['providers'] as $key)$keys[]=Policy::hex($key);
-        if(count(array_unique($keys))!==6||array_intersect($keys,$t['retired_public_keys']))
-            throw new \InvalidArgumentException('Six distinct newly provisioned public identities required');
+        if(count(array_unique($keys))!==count($keys)||array_intersect($keys,$t['retired_public_keys']))
+            throw new \InvalidArgumentException('All validator/provider public identities must be distinct and not retired');
         if(count(array_unique($endpoints))!==3)throw new \InvalidArgumentException('Distinct consensus endpoints required');
     }
 }
