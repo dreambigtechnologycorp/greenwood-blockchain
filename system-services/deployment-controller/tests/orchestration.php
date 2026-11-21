@@ -2,6 +2,10 @@
 declare(strict_types=1);
 require dirname(__DIR__).'/autoload.php';
 require_once __DIR__.'/identity-fixture.php';
+$receiverNodes = getenv('GWD_SEVEN_NODE_TEST') === '1'
+    ? \Greenwood\DeploymentController\Assignment\ReceiverTopology::SEVEN_NODE
+    : \Greenwood\DeploymentController\Assignment\ReceiverTopology::LEGACY;
+$edgeNode = in_array('node-5', $receiverNodes, true) ? 'node-5' : 'node-4';
 use Greenwood\DeploymentController\State\SqliteOperationStore;
 use Greenwood\DeploymentController\Auth\{ChallengeService,SignedRequestVerifier};
 use Greenwood\DeploymentController\Deployment\DeploymentCoordinator;
@@ -24,20 +28,20 @@ $observe=function($a)use(&$stale){return $a+['nonce'=>str_repeat('c',64),'addres
 $edge=function()use(&$edgeReady){return ['confirmed'=>$edgeReady,'generation'=>str_repeat('d',64),'body_sha256'=>str_repeat('e',64)];};
 $ready=function($a,$nonce)use(&$wrongGeneration,$authorize,$account){$url='https://gw-'.$a['application_id'].'-web.greenwoodblockchain.com/';return $a+['nonce'=>$nonce,'ready'=>true,'provider_mtls_verified'=>true,'observed_at'=>time(),'expires_at'=>time()+15,'edge_generation'=>str_repeat($wrongGeneration?'f':'d',64),'pid'=>20,'namespace_identity'=>'netns','backend'=>['address'=>$a['provider_address'],'port'=>$a['ingress_port']],'provider_observed_at'=>time(),'authority'=>$authorize($account,['chain_id'=>'greenwood-physical-v1','registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'application_id'=>$a['application_id'],'service'=>$a['service'],'release_number'=>$a['release_id'],'image_digest'=>$a['image_digest']]),'canonical_url'=>$url,'public_https'=>['url'=>$url,'verified'=>true,'status'=>200,'body_sha256'=>str_repeat('e',64)]];};
 $preflightFault=null;
-$preflight=static function($id,$p,$proof)use(&$preflightFault):array{
+$preflight=static function($id,$p,$proof)use(&$preflightFault,$receiverNodes,$edgeNode):array{
     $a=$p;unset($a['image_ref']);$a['ingress_port']=21001;$a['instance_id']='app-3-web';
     $d=['chain_id'=>$p['chain_id'],'registry_contract_id'=>$p['registry_contract_id'],'operation_id'=>$id,
         'account_id'=>$proof['account_id'],'version'=>1,'previous_generation'=>null,'assignment'=>$a];
     if($preflightFault==='plan')$d['assignment']['provider_id']=str_repeat('f',64);
     if($preflightFault==='runtime')$d['assignment']['ingress_port']=21002;
     $g=AssignmentDocument::generation($d);$assignmentId=AssignmentDocument::assignmentId($d);$nodes=[];
-    foreach(['node-1','node-4']as$n)$nodes[$n]=['node_id'=>$n,'generation'=>$g,'assignment_id'=>$assignmentId,'version'=>1,'state'=>'COMMITTED','observed_at'=>time()];
-    if($preflightFault==='partial')unset($nodes['node-4']);
-    if($preflightFault==='stale')$nodes['node-4']['observed_at']=time()-60;
-    if($preflightFault==='generation')$nodes['node-4']['generation']=str_repeat('0',64);
+    foreach($receiverNodes as$n)$nodes[$n]=['node_id'=>$n,'generation'=>$g,'assignment_id'=>$assignmentId,'version'=>1,'state'=>'COMMITTED','observed_at'=>time()];
+    if($preflightFault==='partial')unset($nodes[$edgeNode]);
+    if($preflightFault==='stale')$nodes[$edgeNode]['observed_at']=time()-60;
+    if($preflightFault==='generation')$nodes[$edgeNode]['generation']=str_repeat('0',64);
     return ['document'=>$d,'ack'=>['acknowledged'=>true,'generation'=>$g,'assignment_id'=>$assignmentId,'version'=>1,'nodes'=>$nodes]];
 };
-$make=function()use(&$store,$authorize,$plan,$inspect,$start,$admit,$observe,$edge,$ready,$preflight){return new DeploymentCoordinator($store,$authorize,$plan,$inspect,$start,$admit,$observe,$edge,$ready,true,$preflight);};
+$make=function()use(&$store,$authorize,$plan,$inspect,$start,$admit,$observe,$edge,$ready,$preflight,$receiverNodes){return new DeploymentCoordinator($store,$authorize,$plan,$inspect,$start,$admit,$observe,$edge,$ready,true,$preflight,receiverNodes:$receiverNodes);};
 $coordinator=$make();$challenges=new ChallengeService($store->db);$signatures=new SignedRequestVerifier($store->db,'https://controller.test');$limits=new RateLimiter($store->db,1000);
 $api=new DeveloperRoutes($store,$challenges,$signatures,$coordinator,$limits,true);
 $submit=function($i)use($api,$public,$secret){[$r,$s]=$api->handleRequest('POST','/v1/developer/challenge',json_encode($i),[]);check($s===200,'Challenge failed');$c=$r['challenge'];return $api->handleRequest('POST','/v1/developer/deployments',json_encode($i+['challenge_id'=>$c['id'],'public_key'=>bin2hex($public),'signature'=>bin2hex(sodium_crypto_sign_detached($c['canonical_bytes'],$secret))]),[]);};
@@ -106,7 +110,7 @@ try{
         if(!$approved)throw new RuntimeException('Allocation pending');
         return $preflight($d['operation_id'],$plan($d['operation_id'],$test,[]),$authorize($account,$test))['ack'];
     };
-    $resumeCoordinator=new DeploymentCoordinator($store,$authorize,$plan,$inspect,$start,$admit,$observe,$edge,$ready,true,$reserve,null,$acknowledge);
+    $resumeCoordinator=new DeploymentCoordinator($store,$authorize,$plan,$inspect,$start,$admit,$observe,$edge,$ready,true,$reserve,null,$acknowledge,receiverNodes:$receiverNodes);
     $test['idempotency_key']='approval-wait';$op=$store->accept($account,$test);$before=$startCalls;
     check($resumeCoordinator->run($op['id'])['state']==='RESERVED'&&$startCalls===$before,'Unapproved reservation started');
     $saved=json_decode($store->get($op['id'])['evidence'],true);check(isset($saved['assignment_document']),'Reservation not durably exportable');
@@ -129,7 +133,7 @@ try{
     check($result['ready']&&$startCalls===$before+1,'Resume duplicated start');
     // Financial gate: export reservation, wait without side effects, resume once, deny expired readiness.
     $funded=false;$fundChecks=0;$funding=function($document)use(&$funded,&$fundChecks){$fundChecks++;if(!$funded)throw new RuntimeException('Unfunded service interval');return ['commitment_id'=>str_repeat('1',64),'financial_status'=>'funded','payment_finalized'=>false];};
-    $financialCoordinator=new DeploymentCoordinator($store,$authorize,$plan,$inspect,$start,$admit,$observe,$edge,$ready,true,$preflight,null,null,$funding);
+    $financialCoordinator=new DeploymentCoordinator($store,$authorize,$plan,$inspect,$start,$admit,$observe,$edge,$ready,true,$preflight,null,null,$funding,$receiverNodes);
     $test['idempotency_key']='funding-wait';$op=$store->accept($account,$test);$before=$startCalls;$beforeAdmit=$admitCalls;
     check($financialCoordinator->run($op['id'])['state']==='RESERVED'&&$startCalls===$before&&$admitCalls===$beforeAdmit,'Unfunded hosted assignment caused runtime/admission side effects');
     check(isset(json_decode($store->get($op['id'])['evidence'],true)['assignment_document']),'Unfunded assignment cannot be exported for quote acceptance');

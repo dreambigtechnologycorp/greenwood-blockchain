@@ -22,6 +22,24 @@
       - greenwood_control_configs is mapping
       - greenwood_control_files is sequence
 
+- name: Require the complete seven-node assignment receiver set
+  ansible.builtin.assert:
+    that:
+      - (greenwood_control_configs[item].assignment_receivers.keys() | list | sort) == ['node-1', 'node-2', 'node-3', 'node-5', 'node-6', 'node-7']
+      - item != 'receiver' or greenwood_control_configs[item].node_id == inventory_hostname
+    fail_msg: Seven-node assignment services require all six receivers and the local receiver identity
+  loop: "{{ greenwood_control_services | intersect(['receiver', 'controller', 'edge']) }}"
+  when: greenwood_topology_profile | default('') == 'seven'
+  no_log: true
+
+- name: Require the authenticated local provider listener for observers and controllers
+  ansible.builtin.assert:
+    that:
+      - greenwood_control_configs[item].provider_http == 'unix:///run/greenwood-provider/operator.sock'
+      - greenwood_control_configs[item].operator_token_file == '/etc/greenwood/operator.token'
+  loop: "{{ greenwood_control_services | intersect(['observer', 'controller']) }}"
+  no_log: true
+
 - name: Install PHP control-plane prerequisites
   ansible.builtin.apt:
     name: "{{ greenwood_control_packages }}"

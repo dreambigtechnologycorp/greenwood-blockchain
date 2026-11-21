@@ -118,7 +118,7 @@ edge checks. Do not restore older ledgers to accept stale snapshots.
 ## HTTPS and Registry
 
 Each greenwood_https_frontends entry supplies name (controller, registry,
-registry-auth or rpc), address, port, tls_name, loopback HTTP backend,
+registry-auth or rpc), address, port, tls_name, loopback HTTP backend (or, for `rpc` only, an explicit DNS HTTPS upstream on a supported port),
 request_limit, certificate, private_key, ca and ca_sha256.
 Ports/request limits must be YAML integers. Distinct listener/name validation,
 root-owned ancestry, key permissions, certificate/key match, CA fingerprint,
@@ -194,3 +194,5 @@ requires inspection of effective routes; it is not successful withdrawal.
 See [operational troubleshooting](../../docs/provider-operations.md#troubleshooting)
 and [regression tests](../../docs/testing/overview.md). Physical acceptance records
 and environment-specific verification scripts are local-only in `docs/acceptance/`.
+
+RPC relay/DNS/certificate preparation: [operator guide](../../docs/operations/RPC_DNS_TLS_HANDOFF.md). HTTPS RPC upstreams use the frontend's pinned CA and require hostname/expiry verification; this does not grant public RPC access.

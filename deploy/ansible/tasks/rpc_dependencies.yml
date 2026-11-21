@@ -1,0 +1,37 @@
+---
+# Public declarations only: reject origin cycles and unsupported bootstrap paths.
+- name: Require one RPC frontend on every declared origin
+  ansible.builtin.assert:
+    that:
+      - hostvars[item].greenwood_https_frontends | default([]) | selectattr('name', 'equalto', 'rpc') | list | length == 1
+  loop: "{{ groups['rpc_hosts'] }}"
+
+- name: Reset the approved validator HTTPS origin list
+  ansible.builtin.set_fact:
+    greenwood_validator_rpc_origins: []
+
+- name: Collect direct validator HTTPS origins
+  ansible.builtin.set_fact:
+    greenwood_validator_rpc_origins: "{{ greenwood_validator_rpc_origins + ['https://' ~ origin.tls_name ~ ':' ~ origin.port] }}"
+  vars:
+    origin: "{{ hostvars[item].greenwood_https_frontends | selectattr('name', 'equalto', 'rpc') | first }}"
+  loop: "{{ groups['validators'] }}"
+
+- name: Require validator frontends to reach their local protocol service
+  ansible.builtin.assert:
+    that:
+      - (greenwood_https_frontends | selectattr('name', 'equalto', 'rpc') | first).backend == 'http://127.0.0.1:9201'
+  when: inventory_hostname in groups['validators']
+
+- name: Require non-validator relays to use a declared validator origin
+  ansible.builtin.assert:
+    that:
+      - (greenwood_https_frontends | selectattr('name', 'equalto', 'rpc') | first).backend in greenwood_validator_rpc_origins
+  when: inventory_hostname in groups['rpc_hosts'] and inventory_hostname not in groups['validators']
+
+- name: Require provider-only bootstrap to use a direct validator HTTPS origin
+  ansible.builtin.assert:
+    that:
+      - provider_rpc_endpoint in greenwood_validator_rpc_origins
+    fail_msg: Provider bootstrap must reach a declared validator origin directly; do not depend on public tunnel or edge activation
+  when: inventory_hostname in groups['providers'] and inventory_hostname not in groups['validators']

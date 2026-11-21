@@ -1,0 +1,35 @@
+---
+# Public CA only. A PEM file hash is distinct from the frontend CA DER fingerprint.
+- name: Verify the reviewed public RPC CA source
+  ansible.builtin.stat:
+    path: "{{ greenwood_rpc_ca_src }}"
+    checksum_algorithm: sha256
+  delegate_to: localhost
+  become: false
+  register: rpc_ca_source
+
+- name: Reject altered or missing RPC trust material
+  ansible.builtin.assert:
+    that:
+      - rpc_ca_source.stat.isreg | default(false)
+      - not (rpc_ca_source.stat.islnk | default(true))
+      - rpc_ca_source.stat.checksum == greenwood_rpc_ca_file_sha256
+
+- name: Install public CA trust prerequisite without restarting services
+  ansible.builtin.apt:
+    name: ca-certificates
+    state: present
+    policy_rc_d: 101
+
+- name: Install the reviewed public RPC CA for provider clients
+  ansible.builtin.copy:
+    src: "{{ greenwood_rpc_ca_src }}"
+    dest: /usr/local/share/ca-certificates/greenwood-rpc.crt
+    owner: root
+    group: root
+    mode: '0644'
+  register: rpc_ca_installed
+
+- name: Update provider system trust when the CA changes
+  ansible.builtin.command: update-ca-certificates
+  when: rpc_ca_installed.changed

@@ -10,6 +10,8 @@ all:
     greenwood_governed_activation_approved: false
     greenwood_recovery_access_confirmed: false
     greenwood_hosting_release: /opt/greenwood
+    greenwood_rpc_ca_src: /private/REPLACE/rpc-ca.pem
+    greenwood_rpc_ca_file_sha256: REPLACE_PUBLIC_CA_PEM_FILE_SHA256
     ansible_ssh_common_args: -o StrictHostKeyChecking=yes
   hosts:
     node-1:

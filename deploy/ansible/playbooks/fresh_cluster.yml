@@ -30,45 +30,6 @@
   tasks:
     - ansible.builtin.import_tasks: ../tasks/fresh_identity.yml
 
-- name: Start the approved validator set
-  hosts: validators
-  become: true
-  gather_facts: false
-  any_errors_fatal: true
-  tasks:
-    - name: Enable and start validators after the all-node identity gate
-      ansible.builtin.systemd_service:
-        name: greenwoodd
-        daemon_reload: true
-        enabled: true
-        state: started
-    - name: Wait for chain-specific RPC readiness
-      ansible.builtin.uri:
-        url: http://127.0.0.1:9201/v1/chain/status
-        return_content: true
-      register: fresh_rpc
-      until: fresh_rpc.status == 200 and fresh_rpc.json.chain_id == provider_chain_id and fresh_rpc.json.finalized_height | int > 0
-      retries: 60
-      delay: 5
-- name: Start approved provider identities independently of validator placement
-  hosts: providers
-  become: true
-  gather_facts: false
-  any_errors_fatal: true
-  tasks:
-    - name: Verify the configured chain endpoint before provider start
-      ansible.builtin.uri:
-        url: "{{ provider_rpc_endpoint | default('http://127.0.0.1:9201' if inventory_hostname in groups['validators'] else '') }}/v1/chain/status"
-        return_content: true
-        validate_certs: true
-      register: provider_chain_status
-      failed_when: provider_chain_status.json.chain_id != provider_chain_id or provider_chain_status.json.genesis_hash != greenwood_expected_genesis_hash
-    - name: Enable and start providers
-      ansible.builtin.systemd_service:
-        name: greenwood-provider
-        enabled: true
-        state: started
-
 - name: Install runtime release on the non-validator edge
   hosts: "control_plane:system_runtime_hosts:!validators:!providers"
   become: true
@@ -99,11 +60,65 @@
         name: provider
         tasks_from: application_hosting
     - ansible.builtin.import_tasks: ../tasks/application_recovery.yml
-    - name: Adopt the validated provider hosting configuration
-      ansible.builtin.systemd_service:
-        name: greenwood-provider
-        state: restarted
 
 - ansible.builtin.import_playbook: control_plane.yml
+
+- name: Start the approved validator set
+  hosts: validators
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Enable and start validators after the all-node identity gate
+      ansible.builtin.systemd_service:
+        name: greenwoodd
+        daemon_reload: true
+        enabled: true
+        state: started
+    - name: Wait for chain-specific RPC readiness
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9201/v1/chain/status
+        return_content: true
+      register: fresh_rpc
+      until: fresh_rpc.status == 200 and fresh_rpc.json.chain_id == provider_chain_id and fresh_rpc.json.genesis_hash == greenwood_expected_genesis_hash and fresh_rpc.json.finalized_height | int > 0
+      retries: 60
+      delay: 5
+
+- ansible.builtin.import_playbook: activate_rpc.yml
+
+- name: Establish provider-only HTTPS client trust
+  hosts: "providers:!validators"
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/rpc_client_trust.yml
+
+- name: Start approved provider identities independently of validator placement
+  hosts: providers
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Verify the configured chain endpoint before provider start
+      ansible.builtin.uri:
+        url: "{{ provider_rpc_endpoint | default('http://127.0.0.1:9201' if inventory_hostname in groups['validators'] else '') }}/v1/chain/status"
+        return_content: true
+        validate_certs: true
+      register: provider_chain_status
+      until: >-
+        provider_chain_status.status | default(0) == 200 and
+        provider_chain_status.json.chain_id | default('') == provider_chain_id and
+        provider_chain_status.json.genesis_hash | default('') == greenwood_expected_genesis_hash and
+        provider_chain_status.json.finalized_height | default(0) | int > 0
+      retries: 30
+      delay: 2
+    - name: Enable and start providers
+      ansible.builtin.systemd_service:
+        name: greenwood-provider
+        enabled: true
+        state: started
+
+
 - ansible.builtin.import_playbook: governed_services.yml
 - ansible.builtin.import_playbook: activate_hosting.yml

@@ -129,3 +129,25 @@ The tooling does not supply unresolved governance ratification, treasury spendin
 Runtime package preparation and guarded installation are documented in [Runtime prerequisites](RUNTIME_PREREQUISITES.md). Run its complete-host audit before selecting idle hosts for installation.
 
 The obsolete testnet was removed on November 17; see [the removal checkpoint](TESTNET_REMOVAL_2026-11-17.md) for retained prerequisites and verified clean-state boundaries.
+
+### RPC bootstrap ordering and trust
+
+Fresh installation stages the non-validator runtime, application-hosting settings
+and control-plane/TLS files before protocol startup. After validators finalize,
+`activate_rpc.yml` starts validator HTTPS origins before non-validator relays and
+checks the exact chain/genesis/finality. Provider-only system trust is installed
+from `greenwood_rpc_ca_src` with `greenwood_rpc_ca_file_sha256`, then provider
+endpoint readiness is checked before any provider start. Internal origin name
+resolution is required; Cloudflare public ingress is not a startup dependency.
+All operator, protocol and hosting approvals remain required. See the
+[RPC DNS/TLS handoff](RPC_DNS_TLS_HANDOFF.md) for Cloudflare and certificate steps.
+
+## Receiver topology and operator certificate handoff
+
+The seven-node assignment profile replicates to nodes 1, 2, 3, 5, 6 and 7;
+node-4 is excluded. Every configured receiver must return a fresh matching commit
+acknowledgement before an application can start. This adds an availability
+dependency on all six receivers; it does not add independent operators.
+Controllers, receivers and the edge must use the same complete peer map.
+See [certificate handoff](SEVEN_NODE_CERTIFICATE_HANDOFF.md) for exact URI roles,
+public-only verification material and the operator-controlled installation order.

@@ -73,7 +73,7 @@ final class PhysicalAssignmentServices
 
     public static function distributor(array $c, \PDO $db, array $services): AssignmentDistributor
     {
-        return new AssignmentDistributor($db, ['node-1', 'node-4'],
+        return new AssignmentDistributor($db, ReceiverTopology::fromConfig($c),
             static fn(array $d): bool => ($services['authorize'])($d) && $services['policy']->approved($d),
             AssignmentDistributor::mtls($services['channel'], $c['assignment_receivers']));
     }

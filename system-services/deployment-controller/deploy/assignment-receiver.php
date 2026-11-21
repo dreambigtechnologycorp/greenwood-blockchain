@@ -8,7 +8,7 @@ umask(0077);
 $path = getenv('GREENWOOD_ASSIGNMENT_CONFIG');
 if (!$path) throw new RuntimeException('ASSIGNMENT_CONFIGURATION_REQUIRED');
 $c = PhysicalAssignmentServices::config($path);
-if (!in_array($c['node_id'] ?? null, ['node-1', 'node-4'], true)) throw new RuntimeException('INVALID_RECEIVER_NODE');
+if (!in_array($c['node_id'] ?? null, \Greenwood\DeploymentController\Assignment\ReceiverTopology::fromConfig($c), true)) throw new RuntimeException('INVALID_RECEIVER_NODE');
 $s = PhysicalAssignmentServices::build($c);
 $receiver = new AssignmentReceiver($c['node_id'], $c['assignments_directory'], $c['receiver_ledger'], $s['authorize'], $s['policy']->approved(...));
 $endpoint = new AssignmentEndpoint($s['channel'], $receiver);

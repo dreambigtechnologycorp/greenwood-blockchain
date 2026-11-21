@@ -13,7 +13,10 @@ final class DeploymentCoordinator {
         private readonly \Closure $admit,private readonly \Closure $observe,private readonly \Closure $edge,
         private readonly \Closure $readiness,private readonly bool $writesEnabled=false,
         private readonly ?\Closure $assignmentPreflight=null,private readonly ?\Closure $canonicalUrl=null,
-        private readonly ?\Closure $acknowledgeAssignment=null,private readonly ?\Closure $fundedInterval=null) {}
+        private readonly ?\Closure $acknowledgeAssignment=null,private readonly ?\Closure $fundedInterval=null,
+        private readonly array $receiverNodes=\Greenwood\DeploymentController\Assignment\ReceiverTopology::LEGACY) {
+        \Greenwood\DeploymentController\Assignment\ReceiverTopology::validate($receiverNodes);
+    }
     public function authority(string $account,array $intent):array {
         DeploymentIdentity::validate($intent);
         $proof=($this->authorize)($account,$intent);
@@ -62,7 +65,9 @@ final class DeploymentCoordinator {
                     if(($ack['acknowledged']??false)!==true||($ack['generation']??null)!==$generation
                         ||($ack['assignment_id']??null)!==AssignmentDocument::assignmentId($document)
                         ||($ack['version']??null)!==$document['version'])throw new \RuntimeException('ASSIGNMENT_ACK_REQUIRED');
-                    foreach(['node-1','node-4']as$node){
+                    if (!is_array($ack['nodes'] ?? null) || array_diff(array_keys($ack['nodes']), $this->receiverNodes)
+                        || array_diff($this->receiverNodes, array_keys($ack['nodes']))) throw new \RuntimeException('ASSIGNMENT_ACK_REQUIRED');
+                    foreach($this->receiverNodes as $node){
                         $row=$ack['nodes'][$node]??[];
                         if(($row['node_id']??null)!==$node||($row['generation']??null)!==$generation||($row['state']??null)!=='COMMITTED'
                             ||($row['assignment_id']??null)!==$ack['assignment_id']||($row['version']??null)!==$document['version']
@@ -71,7 +76,7 @@ final class DeploymentCoordinator {
                     ksort($assignment);
                     $e['assignment']=$assignment+['assignment_id'=>AssignmentDocument::assignmentId($document)];
                     $e['assignment_preflight']=$prepared;
-                    // Node 4 must accept the exact committed assignment and release evidence
+                    // The configured edge must accept the exact committed assignment and release evidence
                     // before the first start. Publication still requires live runtime health.
                     ($this->admit)($op['id'],$e['assignment'],$e['authority']);
                     $e['authority']=$this->authority($op['account'],$i);

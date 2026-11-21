@@ -45,7 +45,16 @@ def validate_frontends(frontends):
             require(all(re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?', label)
                         for label in identity.split('.')), 'invalid TLS hostname')
         backend = entry.get('backend')
-        require(isinstance(backend, str) and re.fullmatch(r'http://127\.0\.0\.1:[0-9]+', backend), 'loopback HTTP backend required')
+        local_backend = isinstance(backend, str) and re.fullmatch(r'http://127\.0\.0\.1:[0-9]+', backend)
+        remote_rpc = (name == 'rpc' and isinstance(backend, str) and
+                      re.fullmatch(r'https://[A-Za-z0-9.-]+:[0-9]+', backend))
+        require(local_backend or remote_rpc, 'loopback HTTP or explicit HTTPS RPC backend required')
+        if remote_rpc:
+            hostname = urlsplit(backend).hostname
+            require(len(hostname) <= 253 and not re.fullmatch(r'[0-9.]+', hostname) and
+                    all(re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?', label)
+                        for label in hostname.split('.')), 'RPC upstream requires a DNS identity')
+            require(hostname.lower() != identity.lower(), 'RPC upstream must not point to itself')
         try:
             backend_port = urlsplit(backend).port
         except ValueError as exc:

@@ -3,11 +3,11 @@ declare(strict_types=1);
 namespace Greenwood\DeploymentController\Assignment;
 use Greenwood\ControlPlane\MutualTlsChannel;
 
-/** Two-node distribution journal; admission requires fresh matching commit acknowledgments. */
+/** Configured-receiver distribution journal; admission requires fresh matching commit acknowledgments. */
 final class AssignmentDistributor {
     public function __construct(private readonly \PDO $db,private readonly array $nodes,
         private readonly \Closure $authorize,private readonly \Closure $send) {
-        if(count($nodes)!==2||count(array_unique($nodes))!==2)throw new \InvalidArgumentException('Two distinct assignment stores required');
+        ReceiverTopology::validate($nodes);
         $db->setAttribute(\PDO::ATTR_ERRMODE,\PDO::ERRMODE_EXCEPTION);$db->exec('PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000');
         $db->exec('CREATE TABLE IF NOT EXISTS distribution(generation TEXT PRIMARY KEY, document TEXT NOT NULL, state TEXT NOT NULL)');
         $db->exec('CREATE TABLE IF NOT EXISTS distribution_ack(generation TEXT NOT NULL, node TEXT NOT NULL, evidence TEXT NOT NULL, PRIMARY KEY(generation,node))');

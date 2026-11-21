@@ -52,6 +52,33 @@ class HttpsInventoryTest(unittest.TestCase):
                     with self.assertRaises(AnsibleFilterError):
                         MODULE.validate_frontends([entry])
 
+    def test_rpc_https_upstream_is_explicit_and_bounded(self):
+        entry = dict(self.frontend, name='rpc', tls_name='rpc-node-5.example.test',
+                     backend='https://rpc-node-1.example.test:8443')
+        self.assertTrue(MODULE.validate_frontends([entry]))
+        for backend in ['https://rpc-node-1.example.test', 'https://rpc-node-1.example.test:443',
+                        'https://rpc-node-5.example.test:8443', 'https://127.0.0.1:8443',
+                        'https://bad..test:8443', 'https://user@host.test:8443',
+                        'https://host.test:8443/path', 'https://host.test:8443?x=1',
+                        'http://192.168.72.100:9201', 'https://host.test:8443\n']:
+            with self.subTest(backend=backend), self.assertRaises(AnsibleFilterError):
+                MODULE.validate_frontends([dict(entry, backend=backend)])
+        with self.assertRaises(AnsibleFilterError):
+            MODULE.validate_frontends([dict(entry, name='registry')])
+
+    def test_rpc_template_verifies_upstream_tls(self):
+        from jinja2 import Environment, FileSystemLoader, StrictUndefined
+        templates = PLUGIN.parent.parent / 'templates'
+        env = Environment(loader=FileSystemLoader(templates), undefined=StrictUndefined)
+        entry = dict(self.frontend, name='rpc', backend='https://rpc-node-1.example.test:8443')
+        rendered = env.get_template('https.conf.j2').render(item=entry)
+        for setting in ['SSLProxyVerify require', 'SSLProxyCheckPeerName on',
+                        'SSLProxyCheckPeerExpire on', 'SSLProxyCACertificateFile ' + entry['ca'],
+                        'ProxyRequests Off']:
+            self.assertIn(setting, rendered)
+        local = env.get_template('https.conf.j2').render(item=self.frontend)
+        self.assertNotIn('SSLProxyEngine', local)
+
     def test_duplicate_service_or_listener(self):
         other = copy.deepcopy(self.frontend)
         with self.assertRaises(AnsibleFilterError):

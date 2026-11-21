@@ -2,6 +2,10 @@
 declare(strict_types=1);
 require dirname(__DIR__).'/autoload.php';
 require_once __DIR__.'/identity-fixture.php';
+$receiverNodes = getenv('GWD_SEVEN_NODE_TEST') === '1'
+    ? \Greenwood\DeploymentController\Assignment\ReceiverTopology::SEVEN_NODE
+    : \Greenwood\DeploymentController\Assignment\ReceiverTopology::LEGACY;
+$edgeNode = in_array('node-5', $receiverNodes, true) ? 'node-5' : 'node-4';
 define('CONTROL_TEST_CHAIN',getenv('GWD_CONTROL_PLANE_TEST_CHAIN')?:'greenwood-physical-v1');
 use Greenwood\ControlPlane\MutualTlsChannel;
 use Greenwood\ControlPlane\SignedPolicySnapshot;
@@ -14,6 +18,8 @@ $options=['private_key_bits'=>2048,'private_key_type'=>OPENSSL_KEYTYPE_RSA,'dige
 $caKey=openssl_pkey_new($options);$csr=openssl_csr_new(['commonName'=>'isolated distribution test CA'],$caKey,$options);
 $ca=openssl_csr_sign($csr,null,$caKey,1,$options+['x509_extensions'=>'v3_ca'],1);openssl_x509_export_to_file($ca,$root.'/ca.pem');
 $pins=[];$roles=['controller'=>'deployment-controller','node-1'=>'assignment/node-1','node-4'=>'assignment/node-4','stranger'=>'deployment-controller','provider-6'=>'provider/node-6','provider-7'=>'provider/node-7'];
+unset($roles['node-1'], $roles['node-4']);
+foreach ($receiverNodes as $node) $roles[$node] = 'assignment/'.$node;
 try {
     foreach($roles as$name=>$role){
         file_put_contents($config,$base.'subjectAltName=DNS:'.$name.'.test,URI:spiffe://'.CONTROL_TEST_CHAIN.'/control-plane/'.$role."\n");
@@ -31,7 +37,7 @@ try {
         file_put_contents($revocations,json_encode(['payload'=>$payload,'signature'=>$signature]));
     };
     $publish();
-    foreach(['node-1','node-4']as$n){mkdir($root.'/'.$n,0700);mkdir($root.'/'.$n.'/assignments',0700);}
+    foreach($receiverNodes as$n){mkdir($root.'/'.$n,0700);mkdir($root.'/'.$n.'/assignments',0700);}
     $channel=static function($name,$peers)use($root,$roles,$pins,$revocations,$policyKey){$identities=[];$uris=[];foreach($peers as$peer=>$identity){$identities[$pins[$peer]]=$identity;$uris[$pins[$peer]]='spiffe://'.CONTROL_TEST_CHAIN.'/control-plane/'.$roles[$peer];}return new MutualTlsChannel($root.'/ca.pem',$root.'/'.$name.'.pem',$root.'/'.$name.'.key',$identities,$uris,$revocations,
         new SignedPolicySnapshot($revocations,$root.'/'.$name.'-policies.sqlite','revocations',bin2hex(sodium_crypto_sign_publickey($policyKey)),300,CONTROL_TEST_CHAIN));};
     // Real TLS handshakes for the expanded compute-provider roles.
@@ -48,7 +54,7 @@ try {
         } finally {pcntl_waitpid($pid,$status);}
         check(pcntl_wexitstatus($status)===0,'Provider server rejected handshake');
     }
-    foreach (['provider/node-4','provider/node-5','provider/node-8','provider/node-66','assignment/node-6'] as $badRole) {
+    foreach (['provider/node-4','provider/node-5','provider/node-8','provider/node-66','assignment/node-8'] as $badRole) {
         $denied=false;
         try {new MutualTlsChannel($root.'/ca.pem',$root.'/controller.pem',$root.'/controller.key',
             [$pins['provider-6']=>'provider-6'],[$pins['provider-6']=>'spiffe://'.CONTROL_TEST_CHAIN.'/control-plane/'.$badRole],$revocations);}
@@ -69,15 +75,15 @@ try {
     };
     $a=['chain_id'=>CONTROL_TEST_CHAIN,'registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'application_id'=>1,'service'=>'web','release_id'=>1,'provider_id'=>str_repeat('a',64),'provider_address'=>'10.77.0.100','ingress_port'=>21001,'instance_id'=>'app-1-web','image_digest'=>'sha256:'.str_repeat('b',64),'provider_endpoint'=>'tcp://10.77.0.100:19443','provider_tls_name'=>'provider.test'];
     $d=['chain_id'=>CONTROL_TEST_CHAIN,'registry_contract_id'=>\Greenwood\DeploymentController\Auth\DeploymentIdentity::registry(),'operation_id'=>str_repeat('c',32),'account_id'=>str_repeat('d',64),'version'=>1,'previous_generation'=>null,'assignment'=>$a];
-    $db=new PDO('sqlite:'.$root.'/distribution.sqlite');$distributor=new AssignmentDistributor($db,['node-1','node-4'],static fn()=>true,$send);
-    $ack=$distributor->distribute($d);check($ack['acknowledged']&&count($ack['nodes'])===2,'TLS distribution failed');
+    $db=new PDO('sqlite:'.$root.'/distribution.sqlite');$distributor=new AssignmentDistributor($db,$receiverNodes,static fn()=>true,$send);
+    $ack=$distributor->distribute($d);check($ack['acknowledged']&&count($ack['nodes'])===count($receiverNodes),'TLS distribution failed');
     foreach(['unregistered','wrong-identity','revoked','expired-policy','tampered-policy']as$case){
         $clientName=$case==='unregistered'?'stranger':'controller';$wrongIdentity=$case==='wrong-identity';
         $publish($case==='revoked'?[$pins['controller']]:[],$case==='expired-policy',$case==='tampered-policy');
         $failed=false;try{$distributor->distribute($d);}catch(Throwable){$failed=true;}
         check($failed,'Accepted '.$case);check($db->query('SELECT state FROM distribution')->fetchColumn()==='PENDING','Failed identity retained admission');
     }
-    echo "Real mTLS assignment distribution: dedicated receiver identities, both ACKs, unregistered client, wrong receiver, revoked controller, expired and tampered signed policy passed\n";
+    echo "Real mTLS assignment distribution: dedicated receiver identities, all configured ACKs, unregistered client, wrong receiver, revoked controller, expired and tampered signed policy passed\n";
 }finally{
     $it=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);
     foreach($it as$p){if($p->isDir())rmdir($p->getPathname());else unlink($p->getPathname());}rmdir($root);

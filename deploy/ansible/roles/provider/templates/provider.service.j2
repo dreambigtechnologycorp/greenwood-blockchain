@@ -9,7 +9,7 @@ User=root
 Group=root
 RuntimeDirectory=greenwood-provider
 RuntimeDirectoryMode=0700
-ExecStart=/opt/greenwood/bin/greenwood-provider --config=/etc/greenwood/provider.json
+ExecStart=/opt/greenwood/bin/greenwood-provider --config=/etc/greenwood/provider.json --operator-socket=/run/greenwood-provider/operator.sock --operator-token-file=/etc/greenwood/operator.token
 Restart=on-failure
 RestartSec=5
 

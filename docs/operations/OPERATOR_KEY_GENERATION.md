@@ -140,11 +140,17 @@ Create separate TLS vault entries for each configured endpoint using `tls-rsa` a
 its reviewed DNS name. Each control-plane certificate also needs exactly one
 approved chain-specific URI SAN, `spiffe://CHAIN/control-plane/ROLE`. Allowed roles
 include deployment-controller, edge-controller, edge-admission, assignment/node-1,
-assignment/node-4, and provider/node-1, node-2, node-3, node-6 or node-7. DNS names,
+assignment/node-2, assignment/node-3, assignment/node-5, assignment/node-6,
+assignment/node-7, and provider/node-1, node-2, node-3, node-6 or node-7.
+The legacy assignment/node-4 URI is supported only for the old two-receiver profile;
+do not provision it for the seven-node installation. DNS names,
 chain identity, CA trust and fingerprint-to-principal mappings must be reviewed
 before certificate issuance. The vault CSR carries a CN only: the authorized issuer
 must add DNS and URI SANs and suitable key usages. Do not self-assign CA trust.
 Do not deploy any of these new topology roles using older pre-fix release images.
+
+See the [seven-node certificate handoff](SEVEN_NODE_CERTIFICATE_HANDOFF.md) for
+current receiver roles, certificate verification and public-only return files.
 
 ## Offline Tails runbook
 
