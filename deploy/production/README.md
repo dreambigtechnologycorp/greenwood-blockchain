@@ -113,7 +113,11 @@ retired identity list. Validators remain exactly A/B/C in either layout.
 
 All provider bindings are returned in `provider_public_keys`; they do not add
 validators, allocate tokens, register providers or change the genesis/state hash.
-Retain that binding map with the deployment inventory. Five-provider preparation
+Retain that binding map with the deployment inventory. Validator consensus endpoints
+use `http://HOST:PORT`, matching the node HTTP-over-TCP transport (the existing
+cluster uses port 9201). Raw `tcp://` and `https://` peer URLs are not supported
+by that transport. These internal peer URLs are separate from public HTTPS
+frontends; do not disable TLS on registry or provider-facing HTTPS services. Five-provider preparation
 does not waive missing governance, recovery, endpoint or retired-identity inputs.
 
 ```sh

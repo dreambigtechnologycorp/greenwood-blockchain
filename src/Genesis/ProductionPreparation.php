@@ -69,8 +69,8 @@ final class ProductionPreparation
             if($fields!==['endpoint','public_key'])throw new \InvalidArgumentException('Only public validator fields accepted');
             $keys[]=Policy::hex($validator['public_key']);
             $endpoint=$validator['endpoint'];
-            if(!is_string($endpoint)||!preg_match('~^tcp://([A-Za-z0-9][A-Za-z0-9.-]*):([0-9]{1,5})$~D',$endpoint,$matches)
-                ||(int)$matches[2]<1||(int)$matches[2]>65535)throw new \InvalidArgumentException('Explicit TCP consensus endpoint required');
+            if(!is_string($endpoint)||!preg_match('~^http://([A-Za-z0-9][A-Za-z0-9.-]*):([0-9]{1,5})$~D',$endpoint,$matches)
+                ||(int)$matches[2]<1||(int)$matches[2]>65535)throw new \InvalidArgumentException('Explicit HTTP consensus endpoint with port required');
             $endpoints[]=$endpoint;
         }
         foreach($t['providers'] as $key)$keys[]=Policy::hex($key);

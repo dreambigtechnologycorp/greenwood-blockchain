@@ -24,7 +24,7 @@ $f=['p'=>$p];
 $t=['version'=>1,'chain_id'=>'production-candidate-test','previous_chain_id'=>'retired-test-chain',
     'retired_public_keys'=>[publicFixture(8)],'validators'=>[],'providers'=>[]];
 foreach(['A','B','C'] as $i=>$id){
-    $t['validators'][$id]=['public_key'=>publicFixture(10+$i),'endpoint'=>'tcp://node-'.($i+1).'.example:9000'];
+    $t['validators'][$id]=['public_key'=>publicFixture(10+$i),'endpoint'=>'http://node-'.($i+1).'.example:9000'];
     $t['providers'][$id]=publicFixture(20+$i);
 }
 $r=ProductionPreparation::prepare($f['p'],$t);
@@ -50,7 +50,7 @@ $providerMutations=[
  static function(&$t){$t['providers']['E']=null;},
  static function(&$t){$t['providers']['D']=['public_key'=>publicFixture(23),'private_key'=>'never-accept-secret-input'];},
  static function(&$t){$t['providers']['E']='malformed';},
- static function(&$t){$t['validators']['D']=['public_key'=>publicFixture(13),'endpoint'=>'tcp://node-6.example:9000'];},
+ static function(&$t){$t['validators']['D']=['public_key'=>publicFixture(13),'endpoint'=>'http://node-6.example:9000'];},
  static function(&$t){$t['providers']=array_values($t['providers']);},
 ];
 foreach($providerMutations as $mutate){
@@ -58,13 +58,18 @@ foreach($providerMutations as $mutate){
  check($v['status']==='BLOCKED'&&$v['candidate']===null&&!str_contains(json_encode($v),'never-accept-secret-input'),'Invalid five-provider topology fails closed without leaking input');
 }
 $mutations=[
+ static function(&$t){$t['validators']['A']['endpoint']='tcp://node-1.example:9201';},
+ static function(&$t){$t['validators']['A']['endpoint']='https://node-1.example:9201';},
+ static function(&$t){$t['validators']['A']['endpoint']='http://user:password@node-1.example:9201';},
+ static function(&$t){$t['validators']['A']['endpoint']='http://node-1.example:9201/path';},
+ static function(&$t){$t['validators']['A']['endpoint']='http://node-1.example:9201?query=1';},
  static function(&$t){$t['chain_id']=$t['previous_chain_id'];},
  static function(&$t){$t['providers']['A']=$t['validators']['A']['public_key'];},
  static function(&$t){$t['retired_public_keys'][]=$t['providers']['A'];},
  static function(&$t){$t['validators']['B']['public_key']=$t['validators']['A']['public_key'];},
  static function(&$t){$t['validators']['A']['private_key']='never-accept-secret-input';},
- static function(&$t){$t['validators']['A']['endpoint']='tcp://host:9000;touch /tmp/example';},
- static function(&$t){$t['validators']['A']['endpoint']='tcp://host:65536';},
+ static function(&$t){$t['validators']['A']['endpoint']='http://host:9000;touch /tmp/example';},
+ static function(&$t){$t['validators']['A']['endpoint']='http://host:65536';},
  static function(&$t){$t['validators']['B']['endpoint']=$t['validators']['A']['endpoint'];},
  static function(&$t){unset($t['providers']['C']);},
  static function(&$t){$t['retired_public_keys']=[];},
