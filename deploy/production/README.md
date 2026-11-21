@@ -104,6 +104,18 @@ and the disabled publisher policy into your private configuration directory.
 Use `economics-cli.php prepare-production-genesis` only with ratified policy and
 independently provisioned public identities. It produces a candidate, not activation.
 
+The public topology template defaults to the seven-node layout: validators A/B/C
+on nodes 1/2/3 and providers A/B/C/D/E on nodes 1/2/3/6/7. Node 4 remains the
+gateway/netboot host; node 5 is edge/registry. The helper also accepts the original
+three-provider A/B/C layout, but rejects incomplete four-provider sets and unknown
+labels. Every validator/provider public key must be distinct and absent from the
+retired identity list. Validators remain exactly A/B/C in either layout.
+
+All provider bindings are returned in `provider_public_keys`; they do not add
+validators, allocate tokens, register providers or change the genesis/state hash.
+Retain that binding map with the deployment inventory. Five-provider preparation
+does not waive missing governance, recovery, endpoint or retired-identity inputs.
+
 ```sh
 python3 scripts/prepare-production-release.py /PRIVATE/release.json \
   --source FULL_COMMIT_SHA --images build/production-services/image-digests.json \
