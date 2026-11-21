@@ -19,8 +19,12 @@ SSLSessionCache shmcb:/run/greenwood-{{ item.name }}-https/sslcache(512000)
 <VirtualHost {{ item.address }}:{{ item.port }}>
     SSLEngine on
     SSLProtocol -all +TLSv1.2 +TLSv1.3
+{% if item.renewal is defined %}
+    Include /etc/greenwood/tls-managed/{{ item.name }}/active.conf
+{% else %}
     SSLCertificateFile {{ item.certificate }}
     SSLCertificateKeyFile {{ item.private_key }}
+{% endif %}
 {% if item.backend.startswith('https://') %}
     SSLProxyEngine on
     SSLProxyProtocol -all +TLSv1.2 +TLSv1.3

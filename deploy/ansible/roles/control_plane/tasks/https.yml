@@ -18,11 +18,8 @@
       - item.tls_name is match('^[A-Za-z0-9.-]+$')
       - item.backend is match('^http://127\.0\.0\.1:[0-9]+$') or (item.name == 'rpc' and item.backend is match('^https://[A-Za-z0-9.-]+:[0-9]+$'))
       - item.request_limit | int >= 0
-      - item.certificate is match('^/etc/greenwood/[A-Za-z0-9_./-]+$')
-      - item.private_key is match('^/etc/greenwood/[A-Za-z0-9_./-]+$')
       - item.ca is match('^/etc/greenwood/[A-Za-z0-9_./-]+$')
       - item.ca_sha256 is match('^[a-f0-9]{64}$')
-      - "'..' not in item.certificate and '..' not in item.private_key and '..' not in item.ca"
   loop: "{{ greenwood_https_frontends }}"
 
 - name: Install standalone Apache HTTPS prerequisite
@@ -31,13 +28,17 @@
     state: present
     policy_rc_d: 101
 
+- name: Stage operator-controlled HTTPS renewal integration
+  ansible.builtin.import_tasks: https_renewal.yml
+
 - name: Verify provisioned private TLS key and certificate pair
   ansible.builtin.command:
     argv:
       - /usr/bin/php
       - -r
       - >-
-        foreach(array_slice($argv,1,3) as $f){for($p=$f;;$p=dirname($p)){
+        $paths=array_slice($argv,1,3);if($argv[5]!=='')$paths[]=$argv[5];
+        foreach($paths as $f){for($p=$f;;$p=dirname($p)){
         if(is_link($p)||!file_exists($p)||fileowner($p)!==0||(fileperms($p)&0022)!==0)exit(1);
         if($p==='/')break;}}
         if((fileperms($argv[2])&0077)!==0)exit(2);
@@ -47,24 +48,36 @@
       - "{{ item.private_key }}"
       - "{{ item.ca }}"
       - "{{ item.ca_sha256 }}"
-  loop: "{{ greenwood_https_frontends }}"
+      - "{{ item.intermediates | default('') }}"
+  loop: "{{ greenwood_https_frontends | rejectattr('renewal', 'defined') | list }}"
   changed_when: false
   check_mode: false
   no_log: true
 
 - name: Verify TLS chain expiry and intended identity
   ansible.builtin.command:
-    argv:
-      - /usr/bin/openssl
-      - verify
-      - -CAfile
-      - "{{ item.ca }}"
-      - "{{ '-verify_ip' if item.tls_name is match('^[0-9.]+$') else '-verify_hostname' }}"
-      - "{{ item.tls_name }}"
-      - "{{ item.certificate }}"
-  loop: "{{ greenwood_https_frontends }}"
+    argv: >-
+      {{ ['/usr/bin/openssl', 'verify', '-no-CApath', '-no-CAstore', '-CAfile', item.ca,
+          '-purpose', 'sslserver']
+         + (['-untrusted', item.intermediates] if item.intermediates is defined else [])
+         + [('-verify_ip' if item.tls_name is match('^[0-9.]+$') else '-verify_hostname'),
+            item.tls_name, item.certificate] }}
+  loop: "{{ greenwood_https_frontends | rejectattr('renewal', 'defined') | list }}"
   changed_when: false
   check_mode: false
+
+- name: Verify the installed managed certificate generation
+  ansible.builtin.command:
+    argv:
+      - /usr/local/sbin/greenwood-renew-https
+      - --config
+      - "/etc/greenwood/control-plane/{{ item.name }}-renewal.json"
+      - --approve-private-key-access
+      - --check-installed
+  loop: "{{ greenwood_https_frontends | selectattr('renewal', 'defined') | list }}"
+  changed_when: false
+  check_mode: false
+  no_log: true
 
 - name: Stage HTTPS configuration without changing existing Apache sites
   ansible.builtin.template:
