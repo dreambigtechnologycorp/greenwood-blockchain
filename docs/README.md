@@ -57,6 +57,17 @@ or an implementation detail conflicts with one of them, these documents win.
 
 ### Operations and assurance
 
+- [Offline Tails CA and certificate custody](operations/TAILS_CA_AND_LETS_ENCRYPT.md)
+  ([downloadable operator PDF](operations/TAILS_CA_AND_LETS_ENCRYPT.pdf)): private
+  CA creation, internal certificate issuance and public-only handoff.
+- [Public HTTPS with Certbot and Cloudflare](operations/PUBLIC_HTTPS_CERTBOT.md):
+  online DNS validation, HTTPS certificate chains and renewal integration.
+- [RPC DNS and ingress handoff](operations/RPC_DNS_TLS_HANDOFF.md): seven-node
+  endpoints, Cloudflare routes and private-LAN resolution.
+- [Seven-node certificate inventory](operations/SEVEN_NODE_CERTIFICATE_HANDOFF.md):
+  required service identities and operator-controlled provisioning boundaries.
+
+
 - [Provider operations](provider-operations.md) and
   [compute security](compute-security-v1.md): Linux provider requirements and
   the explicit v1 security model.
