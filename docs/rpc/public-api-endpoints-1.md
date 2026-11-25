@@ -1,6 +1,6 @@
 # Chain, Block and Account Responses
 
-Checked against `src/Rpc/HttpApi.php` on October 21, 2026. Field descriptions below
+Checked against `src/Rpc/HttpApi.php` in the current checkout. Field descriptions below
 describe this checkout, not a captured live response. See [RPC v1](../rpc-v1.md)
 for route, validation and error rules.
 
@@ -8,19 +8,27 @@ for route, validation and error rules.
 
 `GET /v1/chain/status` returns:
 
-- `chain_id`, `api_version`, and configured process `role`.
+- `chain_id`, `genesis_hash`, `api_version`, and configured process `role`.
 - `height` and `finalized_height`: both are the current finalized tip height.
 - `block_hash` and `state_root`: lowercase hex.
 - `validator_count` and sorted `validator_ids`.
-- `block_time_seconds`, `supply`, and `economy`: configuration-derived fields.
+- `block_time_seconds`, `supply`, and `economy`: configuration/native-ledger views.
+  Native economic genesis reports the 60-second cadence and six-decimal base units.
 - `syncing`: currently returned as false; do not treat this constant as independent
   proof that the node has caught up with its peers.
 
 `supply` includes `hard_cap`, decimal-string `total_supply`, `account_count`,
-`emitted_rewards` and `burned_fees`. The latter two are currently zero placeholders,
-not an implemented rewards/burn accounting claim. Configuration-dependent fields
-can be null. These economic additions are present in the working checkout; they
-are not attested as deployed by this documentation change.
+`emitted_rewards`, `operator_fees_distributed`, `burned_fees`, `decimals`, `unit`
+and `categories`. With native economics, reward release and distributed fees come
+from the ledger; burn remains zero. The total includes account and contract
+balances, protected reserves and service escrow. Categories are disjoint ledger
+balances, explicitly not exchange liquidity or market circulation. `economy`
+includes policy version, reserve balances, proposal count and release height.
+
+Legacy fixtures without native economics have no categories or decimal convention,
+zero reward/fee counters, and configuration-derived economic metadata that can be
+null. Do not mix legacy units with GWD base units. These source responses are not
+attestations that a release is running; see [project status](../PROJECT_STATUS.md).
 
 ## Finality and Validators
 
@@ -28,7 +36,7 @@ are not attested as deployed by this documentation change.
 `certificate_present`, `precommit_count`, and `validator_count`. At genesis no
 certificate is loaded, the round is null and the vote count is zero.
 
-`GET /v1/chain/validators` returns a JSON array, not a `validators` wrapper.
+`GET /v1/chain/validators` returns an object with a `validators` array.
 Each entry contains `validator_id` (genesis label), `public_key` (hex),
 `voting_power` (1 for the equal-power profile), and `active: true`.
 Active here is membership, not a live heartbeat.

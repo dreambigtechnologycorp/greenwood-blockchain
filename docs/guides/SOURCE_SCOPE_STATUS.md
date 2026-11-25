@@ -1,5 +1,10 @@
 # Source scope status — November 16, 2026
 
+> Historical November 16 source-validation snapshot. Preserve these test counts
+> and source-scope limits as evidence of that run; they do not qualify the current
+> working tree, release or physical installation. See [project status](../PROJECT_STATUS.md)
+> and [self-managed updates](SELF_MANAGED_UPDATE.md) for the current review path.
+
 This maps the local implementation to the original
 [WP0–WP10 plan](../economics/proposals/GREENWOOD_CODEX_IMPLEMENTATION_PLAN_2026-11-14.md).
 The plan defines a development milestone separately from production qualification.

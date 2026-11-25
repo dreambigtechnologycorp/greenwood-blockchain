@@ -1,24 +1,38 @@
 # Provider Operations
 
+This guide describes the provider role, which can run on a separate eligible
+host or share a machine with other configured roles. It does not grant validator
+membership or establish that a new provider is qualified for work. Use the trusted
+network genesis, finalized capability/eligibility rules and explicit host resource
+limits. Current rollout evidence is in [project status](PROJECT_STATUS.md).
+
 ## Compute and Hosted Applications
 
 The compute-job lifecycle below is distinct from hosted application execution.
 `bin/greenwood-provider` also wires `ProviderApplicationAdapter` into the private
-operator API for reserve/start/inspect operations. Optional `--application-listen`
-requires `--application-peer`, `--operator-socket` and its protected token. This is
+operator API for reserve/start/inspect/stop operations. Optional `--application-listen`
+requires `--application-peer`, `--operator-socket` and its protected token. This
+optional HTTP bridge accepts only an explicit RFC1918 IPv4 listen address and
+port, and the actual socket peer must match the configured private IPv4 address.
+It is not a general public provider API. This is
 infrastructure access, not the developer controller endpoint.
 `--application-network-policy` requires the operator socket and supplies protected
 network/port allocation policy. Enabled controller writes require
 `unix:///run/greenwood-provider/operator.sock`.
 
 Reservation persists intended runtime/network identity before start. The controller
-obtains matching receiver ACKs and edge admission before one start;
+obtains matching ACKs from every receiver in the protected topology and edge
+admission before one start;
 `START_UNCERTAIN` is reconciled by inspection, never a blind retry. Application
 assignment `generation` is the canonical document SHA-256; `version` is its
 increasing integer. These differ from compute attempt generations below.
 
-Use the [physical handoff](../deploy/ansible/CONTROL_PLANE_HANDOFF.md) for new
-installation. Runtime versions, checksums, matching containerd configuration and
+Use [operator onboarding](operations/ROLE_BASED_ONBOARDING.md) to select roles
+and the [control-plane handoff](../deploy/ansible/CONTROL_PLANE_HANDOFF.md) for
+the supported installation profiles. The current hosted controller requires a
+colocated provider Unix socket and one of its explicit receiver-role profiles;
+an arbitrary remote-controller topology is not implemented by changing example
+hostnames. See [controller configuration](../system-services/deployment-controller/README.md). Runtime versions, checksums, matching containerd configuration and
 an exact EROFS package version are mandatory inventory inputs. Restart commands
 below are maintenance procedures, not permission to change the live deployment.
 
@@ -86,10 +100,14 @@ or local databases; provision and monitor their host storage separately.
 
 ```sh
 sudo php bin/greenwood-provider --config=/etc/greenwood/provider.json \
-  --operator-socket=/run/greenwood/operator.sock \
-  --operator-token-file=/etc/greenwood/operator.token
+  --operator-socket=/run/greenwood-provider/operator.sock \
+  --operator-token-file=/etc/greenwood/provider-operator.token
 sudo php bin/greenwood-provider --config=/etc/greenwood/provider.json --status
 ```
+
+Paths above are examples for the provider role; configure the PHP RPC client
+with `--operator=unix:///run/greenwood-provider/operator.sock` and its actual
+`--token-file=PATH` rather than relying on the node-client default socket.
 
 The operator socket (see [operator API](operator-api.md)) exposes local
 status/jobs/runtime diagnostics and canonical drain/resume/capability
@@ -158,6 +176,13 @@ provider-attested cgroup CPU milliseconds and peak-memory bytes; duration uses
 monotonic elapsed milliseconds. Missing post-start accounting prevents receipt
 construction. Zero CPU/memory is reserved for a pre-task launch failure.
 
+The current source applies SQLite `journal_mode=DELETE` and
+`synchronous=EXTRA` to these durable journals. A previous WAL database requires
+explicit stopped-service migration; do not remove `-wal`/`-shm` files or recreate
+a database to bypass the check. Follow [state storage](../deploy/ansible/STATE_STORAGE.md)
+for persistent path/mount validation and continuation. Released artifact pins must
+be rebuilt from reviewed source before relying on this behavior.
+
 ## Troubleshooting
 
 Previously confirmed running hosted applications can be restored after task loss
@@ -171,7 +196,7 @@ automatically replayed.
 | TLS verification failure | Configured CA, certificate chain, expiry and endpoint SAN | Fix trust/endpoint configuration; never disable verification |
 | Authenticated controller 403 | Signature audience/time, finalized authority, policy freshness and server dependency diagnostics | Reconcile the failed check; 403 is not proof the key is wrong |
 | Global controller /ready returns 503 | Signed operation status and capabilities | Global readiness is hardcoded 503; do not infer operation failure from it |
-| RESERVED operation | Exact allocation generation, both receiver ACKs, admission and scoped pull credential | Complete prerequisites and resume the same operation |
+| RESERVED operation | Exact allocation generation, all configured receiver ACKs, admission and scoped pull credential | Complete prerequisites and resume the same operation |
 | START_UNCERTAIN | Persisted start intent and provider task/container/network identity | Inspect and reconcile; never issue a replacement start blindly |
 | Expired policy | Publisher timer, signed snapshot expiry, SFTP host-key pin, consumer installer | Restore authorized renewal/distribution; preserve rollback ledgers |
 | Socket/EROFS readiness failure | Persistent socket GID, runtime plugins, kernel support and version-matched config | Correct prerequisites in a maintenance window; no snapshotter fallback |
@@ -191,7 +216,9 @@ sudo php vendor/bin/phpunit --do-not-cache-result --bootstrap vendor/autoload.ph
 sudo env GREENWOOD_WASMTIME_LIB=/path/to/libwasmtime.so php -d ffi.enable=true vendor/bin/phpunit --do-not-cache-result --bootstrap vendor/autoload.php tests
 ```
 
-Physical acceptance scripts and results are local-only under `docs/acceptance/`.
+A passing source suite is not physical host qualification. Use the
+[testing guide](testing/overview.md) for required dependencies and release checks;
+private acceptance evidence is not part of this public checkout.
 Test-only checkpoint callbacks are supplied by regression test entrypoints;
 the production CLI supplies none.
 

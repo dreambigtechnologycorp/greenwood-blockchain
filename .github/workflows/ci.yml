@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - '**'
+      - main
   pull_request:
     branches:
       - main
@@ -37,6 +37,7 @@ jobs:
           python3 tests/Fixtures/verify_provider_content_vectors.py
 
   php-unit:
+    # Keep the existing required-check name while expanding its coverage.
     name: PHP unit checks
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -48,7 +49,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
-          php-version: '8.5.12'
+          php-version: '8.5.13'
           extensions: sodium, pdo_sqlite, ffi, curl, pcntl, posix
           ini-values: ffi.enable=true
           coverage: none
@@ -57,5 +58,27 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
       - name: Validate package metadata
         run: composer validate --no-check-publish
-      - name: Run existing unit tests
-        run: php -d ffi.enable=true vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Unit
+      - name: Install verified Wasmtime test library and headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/wasmtime-v48.0.1-x86_64-linux-c-api.tar.xz"
+          curl --fail --location --retry 3 \
+            https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.1/wasmtime-v48.0.1-x86_64-linux-c-api.tar.xz \
+            --output "$archive"
+          printf '%s  %s\n' \
+            67683d04b416a8b91f0e607e7b4c22bd32f18f947c10b5372eb8c277ae3b883a \
+            "$archive" | sha256sum --strict --check -
+          tar -xJf "$archive" -C "$RUNNER_TEMP"
+          wasmtime="$RUNNER_TEMP/wasmtime-v48.0.1-x86_64-linux-c-api"
+          test -s "$wasmtime/lib/libwasmtime.so"
+          install -d runtime/wasmtime/include
+          cp "$wasmtime/include/wasmtime/"*.h runtime/wasmtime/include/
+          printf 'GREENWOOD_WASMTIME_LIB=%s\n' "$wasmtime/lib/libwasmtime.so" >> "$GITHUB_ENV"
+      - name: Verify contract runtime loads
+        run: |
+          php --version
+          php -d ffi.enable=true -r 'require "vendor/autoload.php"; new Greenwood\Contracts\WasmtimeEngine();'
+      - name: Run complete source and contract suites
+        # The native suite requires a separately qualified containerd host.
+        run: php -d ffi.enable=true vendor/bin/phpunit --bootstrap vendor/autoload.php --testsuite source,contracts

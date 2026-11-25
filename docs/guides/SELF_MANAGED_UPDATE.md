@@ -1,8 +1,11 @@
 # Review, test and update Greenwood yourself
 
-These instructions prepare source and release artifacts. They do not authorize a
-production reset. The existing four machines are the eventual destination; there
-is no testnet-state migration or requirement for another physical cluster.
+These instructions prepare source and release artifacts for your selected service
+roles or network. They do not authorize a production reset. Start with
+[role-based onboarding](../operations/ROLE_BASED_ONBOARDING.md) to distinguish
+participation in an existing chain from a new network. [Project status](../PROJECT_STATUS.md)
+records unreleased source changes separately from the reference deployment.
+Review and qualify those changes before treating any earlier artifact as current.
 
 ## Review your local changes
 
@@ -98,16 +101,22 @@ runtime inputs, OCI digests, test report and artifact hashes together.
 
 ## Configure and install when authorized
 
-Use the existing [production implementation guide](../economics/PRODUCTION_IMPLEMENTATION_2026-11-15.md), the policy/topology templates under `docs/economics`, and
+For a new network, use [release preparation](../operations/PRODUCTION_REBUILD.md),
+the policy/topology templates under `docs/economics`, and
 `php scripts/economics-cli.php --help` for the available candidate-generation
 commands. Candidate generation does not create approved signing authorities.
-Keep unresolved policy fields unresolved until formally decided, including the
-explicit recovery choice. Never substitute test fixture keys.
+For the reference network, selected decisions are recorded in the
+[November 18 adoption](../economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md).
+Other networks need their own approved values. An existing-chain participant
+retains that network's trusted genesis/policy rather than creating a replacement.
+Reuse existing authorized identities; never substitute test fixture keys.
 
 Follow the [physical handoff](../../deploy/ansible/CONTROL_PLANE_HANDOFF.md).
-Fresh preflight, tested recovery access, ratified policy and explicit authorization
-for the exact destructive installation remain required. Do not run installation
-commands merely because a source verification report passed.
+Exact-target preflight, recovery readiness, approved public inputs and the chosen
+installation/maintenance scope remain required. A fresh installer is only for
+uninitialized targets. For a staged installation use its bounded continuation;
+for maintenance use the runtime upgrade path. Do not run installation commands
+merely because a source verification report passed.
 
 ## Metering and ongoing use
 
@@ -124,8 +133,9 @@ permission to downgrade independent verification. Keep unsupported payable meter
 disabled until their actual source, governance profile and hardware acceptance
 are qualified.
 
-The latest local test evidence and its limits are recorded in
-[source validation](SOURCE_VALIDATION.md).
+Current validation scope is recorded in [project status](../PROJECT_STATUS.md).
+The [November 16 source validation](SOURCE_VALIDATION.md) is retained historical
+evidence, not qualification of later local changes.
 
 For actual source composition and storage I/O, see
 [adapter integration](SOURCE_ADAPTER_INTEGRATION.md).

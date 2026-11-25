@@ -1,5 +1,11 @@
 # Operator-only production key boundary
 
+This boundary applies to every operator, independently of machine count or
+network topology. Use [role-based onboarding](../../docs/operations/ROLE_BASED_ONBOARDING.md)
+for service prerequisites and [project status](../../docs/PROJECT_STATUS.md) for
+reference-installation progress. Its credentials are already operator-provisioned;
+retain and validate them rather than generating replacement identities.
+
 The operator generates and provisions every production secret personally. AI may
 prepare source, unsigned artifacts, public configuration and public-key validation.
 It must stop before generating, reading, copying, signing with, or backing up a
@@ -33,9 +39,11 @@ AI must not run this generator against production identities.
 
 ## Human handoff
 
-1. Finish source/artifact verification and approve governance before generating
-   production identities. Keep permanent activation disabled and payable profiles
-   empty until their evidence and authority are approved.
+1. Identify existing authorized identities and custody records first. Generate
+   only missing identities for a new role/network or an explicitly approved
+   replacement; an interrupted install is not a reason to rotate keys. Finish
+   relevant public configuration/artifact review and keep activation within its
+   separately approved scope.
 2. End AI access to the key-generation environment. Use a trusted operator terminal,
    restrictive `umask 077`, and a protected directory outside the repository,
    shared build directories, chat attachments and shell transcript capture.
@@ -55,11 +63,14 @@ Do not run `system-service-publish-sign.php` in an AI-controlled session. Do not
 use blanket `ansible --check` as proof of no secret reads. Do not grant ordinary
 application publishing permissions to network-system-service publishers.
 
-## Current activation blockers
+## Review before activation
 
-Node-6's physical Ethernet path and runtime qualification remain outstanding.
-Recovery access is deferred, not verified. Final seven-node physical acceptance,
-registry endpoint/TLS verification, and production governance approvals remain
-required. Allocation ratification, budgets, fees/bootstrap funding, related-party
-controls, signer custody and lost-quorum recovery are not supplied by this guide.
-No production key generation or genesis activation is authorized by preparing it.
+Verify the selected chain/policy and exact release, endpoint trust, service consent,
+custody/recovery evidence and actual physical acceptance. Use the selected
+network's recorded approvals: the reference operator's
+[November 18 adoption](../../docs/economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md)
+is evidence of policy selection, not private-key verification or activation.
+Historical node/link/runtime findings must not be treated as current blockers;
+consult [project status](../../docs/PROJECT_STATUS.md) for the reference installation.
+No production key generation, signing or activation is authorized merely by
+preparing documentation.

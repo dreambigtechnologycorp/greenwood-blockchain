@@ -4,9 +4,13 @@ This guide creates a disposable local network with the checked-in command-line
 tools. It is deliberately explicit: consensus finality requires three separate
 validator processes, not one process configured to impersonate a network.
 
+This fixture creates a new development chain. To join the existing network, use
+[role-based onboarding](../operations/ROLE_BASED_ONBOARDING.md) instead. It is not a
+production genesis template.
+
 ## Prerequisites
 
-- PHP 8.5 with sodium and PDO SQLite enabled.
+- PHP 8.5 with Sodium, PDO SQLite and FFI enabled; see [developer setup](development.md).
 - Composer dependencies installed with `composer install`.
 - Four available local TCP ports, starting at the base port you choose.
 
@@ -19,6 +23,7 @@ From the repository root:
 
 ```bash
 composer install
+umask 077
 php bin/greenwood-cli genesis ./local-genesis 9201
 ```
 
@@ -69,9 +74,9 @@ by `greenwood tx submit`:
 # Nonce 0 applies only to A's first transfer on this disposable genesis.
 php bin/greenwood-cli transfer-sign \
   ./local-genesis/genesis.json ./local-genesis/keys/A.key \
-  RECIPIENT_HEX 1 0 > transfer.json
+  RECIPIENT_HEX 1 0 > ./local-genesis/transfer.json
 
-php bin/greenwood tx submit transfer.json --rpc=http://127.0.0.1:9201
+php bin/greenwood tx submit ./local-genesis/transfer.json --rpc=http://127.0.0.1:9201
 ```
 
 Admission is not finality. Use the returned transaction hash with

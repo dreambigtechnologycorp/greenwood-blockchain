@@ -1,10 +1,15 @@
 # Four- and seven-node deployment guide
 
+Begin with [project status](../PROJECT_STATUS.md) and [operator onboarding](README.md).
+The current installation already has operator-provisioned credentials and staged
+identity/runtime files. Select the bounded storage/deployment continuation; do
+not rerun the netboot, identity-generation or fresh-initialization examples below.
+
 This is source tooling for the existing Pis. It does not require the future PowerEdge, a datacenter move or another qualification cluster. It does not authorize destructive installation or supply production governance approvals.
 
 The [November 17 infrastructure checkpoint](SEVEN_NODE_PREFLIGHT_2026-11-17.md)
-records the completed seven-host identity and netboot checks, unused reformatted
-SD cards, actual runtime gaps, permission repairs and remaining activation gates.
+records the then-completed identity/netboot checks and then-unused reformatted
+SD cards, runtime gaps and permission repairs. It is historical infrastructure evidence.
 The profile placement below is the intended production layout, not a claim that
 registry, edge or provider services have already moved to the new hosts.
 
@@ -17,16 +22,26 @@ The versioned `deploy/topology/profiles.json` is shared by Terraform, inventory 
 | Validators A/B/C | nodes 1–3 | nodes 1–3, unchanged |
 | Providers | A/B/C on nodes 1–3 | retain A/B/C; add D/E on nodes 6–7 |
 | Source/build controller | node-1 | node-1 |
-| Application deployment controller | node-1 with its local provider | node-1 with its local provider |
+| Application deployment controller | node-1 with its local provider | nodes 1, 6 and 7, each with its local provider |
 | Registry and registry authentication | node-1 | node-5 |
 | Application edge / registration frontend placement | node-4 | node-5 |
 | New customer application hosts | node-1 | nodes 6–7 |
-| LAN/network boot/NFS | node-4 | node-4, preserved |
+| LAN/network boot/NFS, Cloudflare | node-4 | node-4, preserved; SSD also backs exclusive validator iSCSI volumes |
 | Governed meter hosts | selected providers | selected providers, plus node-5 for coordinator/approved supporting classes |
 
-The runtime deployment controller currently uses an authenticated local provider connection. It deliberately stays on node-1. Do not move it to node-5 by deleting a systemd dependency or exposing the operator socket. The registry/edge/coordinator moves already offload useful work. Existing providers are not silently retired, and no new validator or independent attestor is created.
+Each application controller uses its colocated provider's authenticated local
+operator socket. The selected composition retains node-1 and adds controllers
+on nodes 6–7; node-1 remains the sole Ansible artifact build controller. Do not
+place an application controller on provider-free node-5 by removing its dependency
+or exposing the socket remotely. All seven nodes remain under DreamBIG ownership;
+additional controllers/providers do not create independent operators or attestors.
 
-Node-5 can initially netboot if that is the available setup. This retains the known node-4 failure dependency. Local boot/storage is an optional future improvement, not a fabricated prerequisite. Define realistic capacity reservations and outage/recovery expectations for the hardware available.
+The six runtime hosts retain NFS boot, with the shared node-4 failure dependency.
+Writable Greenwood and containerd state requires the approved durable-storage
+placement in [STATE_STORAGE.md](../../deploy/ansible/STATE_STORAGE.md): exclusive
+iSCSI-backed ext4 for nodes 1–3 and reviewed SD ext4 on nodes 5–7. Keeping NFS
+boot does not permit live SQLite state directly on NFS. Storage completion and
+recovery acceptance must be recorded separately from this intended placement.
 
 ## 1. Fill private inputs; do not deploy the example
 
@@ -44,7 +59,13 @@ Supply the existing protected configuration inputs described in `deploy/ansible/
 - Explicit per-host control-plane configs, files, policy renewal/pull transport, endpoint certificates, receiver/provider identities and edge-address/network policies.
 - Registry/auth offline archives, immutable references and supervisor definitions **only on `registry_hosts`**. Supply root-only containerd socket configuration for an infrastructure-only host; do not unnecessarily grant the worker group access there.
 
-The private inventory must exactly match its chosen profile groups. The seven-node example's node-1 control services are controller/observer/receiver; node-5 edge/receiver; remaining providers observer/receiver. Registry seed definitions are separate. TLS frontends, RPC forwarding and public tunnel routes require their actual reviewed configuration, not guessed endpoints.
+The private inventory must exactly match its chosen profile groups. The public
+seven-node example supplies controller/observer/receiver on node-1, edge/receiver
+on node-5 and observer/receiver on the other providers. It is a minimal template:
+the selected composition additionally requires controller service/configuration
+and separate internal/public TLS inputs on nodes 6–7. Registry seed definitions
+are separate. TLS frontends, RPC forwarding and public tunnel routes require
+their actual reviewed configuration, not guessed endpoints.
 
 Terraform consumers can set `topology_profile = "seven"`, supply all seven distinct addresses, and render the generated membership:
 
@@ -86,9 +107,15 @@ Required inputs: `greenwood_netboot_activation_approved`, confirmed recovery acc
 
 Boot one client at a time. Capture its newly generated identity/fingerprint and verify SSH, sudo, root mount, CPU/RAM, cooling and container-runtime storage before adding it to installation inputs. Initial image creation is not workload qualification or production activation.
 
-## 3. Preflight and fresh install
+## 3. Preflight, fresh installation and continuation
 
-Run the role-aware read-only production preflight with verified identities and recovery evidence. New profile membership does not waive SSH trust or recovery checks.
+Run the role-aware production preflight with verified identities and recovery
+evidence. Credential-bearing preflight and live commands are operator-only;
+read-only/check mode is not permission for private-key inspection. New profile
+membership does not waive SSH trust or recovery checks. For the current staged
+installation, use the [bounded continuation](../../deploy/ansible/FRESH_CLUSTER.md#continue-after-runtime-and-identity-staging)
+after durable storage, offline SQLite conversion and rebuilt-runtime verification.
+The commands below describe an uninitialized installation only.
 
 ```sh
 ansible-playbook -i /private/production.yml deploy/ansible/playbooks/production_preflight.yml
@@ -124,7 +151,11 @@ This only accepts production `verified_snapshot` or `pinned_node` modes, refuses
 
 `release_runtime.yml` now preflights the artifact for validators, providers, control-plane and system-runtime hosts before stopping consumers. It discovers installed active consumers and restores only those previously active. This is a maintenance rollout, not a claim of zero-downtime consensus upgrades. Keep the artifact/rollback and availability procedure reviewed.
 
-The tooling does not supply unresolved governance ratification, treasury spending authority, production keys, final service consents, private TLS configuration, new hardware identities or installation authorization. These remain operator inputs. Source preparation does not require the future PowerEdge or independent operators for approved Epoch 0 services, and it never converts operator telemetry into independent subsidy evidence.
+The tooling does not supply treasury spending authority, final service consents,
+private TLS configuration, new hardware identities or installation authorization.
+Use the [selected policy adoption](../economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md)
+and existing operator-provisioned identities; verify their exact bindings and
+remaining evidence rather than describing all policy terms as unratified. Source preparation does not require the future PowerEdge or independent operators for approved Epoch 0 services, and it never converts operator telemetry into independent subsidy evidence.
 
 Runtime package preparation and guarded installation are documented in [Runtime prerequisites](RUNTIME_PREREQUISITES.md). Run its complete-host audit before selecting idle hosts for installation.
 

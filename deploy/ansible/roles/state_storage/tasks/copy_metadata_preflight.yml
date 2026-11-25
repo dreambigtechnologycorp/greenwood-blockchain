@@ -1,0 +1,41 @@
+---
+- name: Check public identity and canonical state-root metadata before provisioning
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - -c
+      - |
+        import sys, types
+        sources = {
+            'storage_plan': {{ lookup('file', role_path ~ '/../../files/storage_plan.py') | to_json }},
+            'prepare_state_storage': {{ lookup('file', role_path ~ '/../../files/prepare_state_storage.py') | to_json }},
+            'prepare_durable_state': {{ lookup('file', role_path ~ '/../../files/prepare_durable_state.py') | to_json }},
+            'validate_state_copy_preflight': {{ lookup('file', role_path ~ '/../../files/validate_state_copy_preflight.py') | to_json }}
+        }
+        for name, code in sources.items():
+            module = types.ModuleType(name)
+            sys.modules[name] = module
+            exec(code, module.__dict__)
+        sys.modules['validate_state_copy_preflight'].main()
+      - --plan-json
+      - "{{ greenwood_checked_storage_plan | to_json }}"
+      - --approved-sha256
+      - "{{ greenwood_storage_plan_sha256 }}"
+      - --node
+      - "{{ inventory_hostname }}"
+      - --action
+      - source-metadata
+  changed_when: false
+  check_mode: false
+  register: greenwood_copy_metadata_probe
+  failed_when: false
+  no_log: true
+  when: inventory_hostname != 'node-4'
+
+- name: Require safe copy-root metadata with a bounded diagnostic
+  ansible.builtin.assert:
+    that: greenwood_copy_metadata_probe.rc == 0
+    fail_msg: >-
+      {{ (greenwood_copy_metadata_probe.stderr if greenwood_copy_metadata_probe.stderr is match('^STORAGE STOP: ')
+          else 'Copy metadata probe failed before a bounded result; inspect public path metadata')[:1024] }}
+  when: inventory_hostname != 'node-4'

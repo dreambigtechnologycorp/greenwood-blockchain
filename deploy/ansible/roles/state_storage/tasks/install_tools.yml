@@ -1,0 +1,59 @@
+---
+- name: Require every exact target to have passed this same public plan
+  ansible.builtin.assert:
+    that:
+      - hostvars[item].greenwood_storage_checked_sha256 | default('') == greenwood_storage_plan_sha256
+  loop: "{{ groups['all'] }}"
+
+- name: Preserve a protected storage configuration directory
+  ansible.builtin.file:
+    path: /etc/greenwood-storage
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Install bounded operator storage helpers
+  ansible.builtin.copy:
+    src: "{{ role_path }}/../../files/{{ item }}"
+    dest: "/etc/greenwood-storage/{{ item }}"
+    owner: root
+    group: root
+    mode: '0700'
+    force: false
+  loop: &state_helpers [storage_plan.py, prepare_state_storage.py, prepare_durable_state.py, migrate_sqlite_rollback.py]
+
+- name: Verify installed helper identities before executing privileged storage work
+  ansible.builtin.stat:
+    path: "/etc/greenwood-storage/{{ item }}"
+    checksum_algorithm: sha256
+  loop: *state_helpers
+  register: state_helper_stats
+
+- name: Reject helper drift instead of executing an older or replaced program
+  ansible.builtin.assert:
+    that:
+      - not item.stat.islnk
+      - item.stat.uid == 0
+      - item.stat.mode == '0700'
+      - item.stat.checksum == (lookup('file', role_path ~ '/../../files/' ~ item.item, rstrip=false) | hash('sha256'))
+  loop: "{{ state_helper_stats.results }}"
+
+- name: Preserve the exact approved public plan
+  ansible.builtin.copy:
+    content: "{{ greenwood_storage_plan | to_nice_json }}\n"
+    dest: /etc/greenwood-storage/plan.json
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+
+- name: Verify installed public plan instead of replacing an earlier plan
+  ansible.builtin.slurp:
+    src: /etc/greenwood-storage/plan.json
+  register: state_installed_plan
+
+- name: Reject installed plan drift
+  ansible.builtin.assert:
+    that:
+      - state_installed_plan.content | b64decode | from_json == greenwood_storage_plan

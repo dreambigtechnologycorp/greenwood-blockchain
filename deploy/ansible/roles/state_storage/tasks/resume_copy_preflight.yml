@@ -1,0 +1,77 @@
+---
+- name: Require the exact mounted-client continuation and full reviewed scope
+  ansible.builtin.assert:
+    that:
+      - greenwood_storage_operation in ['check', 'apply']
+      - greenwood_storage_resume_mounted_client == 'node-1'
+      - greenwood_storage_resume_prepared_target is sameas false
+      - greenwood_storage_preparation_approved | bool
+      - greenwood_recovery_access_confirmed | default(false) | bool
+      - greenwood_topology_profile == 'seven'
+      - ansible_play_hosts_all | sort == groups['all'] | sort
+      - greenwood_storage_operation != 'apply' or greenwood_operator_secret_access_authorized | bool
+      - greenwood_storage_operation != 'apply' or not ansible_check_mode
+    fail_msg: Continuation requires all seven nodes, unchanged approved storage, running targets and only Node 1 mounted before copying
+
+- name: Validate the exact unchanged public storage plan
+  ansible.builtin.set_fact:
+    greenwood_checked_storage_plan: "{{ greenwood_storage_plan | greenwood_state_plan(greenwood_storage_plan_sha256) }}"
+
+- name: Require retained approval for the existing SD media
+  ansible.builtin.assert:
+    that: greenwood_checked_storage_plan.clients[item].empty_media_approved is sameas true
+  loop: [node-5, node-6, node-7]
+
+- ansible.builtin.import_tasks: "{{ playbook_dir }}/../tasks/topology_preflight.yml"
+
+- name: Bind continuation to the approved physical machine inventory
+  ansible.builtin.assert:
+    that:
+      - (greenwood_checked_storage_plan.target.machine_id if inventory_hostname == 'node-4' else greenwood_checked_storage_plan.clients[inventory_hostname].machine_id) == greenwood_expected_machine_id
+
+- ansible.builtin.import_tasks: copy_metadata_preflight.yml
+
+- name: Inspect running targets mounted Node 1 and untouched remaining clients
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - -c
+      - |
+        import sys, types
+        sources = {
+            'storage_plan': {{ lookup('file', role_path ~ '/../../files/storage_plan.py') | to_json }},
+            'prepare_state_storage': {{ lookup('file', role_path ~ '/../../files/prepare_state_storage.py') | to_json }},
+            'prepare_durable_state': {{ lookup('file', role_path ~ '/../../files/prepare_durable_state.py') | to_json }},
+            'validate_prepared_storage_target': {{ lookup('file', role_path ~ '/../../files/validate_prepared_storage_target.py') | to_json }},
+            'validate_active_storage_target': {{ lookup('file', role_path ~ '/../../files/validate_active_storage_target.py') | to_json }},
+            'validate_state_copy_preflight': {{ lookup('file', role_path ~ '/../../files/validate_state_copy_preflight.py') | to_json }}
+        }
+        for name, code in sources.items():
+            module = types.ModuleType(name)
+            sys.modules[name] = module
+            exec(code, module.__dict__)
+        sys.modules[{{ ('validate_active_storage_target' if inventory_hostname == 'node-4' else 'validate_state_copy_preflight' if inventory_hostname == 'node-1' else 'prepare_state_storage') | to_json }}].main()
+      - --plan-json
+      - "{{ greenwood_checked_storage_plan | to_json }}"
+      - --approved-sha256
+      - "{{ greenwood_storage_plan_sha256 }}"
+      - --node
+      - "{{ inventory_hostname }}"
+      - --action
+      - "{{ 'mounted-client' if inventory_hostname == 'node-1' else 'check' }}"
+  changed_when: false
+  check_mode: false
+  register: greenwood_storage_resume_probe
+  failed_when: false
+  no_log: true
+
+- name: Require the exact interrupted phase with a bounded diagnostic
+  ansible.builtin.assert:
+    that: greenwood_storage_resume_probe.rc == 0
+    fail_msg: >-
+      {{ (greenwood_storage_resume_probe.stderr if greenwood_storage_resume_probe.stderr is match('^STORAGE STOP: ')
+          else 'Storage continuation probe failed before a bounded result; preserve the current phase')[:1024] }}
+
+- name: Record the all-node storage preparation check
+  ansible.builtin.set_fact:
+    greenwood_storage_checked_sha256: "{{ greenwood_storage_plan_sha256 }}"

@@ -33,7 +33,7 @@ final class ExecutionRegistry
 
         $this->pdo = new PDO('sqlite:' . $dbPath);
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->pdo->exec('PRAGMA journal_mode=WAL');
+        \Greenwood\Persistence\SqliteDurability::configure($this->pdo);
 
         $this->createTable();
     }

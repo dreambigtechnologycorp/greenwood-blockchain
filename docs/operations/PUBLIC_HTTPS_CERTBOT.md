@@ -1,5 +1,11 @@
 # Public HTTPS with Let’s Encrypt, Certbot and Cloudflare
 
+This runbook uses the seven-node reference deployment's DNS names as examples.
+Use the names and trust roots approved for your [service roles](ROLE_BASED_ONBOARDING.md).
+Reuse already-provisioned matching certificate lineages; issuing replacements
+is not required to continue an interrupted installation. [Project status](../PROJECT_STATUS.md)
+records the reference deployment separately from these certificate procedures.
+
 Network and deployment runbook · 21 November 2026
 
 This document covers online certificate acquisition, DNS validation, trust-chain

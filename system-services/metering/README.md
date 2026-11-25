@@ -5,8 +5,15 @@ stdin pipe. Operations are `begin`, `checkpoint`, `finish`, and `bundle`; each i
 bound to a commitment, and sampling operations contain a `sample` from the existing
 `CgroupAccounting::observe()`. No remote API, containerd socket, private keys, shell
 commands, or arbitrary host file reads are exposed. Failures return UNVERIFIED,
-never synthetic zero usage. Closed segments survive restarts in SQLite FULL/WAL.
+never synthetic zero usage. In the working checkout, closed segments use the
+shared SQLite rollback-journal policy (`DELETE`/`EXTRA`). Existing WAL databases
+require [stopped-service migration](../../deploy/ansible/STATE_STORAGE.md).
 Use `SignedObservation` outside this process to sign explicitly nonpayable provenance.
+
+The private Unix-socket interface is
+`php system-services/metering/meter.php /absolute/private/journal --unix`; the
+socket is `meter.sock` with mode 0600 and exclusive journal ownership. These are
+operator-local entrypoints, not public network services.
 
 The OCI recipe installs no dependencies. Its build argument must be an independently
 reviewed digest-pinned image with PHP, Sodium, PDO SQLite and POSIX already installed.
@@ -15,8 +22,9 @@ Production uses the explicitly consented private persistent journal mount and Un
 socket transport. The existing provider collector reads host cgroups; the governed
 meter receives no containerd socket or arbitrary host filesystem access. Governed
 installation, staging, rollback and audit source exists; actual OCI lifecycle
-acceptance remains pending on the authorized four-node production destination.
-See `../runtime/RESOURCE_WORKFLOWS.md` for reproducible source packaging and the
+acceptance is separate from source implementation on each approved destination.
+See [project status](../../docs/PROJECT_STATUS.md) for current evidence and
+[resource workflows](../runtime/RESOURCE_WORKFLOWS.md) for source packaging and the
 separate attestor/coordinator services.
 
 CPU and raw block counters remain provider-origin observations. Memory peaks are

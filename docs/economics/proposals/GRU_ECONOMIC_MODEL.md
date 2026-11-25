@@ -1,5 +1,9 @@
 # Greenwood Resource Unit (GRU) — How It Fits Into the Economic Model
 
+> **Historical scope — reviewed November 24, 2026.** Old allocation, resource prices and 1 GWD/GRU reference are historical proposals; no stable GWD price, redemption promise or universal provider quote follows from them.
+> Read the [economics index](../README.md) for current source and policy precedence,
+> and [project status](../../PROJECT_STATUS.md) for release/installation and qualification.
+
 **GRU is the missing link between Greenwood's blockchain economy and its physical infrastructure economy.**
 
 We already established the distinction in our September 28 design discussions:

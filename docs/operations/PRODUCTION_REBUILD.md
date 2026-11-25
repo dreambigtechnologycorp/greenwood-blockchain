@@ -1,146 +1,112 @@
-# Fresh production release and profile-based replacement
+# Prepare and deploy a reviewed network release
 
-See the [November 17 seven-node checkpoint](SEVEN_NODE_PREFLIGHT_2026-11-17.md) for current infrastructure evidence. The [November 15 preparation findings](PRODUCTION_PREPARATION_2026-11-15.md) retain historical four-node evidence and public genesis-candidate tooling.
+This procedure is for release maintainers and operators creating or replacing a
+network installation. To run services on an existing network, start with
+[role-based onboarding](ROLE_BASED_ONBOARDING.md); joining does not require a new
+genesis, treasury policy or another operator's machine layout. Use
+[project status](../PROJECT_STATUS.md) for the source/release boundary and the
+separately recorded reference deployment's progress.
 
-The November 14, 2026 user direction supersedes the earlier disposable-cluster
-requirement. The destination is the existing physical cluster, now expanded to seven nodes. Its
-testnet genesis, validator/provider identities, blocks and ledger are not migrated.
-No additional host or independent operator is a prerequisite for software completion
-or explicitly approved Epoch 0 customer-funded service activation.
+## Select the operation before building
 
-The implemented four/seven-node tooling is described in [the installation guide](SEVEN_NODE_INSTALLATION.md). All seven host identities and the six client NFS roots have now been verified. Production service placement, runtime reconciliation, recovery qualification and cutover authorization remain separate gates. The [earlier cluster assessment](NODE4_AND_SEVEN_NODE_ASSESSMENT_2026-11-16.md) documents the shared node-4 dependency.
+| Situation | Path |
+| --- | --- |
+| Join an existing chain as a provider or non-signing node | Reuse its trusted public chain inputs; follow the role guide and network participation rules |
+| Initialize a genuinely new supported reference installation | [Fresh cluster](../../deploy/ansible/FRESH_CLUSTER.md), with complete approved chain, role, artifact and custody inputs |
+| Continue after runtime and identity staging, before validator initialization | [Bounded continuation](../../deploy/ansible/FRESH_CLUSTER.md#continue-after-runtime-and-identity-staging); preserve installed genesis, keys and all state |
+| Continue a storage migration | Select the exact receipt/observed-state phase in [state storage](../../deploy/ansible/STATE_STORAGE.md); the provided plan is reference-specific |
+| Replace runtime code in an existing installation | Reviewed immutable release plus `release_runtime.yml`; no fresh-genesis or identity reset |
+
+The existing reference deployment's obsolete testnet removal is recorded in
+[the November 17 snapshot](TESTNET_REMOVAL_2026-11-17.md). It is completed history,
+not a standing instruction to erase state. Any different destructive replacement
+needs its own exact-target authorization and recovery procedure.
 
 ## Ordered release gates
 
-1. Finish source integration, system-service packaging and production tooling.
-   Run applicable regressions and review security, correctness and reproducibility.
-   Record unavailable physical checks separately; never report them as passes.
-2. Commit reviewed source and documentation to the authorized Greenwood repositories
-   and push immutable revisions. Exclude keys, credentials, protected per-machine
-   configuration, runtime state and generated dependency trees.
-3. Resolve governance and prepare fresh production identities and public genesis.
-   Provision validator and provider keys separately; no old testnet key reuse.
-   The selected allocation is **15/25/30/25/5**, totaling 1,000,000,000 GWD with six
-   decimals. Fresh production requires `service_trust_policy: explicit_profiles_v1`;
-   historical programs without a trust profile cannot be installed. Allocation selection is not authority to spend, activate, or recover
-   a lost treasury quorum. The production template leaves unresolved limits unset.
-4. Run infrastructure preflight on the exact machines in the selected profile: confirm machine IDs,
-   addresses, architecture, storage, routing, available runtime and recovery access.
-   Present those targets and the exact destructive installation plan for explicit
-   authorization. No blanket reset based solely on an IP range or inventory name.
-5. After authorization, remove the testnet installation and initialize the reviewed
-   production release using existing Ansible/containerd/control-plane primitives.
-   Install validators/providers, gateway, deployment controller/receiver, OCI registry
-   and authentication, metering, approved attestation components, Application Registry,
-   resource catalog and approved economic programs. Verify artifact digests.
-6. Capture physical acceptance evidence on that rebuilt cluster: certificates and
-   restart roots, workload execution and attribution, paid usage/refunds/disputes,
-   conservation, deployment authorization, renewals, recovery, registration and policy.
-7. Activate only the approved services and profiles. Unsupported payable meters stay
-   disabled. DreamBIG-controlled telemetry is explicitly operator-attested; subsidy
-   rules requiring independent evidence are not relaxed.
+1. Review the complete source and untracked files, including deployment tooling,
+   runtime persistence changes and documentation. Preserve unrelated local work.
+   Run applicable regressions and record warnings, skips and unavailable hardware
+   checks separately. Earlier green runs do not qualify later changes.
+2. Select a reviewed immutable revision and record submodule, dependency, native
+   runtime and image pins. Committing or publishing is a separate authorized
+   release action. Do not package the old HEAD as if it contains local changes.
+3. Build and qualify artifacts for that revision. Bind source, OCI manifests,
+   archive hashes, runtime inputs and verification evidence in one manifest.
+   Follow [production packaging](../../deploy/production/README.md).
+4. Bind the exact public chain/genesis, role topology, service configurations,
+   approved policy and existing or newly operator-provisioned identities. For an
+   existing chain, retain its identity and history. Policy approval, key custody
+   and service consent are separate evidence, not inferred from a successful build.
+5. Verify actual runtime, durable state and recovery readiness on the intended
+   hosts. Credential-bearing checks remain operator-only. Preserve signing,
+   ownership, allocation, policy and route journals. Keep all clients of a
+   migration stopped until copy/conversion and runtime checks complete.
+6. Run the selected guarded installation or maintenance procedure under its
+   approved scope. Startup order establishes validator finality, direct HTTPS
+   origins and relays, provider trust/readiness, then policy/registry/hosting
+   services. Recovery remains disabled until its identity and funding inputs are ready.
+7. Capture role-relevant [physical acceptance](../../deploy/production/PHYSICAL_ACCEPTANCE.md)
+   for execution, attribution, settlement/refunds/disputes, authorization,
+   certificates, restart, storage loss and restore. Activate only services and
+   payable profiles whose authority and evidence are complete.
 
-## Selected allocation and unresolved decisions
+## Reference-network policy and topology
+
+The repository's four/seven-node profiles retain validators A/B/C and explicit
+provider, build-controller, edge and registry placements. See the
+[reference installation guide](SEVEN_NODE_INSTALLATION.md). They are supported
+compositions, not a requirement that another homelab own the same machines.
+Arbitrary hosted receiver membership or validator expansion is not implemented
+by changing an inventory.
+
+The [November 18 adoption record](../economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md)
+records the reference operator's selected Epoch 0 policy, including 15/25/30/25/5
+allocation, bounded operations funding, fee choices and recovery parameters.
+Do not relabel these selected terms as wholly unratified. Adoption does not prove
+custody completion, on-chain execution, independent administration or physical
+acceptance, and does not authorize a different operator's spending.
+
+Reference supply allocation: 1,000,000,000 GWD at six decimals.
 
 | Native reserve | GWD | Base units |
-|---|---:|---:|
+| --- | ---: | ---: |
 | security_emissions | 150,000,000 | 150000000000000 |
 | grants | 250,000,000 | 250000000000000 |
 | subsidies | 300,000,000 | 300000000000000 |
 | institute_treasury | 250,000,000 | 250000000000000 |
 | working_operations | 50,000,000 | 50000000000000 |
 
-Formal Institute ratification, reserve window budgets, fees/bootstrap funding,
-signer/guardian custody and lost-quorum recovery still need final decisions. Existing
-three-of-five ordinary and four-of-five sensitive controls remain the implementation
-basis. No new recovery council, discretionary compensation, privileged founder
-allocation or authority-sunset date is inferred. E3 consensus membership/authority
-migration remains an explicit protocol upgrade, not an automatic effect of onboarding.
+Fresh-production validation requires explicit service trust and recovery decisions.
+Unsupported payable meters remain disabled. Operator-attested customer-paid
+Epoch 0 services do not acquire independent-attestation subsidy authority.
+Validator membership remains genesis-fixed; resource/operator role registration
+does not add consensus votes.
 
-## Acceptance truth labels
+## Source preparation and evidence
 
-Local synthetic tests, real local processes/SQLite, certified local replay, actual
-containerd execution and independent administration are separate evidence categories.
-The retained local release evidence reports unavailable native containerd/gRPC/cgroup
-prerequisites; image execution checks are not physical acceptance. Physical acceptance occurs on
-the authorized rebuilt seven-node destination; separate qualification hardware is
-not required. Production remains HOLD until the applicable gates are satisfied.
-
-The old `qualification.ini` is retained only as a disabled historical fixture.
-It does not constrain the newly authorized destination or require its provisioning.
-
-## Reproducible preparation commands
-
-Run from a clean checkout of the published review revision. Install the locked PHP
-and test dependencies in a separate checkout if a local `vendor` path already
-contains unrelated data. The PHP runtime needs sodium, SQLite, FFI and the pinned
-Wasmtime library. Native acceptance additionally needs gRPC and the actual runtime.
+Use the environment and dependency instructions in
+[self-managed updates](../guides/SELF_MANAGED_UPDATE.md). Review in the working
+checkout; run final release qualification against the chosen clean revision:
 
 ```sh
 php -d ffi.enable=true vendor/bin/phpunit --testsuite source,contracts
 python3 -m unittest discover -s tests/Release -v
-python3 scripts/verify-resource-release.py --output-dir /tmp/greenwood-review-evidence --certified-history
-python3 scripts/package-source.py HEAD --output-dir /tmp/greenwood-source-release
+python3 scripts/verify-resource-release.py --require-clean \
+  --output-dir build/release-qualification --certified-history
+python3 scripts/package-source.py HEAD --output-dir build/production-source
 ```
 
-Set `GREENWOOD_WASMTIME_LIB` and, if required, `GREENWOOD_SQLITE_EXTENSION` to the
-reviewed local dependencies. Evidence output directories must not already exist.
-The selected production allocation is the runner's default; explicit historical
-candidates are separate regression cases. Native tests belong in the approved
-physical acceptance run and must not be silently included as software-only passes.
+Use new output directories. Native acceptance additionally needs the real
+approved runtime and hardware; skipped native checks are not passes. Source
+archive, runtime-image and service-image digests identify different artifacts.
+The current local SQLite policy requires `DELETE` with `synchronous=EXTRA`; old
+WAL state needs stopped-service conversion and a rebuilt matching release before
+startup. See [state storage](../../deploy/ansible/STATE_STORAGE.md).
 
-After supplying reviewed identities and ratified values in a private copy of the
-production policy template, assemble the fresh genesis through the reviewed
-identity/genesis provisioning procedure. The economics CLI only validates the
-resulting **public** genesis document:
-
-```sh
-php scripts/economics-cli.php validate-production-genesis /approved/public/genesis.json
-```
-
-This is schema/invariant validation, not Institute ratification or activation.
-The fresh-production command rejects historical allocations and omitted explicit
-service trust policy. It does not provision keys or authorize reserve spending.
-
-For immutable service archives, set `GREENWOOD_PHP_RUNTIME` to the approved runtime
-image with `@sha256:` digest, select `GREENWOOD_SERVICE_PLATFORM`, and run:
-
-```sh
-scripts/build-resource-services.sh /approved/new/service-archives
-```
-
-The runtime must contain the extensions and Wasmtime dependency documented by the
-service recipes. Do not label archives verified until actual OCI build and runtime
-checks pass. Record their hashes alongside the validator artifact and public genesis.
-
-Use a private completed copy of `deploy/ansible/inventory/production-rebuild.example.yml`
-for the read-only audit (never treat historical IPs as machine identity):
-
-```sh
-ansible-playbook -i /approved/private/production.yml deploy/ansible/playbooks/production_preflight.yml
-```
-
-The audit cannot remove testnet state or authorize installation. Once its evidence
-is available, record the exact services, data directories and containerd namespaces
-in the destructive plan, bind it to machine IDs and release/genesis hashes, and
-obtain explicit authorization before invoking replacement tasks. Do not run the
-existing fresh-cluster playbook against an existing testnet as an implicit reset.
-
-## November 15 access/governance clarification
-
-The supplied historical SSH user is `djordanjones`, with direct LAN Ed25519 key
-access and previously working passwordless sudo on Ubuntu 24.04 ARM64. These are
-not current connectivity results. `validators.ini` is a localhost fixture; derive
-a current physical inventory from the verified topology rather than overwriting it.
-
-Nodes 1–3 historically network-booted with NFS roots supplied by node 4. Node 4
-booted from local SD and supplied DHCP/TFTP/NFS, DNS and the application edge.
-Therefore recovery must include node 4 local boot/network access, tested installation
-media and a way to recover nodes 1–3 when the existing network-boot services are
-unavailable. No current out-of-band recovery has been confirmed.
-
-The user explicitly confirmed that formal Institute ratification is not evidenced
-for allocation, budgets, fees, bootstrap funding, operator compensation, commercial
-bootstrap activation, signer/guardian appointments/custody or lost-quorum recovery.
-The proposed five-of-seven recovery council and 30-day timelock are unapproved.
-Current authority covers source development, review and release preparation only.
+Public genesis preparation/validation is not signing or activation. Human
+operators retain private identities and execute credential-bearing checks and
+service changes. Do not return private inventories, raw state, signing keys or
+backup contents as release evidence. Share public hashes and bounded, redacted
+results. Physical acceptance follows actual authorized deployment; it must not
+be marked passed in advance.

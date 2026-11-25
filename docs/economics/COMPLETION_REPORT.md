@@ -1,5 +1,9 @@
 # GWD Institute economics — implementation completion report
 
+> **Historical scope — reviewed November 24, 2026.** Completion refers to the reported local milestones. Its older allocation candidates, missing-source lists and deployment statements are not the present status.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 Initial report: November 13, 2026. Updated November 14, 2026. Scope: production-target source implementation; no requirement to preserve the existing deployment's state.
 
 **Status: native monetary/treasury foundation implemented and tested. Full production economics acceptance is NOT complete. Nothing has been deployed, pushed to a remote, or used to generate permanent mainnet genesis/keys.**

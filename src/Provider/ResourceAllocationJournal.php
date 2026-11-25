@@ -25,9 +25,9 @@ final class ResourceAllocationJournal
         }
         if(!is_dir($directory)&&!mkdir($directory,0700,true))throw new \RuntimeException('Allocation directory unavailable');
         if(realpath($directory)!==$directory||fileowner($directory)!==posix_geteuid()||(fileperms($directory)&0077))throw new \RuntimeException('Private canonical allocation directory required');
-        $path=$directory.'/allocations.sqlite';foreach(['','-wal','-shm'] as $suffix)if(is_link($path.$suffix)||(file_exists($path.$suffix)&&(!is_file($path.$suffix)||fileowner($path.$suffix)!==posix_geteuid()||(fileperms($path.$suffix)&0077))))throw new \RuntimeException('Unsafe allocation database');
+        $path=$directory.'/allocations.sqlite';foreach(['','-journal','-wal','-shm'] as $suffix)if(is_link($path.$suffix)||(file_exists($path.$suffix)&&(!is_file($path.$suffix)||fileowner($path.$suffix)!==posix_geteuid()||(fileperms($path.$suffix)&0077))))throw new \RuntimeException('Unsafe allocation database');
         $this->db=new \PDO('sqlite:'.$path,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);chmod($path,0600);
-        $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db, 5000);
         $this->db->exec('CREATE TABLE IF NOT EXISTS inventory(body TEXT NOT NULL); CREATE TABLE IF NOT EXISTS leases(id TEXT PRIMARY KEY,body TEXT NOT NULL,released INTEGER NOT NULL DEFAULT 0)');
         $this->db->exec('BEGIN IMMEDIATE');try{
             $old=$this->db->query('SELECT body FROM inventory')->fetchAll(\PDO::FETCH_COLUMN);$raw=CanonicalJson::encode($inventory);

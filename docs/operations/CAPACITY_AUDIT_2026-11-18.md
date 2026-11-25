@@ -1,5 +1,11 @@
 # Seven-node read-only capacity assessment — November 18, 2026
 
+> Historical snapshot: the findings and commands below describe their dated
+> source/infrastructure state, not the current installation procedure. Start with
+> [project status](../PROJECT_STATUS.md) and [operator onboarding](README.md).
+> Retain the recorded evidence and counts; do not repeat completed initialization,
+> removal or credential-generation steps from this snapshot.
+
 Status: **capacity snapshot and draft planning assessment, not production acceptance**.
 Collected approximately 10:56–11:00 America/Chicago. No installs, reboots, service
 restarts, mounts, configuration edits or activation. SSH agent authentication only,

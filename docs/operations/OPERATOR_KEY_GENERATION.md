@@ -1,5 +1,12 @@
 # Generate production keys yourself
 
+This is an operator-controlled creation reference for genuinely missing identities
+or an approved replacement, not a joining requirement to copy the reference
+cluster's full key set. Choose only your [service roles](ROLE_BASED_ONBOARDING.md).
+The reference installation already has its credentials; retain them and consult
+[project status](../PROJECT_STATUS.md) before any continuation. Do not generate
+a second identity merely because an installation was interrupted.
+
 Run this only in your own trusted terminal, outside an AI-controlled session.
 Do not ask AI to run it, verify your vault, or export your private keys. First end
 AI access to the computer/account/storage that will hold them. Use an encrypted
@@ -16,7 +23,9 @@ minimum alone does not guarantee strength.
 
 ## Infrastructure identities
 
-Review `deploy/production/operator-keys.infrastructure.json` first. It creates:
+`deploy/production/operator-keys.infrastructure.json` is the seven-node reference
+plan, not a universal homelab enrollment manifest. Review a role-appropriate plan
+for your own environment. The supplied reference plan creates:
 
 - Three validator identities for nodes 1–3.
 - Five separate provider identities and operator tokens for nodes 1–3, 6 and 7.
@@ -154,8 +163,9 @@ current receiver roles, certificate verification and public-only return files.
 
 ## Offline Tails runbook
 
-Download the [complete offline key custody guide](GREENWOOD_TAILS_KEY_CUSTODY.pdf)
-before disconnecting. It covers tool preparation, all deployment key families,
+Download the [offline key custody worked example](GREENWOOD_TAILS_KEY_CUSTODY.pdf)
+before disconnecting, together with the current Markdown and certificate
+supplement. It covers the reference deployment's tool preparation and key families,
 backups, public-only handoff and the operator-only provisioning boundary.
 The pinned key-generator revision in the guide remains valid for key generation;
 seven-node service deployment requires release artifacts containing the topology fixes.

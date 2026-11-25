@@ -1,0 +1,154 @@
+---
+- ansible.builtin.import_tasks: install_tools.yml
+
+- name: Record the exact copied state scope
+  ansible.builtin.set_fact:
+    greenwood_storage_copy_manifest: "{{ greenwood_storage_plan | greenwood_state_copy_manifest(inventory_hostname) }}"
+    greenwood_storage_bindings: "{{ inventory_hostname | greenwood_state_bindings }}"
+
+- name: Connect only the approved unique initiator and authenticated target
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - /etc/greenwood-storage/prepare_state_storage.py
+      - --plan-file
+      - /etc/greenwood-storage/plan.json
+      - --approved-sha256
+      - "{{ greenwood_storage_plan_sha256 }}"
+      - --node
+      - "{{ inventory_hostname }}"
+      - --action
+      - connect-client
+      - --approve-storage-changes
+  when:
+    - inventory_hostname in ['node-1', 'node-2', 'node-3']
+    - inventory_hostname != greenwood_storage_resume_mounted_client
+  no_log: true
+
+- name: Enable existing iSCSI daemon and automatic login for the approved target
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+  loop: [iscsid.service, open-iscsi.service]
+  when: inventory_hostname in ['node-1', 'node-2', 'node-3']
+
+- name: Recheck exact connected UUID capacity and empty existing filesystem
+  ansible.builtin.command:
+    argv: [/usr/bin/python3, /etc/greenwood-storage/prepare_state_storage.py, --plan-file, /etc/greenwood-storage/plan.json,
+           --approved-sha256, "{{ greenwood_storage_plan_sha256 }}", --node, "{{ inventory_hostname }}", --action, connected-check]
+  changed_when: false
+  when: inventory_hostname != greenwood_storage_resume_mounted_client
+
+- name: Create only the approved new mountpoint
+  ansible.builtin.file:
+    path: /var/lib/greenwood-state
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Install the UUID-bound state mount without modifying fstab
+  ansible.builtin.template:
+    src: state.mount.j2
+    dest: '/etc/systemd/system/var-lib-greenwood\x2dstate.mount'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Mount the exact existing or newly created ext4 filesystem
+  ansible.builtin.systemd_service:
+    name: 'var-lib-greenwood\x2dstate.mount'
+    daemon_reload: true
+    enabled: true
+    state: started
+
+- name: Stop only the previously verified idle container runtime before copying its database
+  ansible.builtin.systemd_service:
+    name: containerd.service
+    state: stopped
+
+- name: Mark the already-applied forwarding oneshot inactive without changing network configuration
+  ansible.builtin.systemd_service:
+    name: greenwood-application-forwarding.service
+    state: stopped
+  when: inventory_hostname in groups.get('application_providers', [])
+
+- name: Check and copy canonical state with byte and metadata verification
+  ansible.builtin.command:
+    argv: [/usr/bin/python3, /etc/greenwood-storage/prepare_durable_state.py, --plan-json,
+           "{{ greenwood_storage_copy_manifest | to_json }}", --apply, --approve-state-copy]
+  register: greenwood_storage_copy_result
+
+- name: Read the public completed copy marker
+  ansible.builtin.slurp:
+    src: /var/lib/greenwood-state/.greenwood-state-copy.json
+  register: greenwood_storage_copy_marker
+
+- name: Require exact completed copy proof before hiding preserved originals with bind mounts
+  ansible.builtin.assert:
+    that:
+      - (greenwood_storage_copy_marker.content | b64decode | from_json).state == 'complete'
+      - (greenwood_storage_copy_marker.content | b64decode | from_json).plan == greenwood_storage_copy_manifest
+
+- name: Install canonical bind mounts after verified preservation
+  ansible.builtin.template:
+    src: bind.mount.j2
+    dest: "/etc/systemd/system/{{ item.unit }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ greenwood_storage_bindings }}"
+
+- name: Start only the reviewed state bindings
+  ansible.builtin.systemd_service:
+    name: "{{ item.unit }}"
+    daemon_reload: true
+    enabled: true
+    state: started
+  loop: "{{ greenwood_storage_bindings }}"
+
+- name: Establish service storage dependency directories
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item }}.d"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop: &state_dependent_units
+    - containerd.service
+    - greenwoodd.service
+    - greenwood-provider.service
+    - greenwood-controller.service
+    - greenwood-observer.service
+    - greenwood-receiver.service
+    - greenwood-edge.service
+    - greenwood-managed-edge.service
+    - greenwood-registry.service
+    - greenwood-registry-auth.service
+    - greenwood-policy.service
+    - greenwood-policy-sftp.service
+    - greenwood-application-recovery.service
+    - greenwood-system-service-agent.service
+    - greenwood-governed-service-agent.service
+
+- name: Require all durable mounts before any later service startup
+  ansible.builtin.template:
+    src: service-storage.conf.j2
+    dest: "/etc/systemd/system/{{ item }}.d/80-greenwood-storage.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: *state_dependent_units
+
+- name: Reload unit metadata without starting containerd or Greenwood
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Convert only copied bound SQLite state to the reviewed rollback-journal format
+  ansible.builtin.command:
+    argv: [/usr/bin/python3, /etc/greenwood-storage/migrate_sqlite_rollback.py, --plan-json,
+           "{{ greenwood_storage_copy_manifest | to_json }}", --apply, --approve-sqlite-conversion]
+
+- name: Report storage-only completion and required offline database migration
+  ansible.builtin.debug:
+    msg: State preserved, bound and migrated; containerd and Greenwood remain stopped. Rebuild and qualify the new source revision before activation.

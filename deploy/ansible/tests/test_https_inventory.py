@@ -2,6 +2,7 @@
 import copy
 import base64
 import importlib.util
+import json
 import pathlib
 import os
 import subprocess
@@ -111,6 +112,55 @@ class HttpsInventoryTest(unittest.TestCase):
             MODULE.validate_frontends([self.frontend, other])
         other['port'] += 1
         self.assertTrue(MODULE.validate_frontends([self.frontend, other]))
+
+    def test_renewal_validity_bounds_and_types_remain_strict(self):
+        frontend = {k: v for k, v in self.frontend.items()
+                    if k not in ('certificate', 'private_key')}
+        frontend['renewal'] = {
+            'source_dir': '/etc/greenwood/acme-incoming/controller',
+            'minimum_validity_seconds': 86400, 'certbot_hook': False,
+        }
+        for value in (3600, 86400, 2592000):
+            with self.subTest(valid=value):
+                frontend['renewal']['minimum_validity_seconds'] = value
+                self.assertTrue(MODULE.validate_frontends([frontend]))
+        for value in (None, True, False, '86400', 86400.0, -1, 0, 3599, 2592001):
+            with self.subTest(invalid=value):
+                frontend['renewal']['minimum_validity_seconds'] = value
+                with self.assertRaisesRegex(AnsibleFilterError, 'bounded renewal validity required'):
+                    MODULE.validate_frontends([frontend])
+
+    def test_managed_renewal_accepts_real_ansible_inventory_integers(self):
+        root = PLUGIN.parents[3]
+        frontend = {k: v for k, v in self.frontend.items()
+                    if k not in ('certificate', 'private_key')}
+        frontend['renewal'] = {
+            'source_dir': '/etc/greenwood/acme-incoming/controller',
+            'minimum_validity_seconds': 86400, 'certbot_hook': False,
+        }
+        for encoding in ('json', 'yaml'):
+            with self.subTest(encoding=encoding), \
+                    tempfile.TemporaryDirectory(prefix='gw-renewal-inventory-') as tmp:
+                work = pathlib.Path(tmp)
+                inventory = {'all': {'hosts': {'localhost': {'ansible_connection': 'local'}},
+                                    'vars': {'greenwood_https_frontends': [frontend],
+                                             'greenwood_policy_sftp': {}}}}
+                path = work / ('inventory.' + encoding)
+                path.write_text(json.dumps(inventory) if encoding == 'json'
+                                else yaml.safe_dump(inventory))
+                play = work / 'test.yml'
+                play.write_text(yaml.safe_dump([{
+                    'hosts': 'localhost', 'gather_facts': False,
+                    'tasks': [{'ansible.builtin.include_role': {
+                        'name': 'control_plane', 'tasks_from': 'https_preflight'}}],
+                }]))
+                env = dict(os.environ, ANSIBLE_CONFIG=str(root / 'ansible.cfg'),
+                           ANSIBLE_LOCAL_TEMP=str(work / 'local'),
+                           ANSIBLE_REMOTE_TEMP=str(work / 'remote'))
+                result = subprocess.run(['ansible-playbook', '-i', str(path),
+                                         str(play), '--check'], env=env, cwd=tmp,
+                                        text=True, capture_output=True, timeout=60)
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
     def test_role_discovers_filter_in_local_ansible(self):
         root = PLUGIN.parents[3]

@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+This source revision includes changes after the `bd529a5` artifact baseline. These are
+not yet a new qualified production release; see [project status](docs/PROJECT_STATUS.md).
+
+- Guarded continuation for interrupted installation and storage preparation;
+  recovery timers stay staged until explicit activation.
+- Durable state placement and offline conversion to SQLite `DELETE` rollback
+  journals with `synchronous=EXTRA`, retaining original state for review.
+- Role-based contributor and homelab onboarding; reconciled protocol/API,
+  deployment, resource and custody documentation. Named machine layouts are
+  labeled reference profiles, not participation requirements.
+
+
 ## v0.1.0-alpha.1 - 2026-11-04
 
 Experimental source-only prerelease. Native runtime binaries and deployment

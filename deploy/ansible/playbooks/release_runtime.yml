@@ -23,27 +23,15 @@
   tags: [runtime_release, runtime_release_preflight]
   vars:
     ansible_python_interpreter: /usr/bin/python3
-  vars_files:
-    - "{{ playbook_dir }}/../roles/controller/defaults/main.yml"
   tasks:
     - name: Require a single canonical artifact export host
       ansible.builtin.assert:
         that:
           - groups['controller'] | length == 1
-    - name: Read recorded release facts
-      ansible.builtin.slurp:
-        src: "{{ greenwood_build_dir }}/artifacts/latest-release.json"
-      register: release_facts_raw
-
-    - name: Parse release facts
-      ansible.builtin.set_fact:
-        release_facts: "{{ release_facts_raw.content | b64decode | from_json }}"
-
-    - name: Require release facts to identify the pinned runtime source
-      ansible.builtin.assert:
-        that:
-          - release_facts.source_sha == greenwood_source_sha
-        fail_msg: "Controller release facts do not identify the pinned runtime source"
+    - name: Read pinned controller release facts with role-default precedence
+      ansible.builtin.import_role:
+        name: controller
+        tasks_from: read_release_facts
 
     - name: Fetch artifact to Ansible controller cache
       ansible.builtin.fetch:
@@ -68,8 +56,6 @@
   any_errors_fatal: true
   strategy: linear
   tags: [runtime_release, runtime_release_preflight]
-  vars_files:
-    - "{{ playbook_dir }}/../roles/controller/defaults/main.yml"
   tasks:
     - name: Validate and bind controller-owned release inputs
       ansible.builtin.import_tasks: "{{ playbook_dir }}/../tasks/runtime_release_preflight.yml"

@@ -1,0 +1,52 @@
+---
+- name: Require matching completed authentication checks on all four machines
+  ansible.builtin.assert:
+    that:
+      - hostvars[item].greenwood_storage_auth_checked | default('') == greenwood_storage_plan_sha256
+  loop: [node-1, node-2, node-3, node-4]
+
+- name: Protect the dedicated storage credential directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  loop: [/root/.secrets, /root/.secrets/greenwood-storage]
+
+- name: Install only the matching node credential without overwriting existing files
+  ansible.builtin.copy:
+    src: "{{ greenwood_storage_auth_directory }}/{{ item }}.json"
+    dest: "/root/.secrets/greenwood-storage/{{ item }}.json"
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+    follow: false
+  loop: "{{ greenwood_storage_auth_nodes }}"
+  no_log: true
+  diff: false
+
+- name: Verify placed credential metadata and content without printing secrets
+  ansible.builtin.stat:
+    path: "/root/.secrets/greenwood-storage/{{ item }}.json"
+    checksum_algorithm: sha256
+    get_mime: false
+    get_attributes: false
+    follow: false
+  loop: "{{ greenwood_storage_auth_nodes }}"
+  register: greenwood_storage_auth_installed
+  no_log: true
+
+- name: Require the protected exact credential after placement
+  ansible.builtin.assert:
+    that:
+      - item.1.stat.isreg and not item.1.stat.islnk
+      - item.1.stat.uid == 0 and item.1.stat.gid == 0
+      - item.1.stat.mode == '0600' and item.1.stat.nlink == 1
+      - item.1.stat.checksum == item.0.stat.checksum
+  loop: "{{ greenwood_storage_auth_sources.results | zip(greenwood_storage_auth_installed.results) | list }}"
+  no_log: true
+
+- ansible.builtin.debug:
+    msg: Separate storage authentication installed and verified; no storage sessions, network services or Greenwood services were changed

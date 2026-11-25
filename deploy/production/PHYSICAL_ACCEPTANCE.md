@@ -1,9 +1,14 @@
-# Physical acceptance on the existing seven nodes
+# Physical acceptance for an installed service composition
 
-Run after exact-target/recovery preflight, finalized governance configuration and
-explicit destructive-installation authorization. Do not execute on the disposable
-old testnet as if it were the new production network. No additional cluster is
-required. Store raw evidence privately and publish a redacted evidence manifest.
+Choose checks for the roles you operate and run after approved installation or
+maintenance with exact-target/recovery preflight and the network's reviewed
+configuration. [Role-based onboarding](../../docs/operations/ROLE_BASED_ONBOARDING.md)
+distinguishes joining an existing chain from a new network. The RPC scripts below
+support explicit four/seven-node reference profiles; they are not generic
+arbitrary-topology acceptance. No extra cluster or destructive reset is required
+just to accept an existing role. Store raw evidence privately and publish a
+redacted manifest. See [project status](../../docs/PROJECT_STATUS.md) for the
+reference deployment; no procedure here constitutes a completed result.
 
 Key-bearing SSH commands and all signing/provisioning steps below are for the
 human operator only. Follow [the custody boundary](OPERATOR_KEY_CUSTODY.md); do not
@@ -12,8 +17,8 @@ run these in an AI-controlled session once production secrets are accessible.
 ## 1. Establish the installation identity
 
 Run the existing read-only preflight using the confirmed private inventory and
-known host keys. Reconcile all machine IDs and recovery arrangements before reset.
-After the authorized fresh install, validate the new genesis:
+known host keys. Reconcile machine IDs and recovery arrangements for the approved
+scope. After deployment, validate the exact trusted genesis (new only for a new network):
 
 ```sh
 python3 scripts/production-preflight.py --inventory /PRIVATE/inventory.json \
@@ -68,7 +73,7 @@ Record manifest digests, never authentication tokens or private keys.
 
 ## 4. Execute funded finite and hosted journeys
 
-Use newly provisioned acceptance customer/provider identities and an approved
+Use distinct, authorized acceptance customer/provider identities and an approved
 funding amount/program. No helper bypasses treasury governance. Record the exact
 accepted quote, resource limits, source/trust profile and prior-finalized escrow.
 Run an actual containerd finite job and an actual hosted application through the

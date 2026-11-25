@@ -1,0 +1,13 @@
+[Unit]
+Description=Greenwood preserved {{ item.destination }} state binding
+Requires=var-lib-greenwood\x2dstate.mount
+BindsTo=var-lib-greenwood\x2dstate.mount
+After=var-lib-greenwood\x2dstate.mount
+Before=containerd.service
+[Mount]
+What={{ item.source }}
+Where={{ item.destination }}
+Type=none
+Options=bind
+[Install]
+WantedBy=multi-user.target

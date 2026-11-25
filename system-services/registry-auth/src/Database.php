@@ -45,10 +45,8 @@ final class Database
             umask($mask);
         }
 
-        $db->exec('PRAGMA journal_mode=WAL');
-        $db->exec('PRAGMA synchronous=FULL');
+        \Greenwood\Persistence\SqliteDurability::configure($db);
         $db->exec('PRAGMA foreign_keys=ON');
-        $db->exec('PRAGMA busy_timeout=5000');
 
         $db->exec(
             'CREATE TABLE IF NOT EXISTS registry_challenges (

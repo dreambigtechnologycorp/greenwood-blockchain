@@ -1,0 +1,30 @@
+---
+- name: Inspect installed migration helper identities
+  ansible.builtin.stat:
+    path: "/etc/greenwood-storage/{{ item }}"
+    checksum_algorithm: sha256
+  loop: [prepare_durable_state.py, migrate_sqlite_rollback.py]
+  register: state_verifier_stats
+
+- name: Refuse unreviewed migration-check code
+  ansible.builtin.assert:
+    that:
+      - item.stat.isreg | default(false)
+      - not (item.stat.islnk | default(true))
+      - item.stat.uid == 0
+      - item.stat.mode == '0700'
+      - item.stat.checksum == (lookup('file', role_path ~ '/../../files/' ~ item.item, rstrip=false) | hash('sha256'))
+  loop: "{{ state_verifier_stats.results }}"
+
+- name: Recheck bound volume identity completed copy and SQLite journal headers
+  ansible.builtin.command:
+    argv: [/usr/bin/python3, /etc/greenwood-storage/migrate_sqlite_rollback.py, --plan-json,
+           "{{ greenwood_storage_plan | greenwood_state_copy_manifest(inventory_hostname) | to_json }}", --check]
+  changed_when: false
+  register: state_sqlite_header_check
+
+- name: Refuse remaining WAL databases before runtime readiness
+  ansible.builtin.assert:
+    that:
+      - (state_sqlite_header_check.stdout | from_json).wal_remaining == 0
+      - (state_sqlite_header_check.stdout | from_json).plan_sha256 == (greenwood_storage_plan | greenwood_state_copy_manifest(inventory_hostname)).plan_sha256

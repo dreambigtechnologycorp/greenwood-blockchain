@@ -1,0 +1,92 @@
+---
+# Operator-only restart of the idle container runtime after state migration and
+# a newly reviewed runtime distribution. Never starts a Greenwood service.
+- name: Verify public storage and machine approvals before runtime restart
+  hosts: all
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require exact operator storage-runtime restart authorization
+      ansible.builtin.assert:
+        that:
+          - greenwood_storage_runtime_start_approved | default(false) | bool
+          - greenwood_storage_preparation_approved | default(false) | bool
+          - greenwood_recovery_access_confirmed | default(false) | bool
+          - greenwood_topology_profile == 'seven'
+          - ansible_play_hosts_all | sort == groups['all'] | sort
+          - not ansible_check_mode
+    - ansible.builtin.import_tasks: ../tasks/topology_preflight.yml
+    - ansible.builtin.import_role:
+        name: state_storage
+        tasks_from: validate_public_plan
+
+- name: Read canonical rebuilt runtime evidence without rebuilding
+  hosts: controller
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: controller
+        tasks_from: read_release_facts
+
+- name: Verify all copied storage and new runtime trees before starting containerd
+  hosts: 'validators:providers:control_plane:system_runtime_hosts'
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/resume_runtime_preflight.yml
+    - name: Require the rebuilt release to contain the rollback-journal policy
+      ansible.builtin.stat:
+        path: /opt/greenwood/src/Persistence/SqliteDurability.php
+        get_checksum: false
+      register: state_sqlite_policy
+    - name: Reject the older WAL-based release
+      ansible.builtin.assert:
+        that:
+          - state_sqlite_policy.stat.isreg | default(false)
+          - not (state_sqlite_policy.stat.islnk | default(true))
+    - ansible.builtin.import_role:
+        name: state_storage
+        tasks_from: verify_migration
+    - ansible.builtin.import_role:
+        name: control_plane
+        tasks_from: storage_preflight
+
+- name: Start and verify only the preserved empty container runtime
+  hosts: 'validators:providers:control_plane:system_runtime_hosts'
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Start containerd only after every storage and source gate passed
+      ansible.builtin.systemd_service:
+        name: containerd.service
+        daemon_reload: true
+        state: started
+    - name: Read the installed container runtime version
+      ansible.builtin.command: /usr/bin/containerd --version
+      register: state_runtime_version
+      changed_when: false
+    - name: Require the approved containerd version
+      ansible.builtin.assert:
+        that: "(' v' ~ containerd_version ~ ' ') in (state_runtime_version.stdout ~ ' ') or (' ' ~ containerd_version ~ ' ') in (state_runtime_version.stdout ~ ' ')"
+    - name: Verify required EROFS plugin health
+      ansible.builtin.command: /usr/bin/ctr plugins ls
+      register: state_runtime_plugins
+      changed_when: false
+    - name: Reject an unavailable EROFS snapshotter
+      ansible.builtin.assert:
+        that: state_runtime_plugins.stdout is search('(?m)^io\.containerd\.snapshotter\.v1[ \t]+erofs[ \t]+.*[ \t]+ok[ \t]*$')
+    - name: Confirm no Greenwood workloads were started
+      ansible.builtin.command:
+        argv: [/usr/bin/ctr, --namespace, greenwood, "{{ item }}", list, --quiet]
+      loop: [tasks, containers]
+      register: state_runtime_objects
+      changed_when: false
+    - name: Require an empty protocol namespace for guarded first startup
+      ansible.builtin.assert:
+        that: item.stdout | trim == ''
+      loop: "{{ state_runtime_objects.results }}"

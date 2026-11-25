@@ -1,6 +1,9 @@
 # GREENWOOD_REGISTRY_V1
 
-Greenwood network-owned OCI registry.
+Greenwood network-owned OCI registry role. The established public registry name
+is `registry.greenwoodblockchain.com`; use the approved network configuration for
+its authentication realm and trust material. The name alone is not an acceptance
+result for a particular release; see [project status](../../docs/PROJECT_STATUS.md).
 
 This directory's Dockerfile/configuration are bootstrap image inputs, not a
 verified description of the current running registry. The example bearer realm

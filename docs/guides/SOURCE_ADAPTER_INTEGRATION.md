@@ -1,5 +1,10 @@
 # Connect resource sources to the existing provider
 
+Start with [role-based onboarding](../operations/ROLE_BASED_ONBOARDING.md) for
+service placement and [project status](../PROJECT_STATUS.md) for release scope.
+These interfaces describe source composition, not an automatic host installer
+or an approval to enable resource claims on another network.
+
 The collector boundary is operator-controlled. These interfaces extend the
 existing provider, funding guard and settlement workflow; they introduce no new
 currency, public storage API or payment authority. The same source works for local

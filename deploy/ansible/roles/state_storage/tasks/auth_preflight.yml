@@ -1,0 +1,108 @@
+---
+- name: Require operator execution and exact four-host storage credential scope
+  ansible.builtin.assert:
+    that:
+      - greenwood_operator_secret_access_authorized | bool
+      - greenwood_storage_preparation_approved | bool
+      - not ansible_check_mode
+      - greenwood_topology_profile == 'seven'
+      - ansible_play_hosts_all | sort == ['node-1', 'node-2', 'node-3', 'node-4']
+      - greenwood_storage_auth_directory is defined
+      - greenwood_storage_auth_directory is match('^/')
+    fail_msg: Human execution with the reviewed plan and separate protected CHAP directory is required; do not limit hosts
+
+- name: Validate exact public plan and reviewed hash
+  ansible.builtin.set_fact:
+    greenwood_checked_storage_plan: "{{ greenwood_storage_plan | greenwood_state_plan(greenwood_storage_plan_sha256) }}"
+    greenwood_storage_auth_nodes: "{{ ['node-1', 'node-2', 'node-3'] if inventory_hostname == 'node-4' else [inventory_hostname] }}"
+
+- ansible.builtin.import_tasks: "{{ playbook_dir }}/../tasks/topology_preflight.yml"
+
+- name: Bind credential placement to the physical machines in the public plan
+  ansible.builtin.assert:
+    that:
+      - (greenwood_checked_storage_plan.target.machine_id if inventory_hostname == 'node-4' else greenwood_checked_storage_plan.clients[inventory_hostname].machine_id) == greenwood_expected_machine_id
+
+- name: Validate all local CHAP files without generating or printing credentials
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - "{{ playbook_dir }}/../../../scripts/prepare-storage-auth.py"
+      - --directory
+      - "{{ greenwood_storage_auth_directory }}"
+      - --check
+  delegate_to: localhost
+  become: false
+  run_once: true
+  changed_when: false
+  no_log: true
+
+- name: Reject unprotected or linked remote credential paths before any placement
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - -c
+      - |
+        import json, os, stat, sys
+        from pathlib import Path
+        def reject(reason, part, value):
+            kind = ('symlink' if stat.S_ISLNK(value.st_mode) else
+                    'directory' if stat.S_ISDIR(value.st_mode) else
+                    'regular-file' if stat.S_ISREG(value.st_mode) else 'other')
+            sys.exit(f'{reason}: path={part} uid={value.st_uid} gid={value.st_gid} '
+                     f'mode={stat.S_IMODE(value.st_mode):04o} type={kind} links={value.st_nlink}; '
+                     'metadata only; no credential contents read')
+        nodes = json.loads(sys.argv[1])
+        for name in nodes:
+            path = Path('/root/.secrets/greenwood-storage') / (name + '.json')
+            for part in reversed((path, *path.parents)):
+                try:
+                    value = part.lstat()
+                except FileNotFoundError:
+                    break
+                except OSError as error:
+                    sys.exit(f'Storage credential metadata unavailable: path={part} errno={error.errno}')
+                if stat.S_ISLNK(value.st_mode) or value.st_uid != 0 or value.st_mode & 0o022:
+                    reject('Unprotected storage credential path', part, value)
+                if part == path:
+                    if not stat.S_ISREG(value.st_mode) or stat.S_IMODE(value.st_mode) != 0o600 or value.st_nlink != 1:
+                        reject('Existing storage credential metadata requires review', part, value)
+                elif not stat.S_ISDIR(value.st_mode):
+                    reject('Storage credential directory required', part, value)
+      - "{{ greenwood_storage_auth_nodes | to_json }}"
+  changed_when: false
+
+- name: Read local credential checksums only inside the operator process
+  ansible.builtin.stat:
+    path: "{{ greenwood_storage_auth_directory }}/{{ item }}.json"
+    checksum_algorithm: sha256
+    get_mime: false
+    get_attributes: false
+    follow: false
+  loop: "{{ greenwood_storage_auth_nodes }}"
+  delegate_to: localhost
+  become: false
+  register: greenwood_storage_auth_sources
+  no_log: true
+
+- name: Check existing remote credential checksums without exposing them
+  ansible.builtin.stat:
+    path: "/root/.secrets/greenwood-storage/{{ item }}.json"
+    checksum_algorithm: sha256
+    get_mime: false
+    get_attributes: false
+    follow: false
+  loop: "{{ greenwood_storage_auth_nodes }}"
+  register: greenwood_storage_auth_existing
+  no_log: true
+
+- name: Refuse replacement of any existing storage credential before placement
+  ansible.builtin.assert:
+    that:
+      - not item.1.stat.exists or item.1.stat.checksum == item.0.stat.checksum
+    fail_msg: Existing storage credential differs; no replacement or automatic rotation is permitted
+  loop: "{{ greenwood_storage_auth_sources.results | zip(greenwood_storage_auth_existing.results) | list }}"
+  no_log: true
+
+- ansible.builtin.set_fact:
+    greenwood_storage_auth_checked: "{{ greenwood_storage_plan_sha256 }}"

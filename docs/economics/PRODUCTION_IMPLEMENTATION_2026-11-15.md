@@ -1,5 +1,9 @@
 # Production implementation checkpoint — November 15, 2026
 
+> **Historical scope — reviewed November 24, 2026.** The four-node destination and unresolved-ratification list below predate later deployment planning and the November 18 adoption. The evidence counts remain November 15 results.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 This supersedes the deployment scope and open-source-component descriptions in
 UNIVERSAL_RESOURCE_CONTINUATION_2026-11-14.md. The production destination is the
 existing four physical nodes. No testnet chain state or identity is retained, and

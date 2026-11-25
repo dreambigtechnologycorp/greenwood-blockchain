@@ -1,0 +1,62 @@
+---
+# PUBLIC template only. Bind actual machine/FS UUIDs and exact SD partition bytes.
+# No CHAP password, signing key or private inventory belongs in this document.
+greenwood_storage_operation: check
+greenwood_storage_preparation_approved: false
+greenwood_storage_plan_sha256: REQUIRED_CANONICAL_JSON_SHA256
+greenwood_storage_plan:
+  version: 1
+  chain_id: greenwood-prod-v1
+  target:
+    node: node-4
+    machine_id: REQUIRED_NODE4_MACHINE_ID
+    address: 192.168.72.103
+    filesystem_uuid: REQUIRED_EXISTING_SHARED_SSD_UUID
+    backing_directory: /mnt/greenwood/block-volumes
+    reserve_free_bytes: 137438953472
+  clients:
+    node-1:
+      machine_id: REQUIRED_NODE1_MACHINE_ID
+      kind: iscsi
+      filesystem_uuid: REQUIRED_NEW_FILESYSTEM_UUID
+      device_bytes: 68719476736
+      expected_existing_iqn: iqn.2004-10.com.ubuntu:01:d066b4bf9ef
+      initiator_iqn: iqn.2026-11.com.greenwoodblockchain:greenwood-prod-v1.node-1.initiator
+      target_iqn: iqn.2026-11.com.greenwoodblockchain:greenwood-prod-v1.node-1.state
+      chap_file: /root/.secrets/greenwood-storage/node-1.json
+    node-2:
+      machine_id: REQUIRED_NODE2_MACHINE_ID
+      kind: iscsi
+      filesystem_uuid: REQUIRED_NEW_FILESYSTEM_UUID
+      device_bytes: 68719476736
+      expected_existing_iqn: iqn.2004-10.com.ubuntu:01:d066b4bf9ef
+      initiator_iqn: iqn.2026-11.com.greenwoodblockchain:greenwood-prod-v1.node-2.initiator
+      target_iqn: iqn.2026-11.com.greenwoodblockchain:greenwood-prod-v1.node-2.state
+      chap_file: /root/.secrets/greenwood-storage/node-2.json
+    node-3:
+      machine_id: REQUIRED_NODE3_MACHINE_ID
+      kind: iscsi
+      filesystem_uuid: REQUIRED_NEW_FILESYSTEM_UUID
+      device_bytes: 68719476736
+      expected_existing_iqn: iqn.2004-10.com.ubuntu:01:d066b4bf9ef
+      initiator_iqn: iqn.2026-11.com.greenwoodblockchain:greenwood-prod-v1.node-3.initiator
+      target_iqn: iqn.2026-11.com.greenwoodblockchain:greenwood-prod-v1.node-3.state
+      chap_file: /root/.secrets/greenwood-storage/node-3.json
+    node-5:
+      machine_id: REQUIRED_NODE5_MACHINE_ID
+      kind: sd
+      filesystem_uuid: REQUIRED_EXISTING_SD_UUID
+      device_bytes: 0
+      empty_media_approved: false
+    node-6:
+      machine_id: REQUIRED_NODE6_MACHINE_ID
+      kind: sd
+      filesystem_uuid: REQUIRED_EXISTING_SD_UUID
+      device_bytes: 0
+      empty_media_approved: false
+    node-7:
+      machine_id: REQUIRED_NODE7_MACHINE_ID
+      kind: sd
+      filesystem_uuid: REQUIRED_EXISTING_SD_UUID
+      device_bytes: 0
+      empty_media_approved: false

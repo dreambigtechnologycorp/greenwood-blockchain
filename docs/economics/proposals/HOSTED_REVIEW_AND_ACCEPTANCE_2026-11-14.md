@@ -1,4 +1,9 @@
 # Greenwood — Hosted Settlement Implementation Review
+
+> **Historical scope — reviewed November 24, 2026.** This archived proposal/review preserves its original assumptions, recommendations and test reports. It does not independently adopt policy or describe the latest implementation.
+> Read the [economics index](../README.md) for current source and policy precedence,
+> and [project status](../../PROJECT_STATUS.md) for release/installation and qualification.
+
 **November 14, 2026 | Production Readiness Assessment**
 
 **Verdict: Both compute settlement and hosted recurring settlement are now implemented locally. The remaining critical work is operational verification, independent metering, and production governance.**

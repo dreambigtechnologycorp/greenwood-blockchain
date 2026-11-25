@@ -12,6 +12,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 class RpcStartupTest(unittest.TestCase):
     def test_fresh_dependency_order(self):
         plays = yaml.safe_load((ROOT/'playbooks/fresh_cluster.yml').read_text())
+        plays += yaml.safe_load((ROOT/'playbooks/finish_installation.yml').read_text())
         names = [p.get('name', p.get('ansible.builtin.import_playbook')) for p in plays]
         order = ['Provision and validate all protocol identities before starting any node',
                  'Install runtime release on the non-validator edge',
@@ -72,7 +73,7 @@ class RpcStartupTest(unittest.TestCase):
         self.assertIn("backend == 'http://127.0.0.1:9201'", tasks)
         self.assertIn('backend in greenwood_validator_rpc_origins', tasks)
         self.assertIn('provider_rpc_endpoint in greenwood_validator_rpc_origins', tasks)
-        preflight = (ROOT/'tasks/fresh_preflight.yml').read_text()
+        preflight = (ROOT/'tasks/installation_preflight.yml').read_text()
         self.assertIn('import_tasks: rpc_dependencies.yml', preflight)
 
     def test_dependency_preflight_executes_for_seven_nodes_and_rejects_cycle(self):
@@ -99,7 +100,7 @@ class RpcStartupTest(unittest.TestCase):
         tasks = yaml.safe_load((ROOT/'tasks/rpc_client_trust.yml').read_text())
         self.assertIn('rpc_ca_source.stat.checksum == greenwood_rpc_ca_file_sha256', tasks[1]['ansible.builtin.assert']['that'])
         self.assertEqual('rpc_ca_installed.changed', tasks[-1]['when'])
-        preflight = (ROOT/'tasks/fresh_preflight.yml').read_text()
+        preflight = (ROOT/'tasks/installation_preflight.yml').read_text()
         self.assertIn('fresh_rpc_ca.stat.checksum == greenwood_rpc_ca_file_sha256', preflight)
 
 if __name__ == '__main__':

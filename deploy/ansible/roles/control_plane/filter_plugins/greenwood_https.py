@@ -75,7 +75,11 @@ def validate_frontends(frontends):
                     'explicit renewal settings required')
             require(renewal['source_dir'] in ('/etc/letsencrypt/live/' + identity,
                     '/etc/greenwood/acme-incoming/' + name), 'approved renewal source required')
-            require(type(renewal['minimum_validity_seconds']) is int and
+            # Ansible tags inventory integers with an int subclass. Preserve the
+            # integer-only contract without rejecting those tagged values or
+            # accepting booleans, numeric strings or floats.
+            require(isinstance(renewal['minimum_validity_seconds'], int) and
+                    not isinstance(renewal['minimum_validity_seconds'], bool) and
                     3600 <= renewal['minimum_validity_seconds'] <= 2592000, 'bounded renewal validity required')
             require(type(renewal['certbot_hook']) is bool, 'explicit Certbot hook flag required')
             require(not renewal['certbot_hook'] or renewal['source_dir'].startswith('/etc/letsencrypt/live/'),

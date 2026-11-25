@@ -7,7 +7,7 @@ final class SqliteOperationStore implements OperationStore {
     public function __construct(private readonly string $path) {
         if(is_link($path)||!is_dir(dirname($path))||(fileperms(dirname($path))&0077)!==0)throw new \RuntimeException('Private operation directory required');
         $this->db=new \PDO('sqlite:'.$path,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);chmod($path,0600);
-        $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db, 5000);
         $this->db->exec('CREATE TABLE IF NOT EXISTS operations_v2(id TEXT PRIMARY KEY, account TEXT NOT NULL, idem TEXT NOT NULL, intent TEXT NOT NULL, state TEXT NOT NULL, evidence TEXT NOT NULL, version INTEGER NOT NULL, UNIQUE(account,idem))');
         $this->db->exec('CREATE TABLE IF NOT EXISTS journal_v2(id TEXT NOT NULL, version INTEGER NOT NULL, state TEXT NOT NULL, evidence TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY(id,version))');
         $this->db->exec('CREATE TABLE IF NOT EXISTS auth_nonce(nonce TEXT PRIMARY KEY, expires INTEGER NOT NULL)');

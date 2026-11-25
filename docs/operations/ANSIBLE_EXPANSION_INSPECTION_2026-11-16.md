@@ -1,5 +1,11 @@
 # Ansible inspection for the proposed seven-node layout
 
+> Historical snapshot: the findings and commands below describe their dated
+> source/infrastructure state, not the current installation procedure. Start with
+> [project status](../PROJECT_STATUS.md) and [operator onboarding](README.md).
+> Retain the recorded evidence and counts; do not repeat completed initialization,
+> removal or credential-generation steps from this snapshot.
+
 November 16, 2026. Source inspection only. No Ansible plays, infrastructure migrations or network changes were executed. The existing seven-Pi hardware plan remains the target; no PowerEdge or additional qualification hardware is required by these findings. New hosts remain unverified and unassigned.
 
 ## Conclusion

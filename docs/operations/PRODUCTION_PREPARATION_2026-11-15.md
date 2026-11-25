@@ -1,5 +1,11 @@
 # Post-merge production preparation — November 15, 2026
 
+> Historical snapshot: the findings and commands below describe their dated
+> source/infrastructure state, not the current installation procedure. Start with
+> [project status](../PROJECT_STATUS.md) and [operator onboarding](README.md).
+> Retain the recorded evidence and counts; do not repeat completed initialization,
+> removal or credential-generation steps from this snapshot.
+
 Merged implementation: `bfa3d500d799d212530fc469e745679f0e8e3aa4`.
 Production installation and permanent genesis remain unauthorized.
 

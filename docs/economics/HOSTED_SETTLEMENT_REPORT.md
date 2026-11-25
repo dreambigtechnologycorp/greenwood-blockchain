@@ -1,5 +1,9 @@
 # Hosted recurring settlement — implementation report
 
+> **Historical scope — reviewed November 24, 2026.** This hosted-CPU milestone predates the fresh-production requirement for explicit resource V2 trust profiles. Test counts and environment paths remain historical.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 November 14, 2026. **Local candidate implementation; mainnet HOLD remains.** The latest supplied review is archived under `proposals/GRU_IMPLEMENTATION_REVIEW_2026-11-14.md`. No permanent genesis, production switch, wallet, user payment, live deployment or remote push changed.
 
 ## Delivered

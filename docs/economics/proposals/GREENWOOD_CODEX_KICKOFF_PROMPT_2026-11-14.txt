@@ -1,3 +1,6 @@
+ARCHIVED TASK INPUT — November 14, 2026. This prompt is not current execution authority.
+Read docs/economics/README.md and docs/PROJECT_STATUS.md for current source, adopted policy, release status and operator onboarding. The original prompt follows unchanged.
+
 Codex: Continue implementing Greenwood's native resource economy in the current local working tree. The attached GREENWOOD_CODEX_IMPLEMENTATION_PLAN_2026-11-14.md is the controlling engineering plan. Read it fully, along with proposals/GRU_IMPLEMENTATION_REVIEW_2026-11-14.md, INDEPENDENT_CPU_METERING_PLAN.md and the latest local evidence before editing.
 
 Start with WP0: inspect git status, current local economics/hosted classes, tests, uncommitted changes, and exact ServiceSettlement interfaces. Preserve all existing native economics and deployed provider abstractions. The public GitHub default branch may lag the local candidate. Reproduce representative baseline tests and record their exact results; never claim historical results were just rerun.

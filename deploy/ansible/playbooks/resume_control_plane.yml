@@ -1,0 +1,64 @@
+---
+# Human-only continuation after runtime/identity staging and before first startup.
+# Never rebuilds, distributes, replaces identities, resets state or skips gates.
+- name: Revalidate the complete staged installation
+  hosts: all
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require explicit bounded continuation authority
+      ansible.builtin.assert:
+        that:
+          - greenwood_resume_control_plane_approved | default(false) | bool
+          - not ansible_check_mode
+        fail_msg: Approve continuation of this staged installation explicitly; this is not a generic recovery or upgrade path
+    - ansible.builtin.import_tasks: ../tasks/installation_preflight.yml
+
+- name: Read the canonical controller release without rebuilding
+  hosts: controller
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Require a single canonical build controller
+      ansible.builtin.assert:
+        that: groups['controller'] | length == 1
+    - ansible.builtin.import_role:
+        name: controller
+        tasks_from: read_release_facts
+    - name: Require complete canonical runtime evidence
+      ansible.builtin.assert:
+        that:
+          - release_facts.sha256 is match('^[a-f0-9]{64}$')
+          - release_facts.tree_digest is match('^[a-f0-9]{64}$')
+
+- name: Verify every staged runtime before any installed-code identity check
+  hosts: "validators:providers:control_plane:system_runtime_hosts"
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/resume_runtime_preflight.yml
+
+- name: Require an unstarted protocol and validate installed identities
+  hosts: "validators:providers"
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/resume_protocol_preflight.yml
+    - ansible.builtin.import_tasks: ../tasks/validate_installed_public_config.yml
+    - ansible.builtin.import_tasks: ../tasks/validate_installed_identity.yml
+
+# The same staging/startup sequence as fresh_cluster; no duplicate activation path.
+- name: Record successful continuation checks on every target
+  hosts: all
+  become: false
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.set_fact:
+        greenwood_installation_staging_verified: true
+
+- ansible.builtin.import_playbook: finish_installation.yml

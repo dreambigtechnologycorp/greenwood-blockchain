@@ -1,0 +1,94 @@
+---
+- name: Require the approved staged runtime root
+  ansible.builtin.assert:
+    that:
+      - greenwood_hosting_release == '/opt/greenwood'
+      - hostvars[groups['controller'][0]].release_facts.source_sha == greenwood_source_sha
+
+- name: Inspect installed source identity and tree marker without checksumming them
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    get_checksum: false
+  loop:
+    - /opt/greenwood/release-source.json
+    - /etc/greenwood/tree.digest
+  register: resume_runtime_files
+
+- name: Require protected installed runtime evidence
+  ansible.builtin.assert:
+    that:
+      - item.stat.isreg | default(false)
+      - not (item.stat.islnk | default(true))
+      - item.stat.uid == 0
+      - not item.stat.wgrp
+      - not item.stat.woth
+    fail_msg: Runtime staging is incomplete or unprotected; do not skip directly to activation
+  loop: "{{ resume_runtime_files.results }}"
+
+- name: Read installed public runtime source identity
+  ansible.builtin.slurp:
+    src: /opt/greenwood/release-source.json
+  register: resume_runtime_source
+
+- name: Read installed public canonical tree marker
+  ansible.builtin.slurp:
+    src: /etc/greenwood/tree.digest
+  register: resume_runtime_marker
+
+- name: Require the staged runtime to identify the approved source and tree
+  ansible.builtin.assert:
+    that:
+      - (resume_runtime_source.content | b64decode | from_json).source_sha == greenwood_source_sha
+      - resume_runtime_marker.content | b64decode | trim == hostvars[groups['controller'][0]].release_facts.tree_digest
+    fail_msg: Installed runtime identity differs from the approved controller release
+
+- name: Recompute the installed public application tree digest
+  ansible.builtin.shell: |
+    set -eu -o pipefail
+    cd /opt/greenwood
+    find . -name 'wasmtime-*' -prune -o -type f -print0 \
+      | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}'
+  args:
+    executable: /bin/bash
+  register: resume_runtime_tree
+  changed_when: false
+
+- name: Reject any runtime drift before executing installed identity validation
+  ansible.builtin.assert:
+    that:
+      - resume_runtime_tree.stdout | trim == hostvars[groups['controller'][0]].release_facts.tree_digest
+    fail_msg: Staged application files differ from the canonical release; reconcile instead of starting services
+
+- name: Inspect installed control-plane service activity without reading credentials
+  ansible.builtin.command:
+    argv: [systemctl, show, "{{ item }}", --property=ActiveState, --property=MainPID]
+  loop:
+    - greenwood-controller.service
+    - greenwood-observer.service
+    - greenwood-receiver.service
+    - greenwood-edge.service
+    - greenwood-registry.service
+    - greenwood-registry-auth.service
+    - greenwood-policy.service
+    - greenwood-policy.timer
+    - greenwood-policy-sftp.service
+    - greenwood-rpc-https.service
+    - greenwood-controller-https.service
+    - greenwood-registry-https.service
+    - greenwood-registry-auth-https.service
+    - greenwood-application-recovery.timer
+    - greenwood-application-recovery.service
+  register: resume_control_activity
+  changed_when: false
+  failed_when: false
+
+- name: Refuse already active or uncertain service state
+  ansible.builtin.assert:
+    that:
+      - item.rc == 0
+      - "'ActiveState=inactive' in item.stdout_lines or 'ActiveState=failed' in item.stdout_lines"
+      - "'MainPID=0' in item.stdout_lines or item.item.endswith('.timer')"
+    fail_msg: A service is running or its state is uncertain; inspect and reconcile it before bounded first-start continuation
+  loop: "{{ resume_control_activity.results }}"
+  loop_control:
+    label: "{{ item.item }}"

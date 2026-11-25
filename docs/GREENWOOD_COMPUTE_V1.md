@@ -1,182 +1,182 @@
 # Greenwood Compute Protocol V1
 
-This document defines the Greenwood compute/contract execution protocol.
+Source reference reviewed November 24, 2026. The request/assignment V1 and receipt
+V2 formats below map to `src/Compute/Protocol`; this documentation introduces no
+wire change. See [project status](PROJECT_STATUS.md) for release/qualification
+state and [economics](economics/README.md) for protocol versus adopted policy.
 
-## 1. Architecture
+## Execution paths and roles
 
-```
-+------------------+    +------------------+    +-------------+
-|  greenwoodd      |    |  greenwood-provider |    |  containerd |
-|  (blockchain)    |----|  (compute agent)  |----|  (runtime)  |
-+------------------+    +------------------+    +-------------+
-```
+Finite jobs use finalized `ComputeRequest` → `ComputeAssign` → provider execution
+→ `ComputeReceiptV2`. Validators check authorization, deterministic state,
+funding and receipts. They do not execute OCI workloads or read remote cgroups.
+`bin/greenwood-provider` supervises off-chain workers and containerd execution.
+The supervisor builds/signs receipts from bounded worker facts; workers do not
+hold its signing key.
 
-## 2. Objects
+Hosted applications instead use Application Registry authority, approved assignment
+documents, the deployment controller/receiver and `ProviderApplicationOperator`.
+These are distinct from finite-job `ComputeAssign` transactions. Recurring hosted
+financial intervals share the native `ServiceSettlement` engine. Containerd
+resource-GC leases, capacity reservations and financial commitments are different
+identities and must not be interchanged.
 
-### 2.1 Provider
+## Transaction map
 
-```
-provider_id: string
-owner_address: 32-byte address
-status: pending | active | inactive
-cpu_capacity: u32 (milli-cores)
-memory_capacity: u64 (bytes)
-endpoint: string
-```
+All use the signed [V1 envelope](GREENWOOD_PROTOCOL_V1.md).
 
-### 2.2 Workload
+| Type | Payload | Purpose |
+| --- | --- | --- |
+| 7 | `ComputeRequest` | Request identity and bounded execution terms |
+| 8 | `ComputeAssign` | Provider and assignment generation |
+| 9 | Signed `ComputeReceiptV2` | Terminal execution evidence |
+| 10 | `ProviderCapability` V1 | Base capacity advertisement |
+| 13 | Canonical native service action | Quote acceptance, escrow, claims, settlement/refund |
+| 14 | `ProviderCapabilityV2` | Hardware/resource capability extension |
 
-```
-workload_id: string
-owner: 32-byte address
-provider_id: string
-image: string
-image_digest: string (mandatory)
-command: array of strings
-args: array of strings
-env: map of string -> string
-cpu_millis: u32
-memory_bytes: u64
-ports: array of port mappings
-status: pending | running | stopped | failed
-```
+Types 4–6 (`DeployWorkload`, `UpdateWorkload`, `StopWorkload`) have reserved
+constants but are rejected by the current envelope constructor. Earlier generic
+workload examples were not the accepted protocol.
 
-### 2.3 WorkloadReceipt
+## Frozen finite-job encodings
 
-```
-workload_id: string
-provider_id: string
-exit_code: i32 (optional)
-started_at: u64 (optional)
-stopped_at: u64 (optional)
-logs_hash: 32 bytes (optional)
-health_status: healthy | unhealthy | unknown
-```
+Integers are unsigned big-endian; supported `u64` values fit signed 64-bit PHP.
+`bytes(x)` is `u32(length) | x`. Identities/digests below are raw bytes, not hex.
+Decoders reject trailing data.
 
-## 3. DeployWorkload Transaction
+### ComputeRequest (type 7)
 
-```
-DeployWorkload payload:
-    workload_id: length-prefixed string
-    provider_id: length-prefixed string
-    image: length-prefixed string
-    image_digest: length-prefixed string
-    command: array of length-prefixed strings
-    args: array of length-prefixed strings
-    env: map of length-prefixed key-value pairs
-    cpu_millis: u32
-    memory_bytes: u64
+```text
+u16 protocol_version = 1
+requester[32]
+u32 request_nonce
+workload_digest[32]
+bytes(workload_ref)             # retrieval metadata, at most 256 bytes
+input_digest[32]
+bytes(input_ref)                # retrieval metadata, at most 256 bytes
+u8 trust_class                 # OPEN=0, TRUSTED=1, SOVEREIGN=2
+u32 cpu_limit_millis            # milli-cores, not elapsed CPU milliseconds
+u64 memory_limit_bytes
+u32 pid_limit
+u64 execution_timeout_ms
+u32 output_retention_bytes
+u64 max_payment                # GWD base units on economic chains
+u64 deadline_height
 ```
 
-## 4. Execution Model
+`ComputeRequestId = H(GREENWOOD_COMPUTE_REQUEST_V1, canonical_request_bytes)`.
+The outer transaction authenticates the requester; no second request signature
+exists. `max_payment` is a ceiling, not escrow. See the
+[request codec](../src/Compute/Codec/ComputeRequestCodec.php) and
+[request object](../src/Compute/Protocol/ComputeRequest.php).
 
-### 4.1 Chain Execution
+### ComputeAssign (type 8)
 
-```
-block validation
-    -> validators finalize workload assignment
-```
-
-### 4.2 Provider Execution (OFF-CHAIN)
-
-```
-provider watches finalized state
-    -> identifies assigned workloads
-    -> verifies assignment
-    -> pulls exact OCI image digest
-    -> creates container via containerd
-    -> applies resource limits
-    -> starts container
-    -> monitors health
-    -> submits workload receipt
+```text
+u16 protocol_version = 1
+request_id[32]
+provider_id[32]
+provider_public_key[32]
+u32 generation                 # starts at 1
+u64 deadline
 ```
 
-**IMPORTANT**: Container execution MUST NOT affect consensus determinism.
+Provider ID is derived from its public key under `GREENWOOD_PROVIDER_V1`.
+The [assignment](../src/Compute/Protocol/ComputeAssign.php) binds a generation;
+stale-generation receipts cannot finish a replacement assignment. On an economic
+chain, matching funding must exist in an earlier finalized block for the request,
+provider, generation and deadline.
 
-## 5. Provider Agent (greenwood-provider)
+### ComputeReceiptV2 (type 9)
 
-```
-bin/greenwood-provider
-```
+V2 starts with `u16(2)`, request ID and `u32 generation`, followed by the remaining
+frozen V1 body fields:
 
-Responsibilities:
-
-- Watch finalized Greenwood state
-- Find workloads assigned to this provider
-- Verify provider assignment
-- Pull OCI images by exact digest
-- Create/start containers through containerd
-- Enforce CPU/memory limits
-- Monitor health
-- Submit workload receipts
-
-## 6. containerd Integration
-
-Preferred: PHP direct gRPC integration to containerd API.
-
-Fallback: Small local transport adapter (no protocol logic).
-
-### 6.1 Image Pulling
-
-```
-image_digest = sha256:<digest>
+```text
+provider_id[32], execution_id[32]
+workload_digest[32], input_digest[32], output_digest[32]
+bytes(output_ref)
+u8 status
+u8 exit_code_present, u32 exit_code if present
+u64 cpu_time_ms, u64 memory_peak_bytes, u64 runtime_duration_ms
+u8 fuel_used_present, u64 fuel_used if present
+u64 output_bytes_observed
+u8 stdout_truncated, u8 stderr_truncated
+u16 signature_length = 64, signature[64]
 ```
 
-MUST use exact digest, never mutable tags like "latest".
+Provider signing digest: `H(GREENWOOD_RECEIPT_SIGN_V2, unsigned_receipt_bytes)`;
+the provider signs this digest with Ed25519.
+Receipt ID: `H(GREENWOOD_COMPUTE_RECEIPT_V2, unsigned_receipt_bytes)`.
+The enclosing transaction is authenticated separately. The
+[codec](../src/Compute/Codec/ComputeReceiptV2Codec.php) and
+[verifier](../src/Compute/Verification/ComputeReceiptVerifier.php) define exact
+status, optional-field, assignment, signature and bounds checks. Peak RAM is not
+RAM-hours; output size is not egress. A signed counter establishes attribution,
+not independent proof of consumption.
 
-### 6.2 Resource Limits
+## Capacity, eligibility and operator onboarding
 
-```
-CPU: u32 milli-cores
-Memory: u64 bytes
-```
+[ProviderCapability](../src/Compute/Protocol/ProviderCapability.php) binds ID/key,
+ACTIVE/DRAINING/SUSPENDED status, increasing nonce, supported architectures,
+CPU/memory/PID capacity and maximum concurrent jobs. Capability registration does
+not grant TRUSTED/SOVEREIGN eligibility. Those execution classes select providers
+without weakening the finite-workload sandbox.
 
-### 6.3 Persistent Volumes
+[ProviderCapabilityV2](../src/Resources/ProviderCapabilityV2.php) adds signed assets
+and resource profiles without rewriting V1. A
+[ResourceManifest](../src/Resources/ResourceManifest.php) fixes quoted assets,
+units, reservation/consumption basis, rates, maxima and coverage. An advertisement
+is not physical qualification. Unsupported meters remain nonpayable; overlapping
+positive-price coverage cannot charge twice for the same resource.
 
-```
-/var/lib/greenwood/volumes/<volume_id>/
-```
+A homelab provider needs approved Linux runtime/artifacts, its own provider identity,
+trusted chain/genesis and RPC configuration, protected state, truthful capacity,
+and the required network eligibility, program and funding authorizations. Physical
+placement is an operator choice subject to isolation and durability requirements.
+Joining as a provider does not add a validator vote, treasury signer, independent
+witness or subsidy entitlement. Consensus membership remains genesis-fixed.
+See [provider operations](provider-operations.md),
+[operator onboarding](operations/ROLE_BASED_ONBOARDING.md) and
+[Linux requirements](linux-execution-manifest.md).
 
-Provider-local volumes only for v1.
+Execution classes and economic attestation profiles are separate. Fresh production
+requires explicit V2 resource programs. An approved Epoch 0 operator-attested
+program is customer-funded with zero subsidy and disclosed common control.
+Independent programs require qualified sources/domains and finalized eligibility;
+separate processes, nodes or keys under one operator do not establish independence.
 
-## 7. Receipt Submission
+## Funding and runtime boundaries
 
-Workload receipts are submitted as transactions to finalize state.
+Finite assignment requires prior-finalized escrow. Hosted start/recovery checks the
+receiver's COMMITTED assignment journal, exact approved document/generation,
+registry authority, provider, chain/genesis and active funded interval. Each renewal
+needs funding; runtime restarts do not create new billing entitlements. Missing
+protected funding configuration fails `HOSTED_SERVICE_SETTLEMENT_NOT_QUALIFIED`.
+A deployment flag cannot supply missing funds or establish qualification.
 
-```
-SubmitWorkloadReceipt payload:
-    workload_id: length-prefixed string
-    provider_id: length-prefixed string
-    exit_code: i32
-    started_at: u64
-    stopped_at: u64
-    logs_hash: 32 bytes
-    health_status: i32
-```
+Usage evidence and challenge/dispute rules govern payment after execution.
+Settlement is an explicit signed action. Receipt finality and provider journal
+`SETTLED` mean execution reconciliation, not GWD payment. Unused escrow returns to
+its original source. See [current financial rules](economics/README.md).
 
-## 8. Health Checks
+Workloads use exact OCI digests, verified input identity, bounded CPU/memory/PID,
+timeout and output policies. Finite V1 workloads have a private network namespace
+without external connectivity. Hosted networking/storage and governed system-service
+mounts use separate reviewed paths, not extra fields in the finite request.
+Read [compute security](compute-security-v1.md) before runtime changes.
 
-Providers should monitor workload health:
+Expiry/stale-head handling is polling based. Financial ceilings do not prove hard
+physical cutoffs. Historical local tests/replays do not certify deployed isolation,
+independent metering, distributed operation or production acceptance.
 
-- HTTP endpoint health checks (if configured)
-- Container exit status
-- Resource usage metrics
+## Verification
 
-## 9. Error Handling
+Follow [testing prerequisites](testing/overview.md). Codecs/verifier tests live in
+`tests/Compute`; funding, hosted and resource tests live in `tests/Economics`.
+Native containerd/cgroup acceptance requires the approved Linux profile. Preserve
+frozen vectors and replay compatibility when changing implementation.
 
-- Image pull failure -> workload marked failed
-- Container start failure -> workload marked failed
-- Health check failure -> provider reports unhealthy status
-
-## 10. Security
-
-- Image digest verification mandatory
-- Resource limits enforced
-- No host filesystem access
-- No network access (unless explicitly allowed by workload)
-
----
-
-<!-- docs-nav -->
-**Continue reading:** [Documentation hub](README.md) · [Provider operations](provider-operations.md) · [Compute security](compute-security-v1.md)
-<!-- /docs-nav -->
+**Continue reading:** [Documentation hub](README.md) ·
+[Provider operations](provider-operations.md) ·
+[Resource metering](guides/RESOURCE_METERING.md) · [Economics](economics/README.md)

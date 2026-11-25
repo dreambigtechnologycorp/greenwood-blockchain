@@ -1,10 +1,11 @@
 # Greenwood Operator API v1
 
 Privileged control plane for node operators. **Never served on the public
-listener.** Transport (preferred order):
-
-1. Unix-domain socket (`--operator-socket=/run/greenwood/operator.sock`, mode 0660)
-2. Loopback-only HTTP + bearer token
+listener.** The shipped node/provider entrypoints configure a Unix-domain socket
+(`--operator-socket=/run/greenwood/operator.sock`, mode 0660). The transport and
+authentication classes also support restricted HTTP composition; this is not a
+`greenwoodd --operator-listen` option. The provider application bridge has its own
+explicit listener/peer options described in [provider operations](provider-operations.md).
 
 Authentication: every request requires `Authorization: Bearer <token>`.
 The token comes from a protected file (`--operator-token-file`, mode 0600),
@@ -75,12 +76,17 @@ Response:
 `finalized: false` — this is transport acceptance, not finality. Poll
 `GET /v1/compute/providers/{id}` on the public API. Chain admission enforces
 all protocol guards (key binding, capability nonce, reservation cover);
-rejection surfaces as 409 PROVIDER_CAPABILITY_REJECTED.
+rejection surfaces as 409 PROVIDER_CAPABILITY_REJECTED. The adapter also maps
+a submission transport exception to that code, so reconcile finalized capability
+and account nonce after an uncertain response before issuing another mutation.
 
 Capability request fields (all optional after registration; all required for
 initial registration): `status` (ACTIVE|DRAINING|SUSPENDED), `architectures`,
 `cpu_capacity_millis`, `memory_capacity_bytes`, `pid_capacity`,
-`max_concurrent_jobs`. Unknown fields → 400.
+`max_concurrent_jobs`. Unknown fields → 400. This endpoint signs the base
+type-10 capability; it does not publish the type-14 native resource extension.
+On a native economic genesis, transaction fees and any applicable resource
+reservation constraints still apply.
 
 ## Local emergency drain vs network status
 

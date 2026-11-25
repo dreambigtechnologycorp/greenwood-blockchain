@@ -1,8 +1,16 @@
 # Runtime prerequisite preparation
 
+Use [project status](../PROJECT_STATUS.md) for current progress. The dated
+November 17 sections below retain their original evidence; node-6 link recovery
+and runtime installation were subsequently recorded in the
+[November 18 capacity audit](CAPACITY_AUDIT_2026-11-18.md). Do not reinstall
+completed prerequisites solely because an older section names a pending host.
+
 Use `deploy/ansible/playbooks/runtime_prerequisites.yml` to validate the host runtime separately from chain deployment. Its default invocation and check mode perform a read-only audit. They do not install packages, stop consumers, deploy identities, or activate genesis. Ansible may create temporary module files on the controller and targets.
 
-For the seven-node profile the audit covers nodes 1–3 and 5–7. Node 4 remains the boot/network gateway and is excluded. Do not use the unused SD volumes on nodes 5–7 for runtime storage without a separate storage decision.
+For the seven-node profile the audit covers nodes 1–3 and 5–7. Node 4 remains the boot/network gateway and is excluded. The SD volumes on nodes 5–7 are covered by the separate
+[durable-state procedure](../../deploy/ansible/STATE_STORAGE.md); runtime
+package preparation alone does not mount or qualify them.
 
 ## Inputs
 
@@ -37,7 +45,7 @@ After reviewing the candidate and confirming recovery access, an explicitly appr
 
 Installation runs serially through the existing `common` and `container_runtime` roles. It installs PHP, Wasmtime, gRPC, containerd, runc and EROFS tooling and starts containerd. It does not deploy Greenwood application services or production chain configuration. Hosts with active Greenwood or containerd units are rejected; existing nodes 1–3 require a separately coordinated maintenance procedure. Do not disable that guard to force an upgrade.
 
-Passing preparation does not establish package dependency resolution, successful installation, workload execution, EROFS suitability on NFS-backed storage, metering qualification, or production readiness. Preserve package metadata and versions, and run installation verification and physical workload acceptance after an authorized installation. Governance and genesis approvals remain separate.
+Passing preparation does not establish package dependency resolution, successful installation, workload execution, EROFS suitability on the selected durable filesystem, metering qualification, or production readiness. Direct NFS-backed live state is rejected by the current first-start storage checks. Preserve package metadata and versions, and run installation verification and physical workload acceptance after an authorized installation. Governance and genesis approvals remain separate.
 
 ## November 17, 2026 candidate
 

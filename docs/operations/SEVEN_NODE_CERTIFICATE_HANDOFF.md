@@ -1,5 +1,11 @@
 # Seven-node certificate and activation handoff
 
+This is a supported seven-node reference composition. For your own service
+layout, begin with [role-based onboarding](ROLE_BASED_ONBOARDING.md); do not copy
+its chain identity, DNS names or certificates. Existing matching credentials
+are retained. [Project status](../PROJECT_STATUS.md) records the reference
+installation and release boundary separately from this procedure.
+
 Use only a reviewed release containing the seven-node receiver and HTTPS startup
 fixes. This guide does not approve genesis, spending, CA authority or activation.
 Private-key operations below are for the human operator, outside the AI session.
@@ -12,7 +18,7 @@ For chain `greenwood-prod-v1`, use these exact control-plane URI SANs:
 
 | Service | Node | URI SAN |
 | --- | --- | --- |
-| Deployment controller | 1 | `spiffe://greenwood-prod-v1/control-plane/deployment-controller` |
+| Deployment controller | 1, 6 and 7, each with a separate leaf/key/pin | `spiffe://greenwood-prod-v1/control-plane/deployment-controller` |
 | Assignment receiver | 1 | `spiffe://greenwood-prod-v1/control-plane/assignment/node-1` |
 | Assignment receiver | 2 | `spiffe://greenwood-prod-v1/control-plane/assignment/node-2` |
 | Assignment receiver | 3 | `spiffe://greenwood-prod-v1/control-plane/assignment/node-3` |
@@ -24,7 +30,8 @@ For chain `greenwood-prod-v1`, use these exact control-plane URI SANs:
 | Provider observer | 1, 2, 3, 6, 7 respectively | `spiffe://greenwood-prod-v1/control-plane/provider/node-N` |
 
 Use separate receiver credentials, never a node-4 identity on node-5. Node-4
-remains gateway/netboot-only. Each control-plane certificate must contain exactly
+remains outside application assignment hosting; it supplies gateway, netboot/NFS,
+Cloudflare and shared SSD/iSCSI infrastructure in this reference installation. Each control-plane certificate must contain exactly
 its intended URI SAN, an approved DNS SAN matching its configured `tls_name`, and
 serverAuth/clientAuth extended key usages. Supply each public CSR and approved DNS
 name to your approved certificate issuer. A key manifest or CN alone is insufficient.
@@ -91,8 +98,10 @@ you approve the exact final artifacts and installation scope.
 
 ## 4. Operator-only installation and acceptance
 
-Use the existing [fresh-cluster procedure](../../deploy/ansible/FRESH_CLUSTER.md)
-and [custody boundary](../../deploy/production/OPERATOR_KEY_CUSTODY.md).
+Select the appropriate [installation or continuation](../../deploy/ansible/FRESH_CLUSTER.md)
+and follow the [custody boundary](../../deploy/production/OPERATOR_KEY_CUSTODY.md).
+An installation with staged genesis/identities uses the bounded continuation,
+not fresh initialization or duplicate key generation.
 Install private credentials yourself with the required owners/modes. Sign initial
 policy snapshots yourself, close to startup because they expire; enable their
 approved renewal/transfer workflow. Never reset an existing policy to an empty

@@ -1,0 +1,8 @@
+[Unit]
+RequiresMountsFor=/var/lib/greenwood-state {{ greenwood_storage_bindings | map(attribute='destination') | join(' ') }}
+BindsTo=var-lib-greenwood\x2dstate.mount {{ greenwood_storage_bindings | map(attribute='unit') | join(' ') }}
+After=var-lib-greenwood\x2dstate.mount {{ greenwood_storage_bindings | map(attribute='unit') | join(' ') }}
+ConditionPathIsMountPoint=/var/lib/greenwood-state
+{% for binding in greenwood_storage_bindings %}
+ConditionPathIsMountPoint={{ binding.destination }}
+{% endfor %}

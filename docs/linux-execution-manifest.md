@@ -1,7 +1,12 @@
 # Linux Execution Requirements
 
 This is the current prerequisite checklist, not a certified runtime bill of
-materials. Record the exact approved artifacts for the intended installation.
+materials. Reviewed November 24, 2026. Record exact approved artifacts for the
+intended operator installation. Requirements are role-based: a homelab provider,
+validator, archive/RPC node and control-plane service need different permissions
+and dependencies. See [project status](PROJECT_STATUS.md) for the repository's
+release/qualification state; a historical cluster layout is not a network-wide
+placement requirement.
 
 ## Runtime Inputs
 
@@ -21,6 +26,23 @@ when EROFS is selected. Repository snapshot provenance and package availability
 must be recorded separately. Do not substitute `latest` or a guessed minimum
 version for a tested installation profile.
 
+## Roles and admission
+
+| Role | Required boundary |
+| --- | --- |
+| Non-validating node / archive / RPC | Trusted network genesis and endpoints; verified history/replay and durable state; no validator signing key needed |
+| Validator | Existing genesis membership, its own signing authority and durable safety journal; provider registration cannot add consensus votes |
+| Compute/hosted provider | Approved containerd/runc/EROFS profile, isolated worker, own provider identity, declared capacity, eligibility and finalized funding |
+| Deployment controller / receiver | Protected deployment identity, registry authorization, committed assignment journal and authenticated operator endpoint |
+| Meter / attestor / coordinator | Approved service definition and local consent, scoped evidence/IPC and declared trust policy; independent claims additionally need qualified separate control |
+
+A compatible machine is not automatically admitted to every role. Follow
+[operator onboarding](operations/ROLE_BASED_ONBOARDING.md),
+[provider operations](provider-operations.md) and the
+[economics policy/source map](economics/README.md). Customer-funded Epoch 0
+services still need approved programs and funding. Provider joins do not unlock
+subsidies or rotate the genesis-fixed validator/governance authorities.
+
 ## Ownership and State
 
 Executable releases and all parent directories must be root-owned and not writable
@@ -39,6 +61,15 @@ The dedicated SFTP public-bundle chroot is a deliberate root-owned 0755 exceptio
 under private control-plane state; it contains only public signed output. Signing
 keys and ledgers must never be placed there. See the [handoff](../deploy/ansible/CONTROL_PLANE_HANDOFF.md).
 
+Paths above are role defaults, not a promise that an arbitrary mount is suitable.
+Bind configured writable paths to approved durable storage and validate ownership,
+mount identity, locking and restart behavior before startup. The November 24
+source uses SQLite `journal_mode=DELETE` and `synchronous=EXTRA`; former
+WAL databases require an explicit stopped-service migration. That source change
+has not yet been incorporated into rebuilt immutable release artifacts. See
+[storage operations](../deploy/ansible/STATE_STORAGE.md); do not copy/delete live
+SQLite sidecars or treat an empty replacement directory as recovered state.
+
 ## Containerd Configuration
 
 Use a reviewed configuration for the exact containerd build. Validate it with
@@ -47,7 +78,7 @@ restart. An old example TOML is not proof of compatibility. Preserve unrelated
 runtime settings and storage. Configure worker socket GID persistently; one-off
 `chgrp` does not survive socket recreation.
 
-On disposable/new hardware, acceptance must prove socket ownership across daemon
+On the intended installation profile, acceptance must prove socket ownership across daemon
 restarts and healthy EROFS transfer/unpack plugins. Merely loading the module or
 enabling a snapshotter is insufficient. Restart checks require maintenance approval.
 
@@ -59,7 +90,10 @@ From the installed approved source tree, the node uses `bin/greenwoodd` with
 Private operator activation requires both `--operator-socket` and
 `--operator-token-file`. Do not start a second process beside an existing service.
 
-Control-plane units are staged by Ansible, then activated only in the documented
+Role-specific service definitions and approved releases are staged by Ansible.
+A joining operator uses the network's trusted genesis and public configuration;
+creating a fresh chain is a separate network-creation procedure, not provider
+onboarding. Control-plane units are activated only in the documented
 dependency order after their protected configurations, trust material and current
 policies validate. Setting a deployment boolean does not satisfy authorization.
 

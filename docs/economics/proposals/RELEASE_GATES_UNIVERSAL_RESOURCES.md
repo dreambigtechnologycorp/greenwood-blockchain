@@ -1,5 +1,9 @@
 # Universal resource release gates — HOLD
 
+> **Historical scope — reviewed November 24, 2026.** The machine-specific restrictions, permissions and missing-source list below are archived directions, not current execution authority. Use the current role-based runbooks and project status.
+> Read the [economics index](../README.md) for current source and policy precedence,
+> and [project status](../../PROJECT_STATUS.md) for release/installation and qualification.
+
 **Superseded deployment scope:** the user's November 14 direction selects the
 existing four-node cluster for replacement, without testnet state migration.
 See `docs/operations/PRODUCTION_REBUILD.md` for the ordered source/publish/genesis/

@@ -31,7 +31,10 @@ are the required references for behavior.
 | New-node staging | [Physical handoff](../deploy/ansible/CONTROL_PLANE_HANDOFF.md) | `deploy/ansible/roles/control_plane`, provider runtime preflight |
 
 Current guides distinguish source behavior, protocol compatibility and required
-physical validation. See the [audit scope](CURRENT_FUNCTIONALITY.md#documentation-audit-scope).
+physical validation. [Project status](PROJECT_STATUS.md) records release progress;
+[role-based onboarding](operations/ROLE_BASED_ONBOARDING.md) is the entrypoint for
+a homelab operator. Named host layouts are supported examples, not general
+participation requirements.
 
 ## Operating Reference Set
 
@@ -51,6 +54,57 @@ guides does not modify evidence, authorize deployment or establish passing
 installation results. The current instructions contain only supported processes;
 no report should be substituted for them.
 
+## November 24, 2026 audit
+
+Reviewed every one of the **163 tracked entries in `docs/`** present at the start
+of this audit, plus root documentation, related deployment/service guides and the
+new onboarding/index pages. The [file-by-file audit record](DOCUMENTATION_AUDIT_2026-11-24.json)
+lists the reviewed content, final hashes, preserved artifacts and validation
+limits. Ignored operational outputs, credentials and third-party dependency trees
+are outside this source-documentation audit.
+
+| Area | Review and changes |
+| --- | --- |
+| Root README and contribution/security/release guides | Role-first navigation, reproducible developer entrypoints, explicit source versus release versus installation status |
+| Getting started and user guides | Separate local fixture, application development, existing-network participation and network creation |
+| Architecture, protocol, CLI and RPC | Correct commands, response shapes, envelope types, quorum, persistence and implemented runtime boundaries against source |
+| Contracts | Replace two Markdown-disguised `.wat` files with valid runnable WAT examples; correct quickstart commands |
+| Operations and deployment | Role dependencies, provider registration/funding, exact profile limitations, staged recovery, storage continuation and credential boundaries |
+| Economics | Separate protocol invariants and current funding rules from the initial operator's adopted policy and historical proposals |
+| JSON templates and evidence | Parse/review all 60 tracked economics JSON files; verify intentionally incomplete policy templates reject and the disabled catalog remains disabled |
+| Custody PDFs | Synchronize the CA guide with its Markdown source; add a current-scope/correction page to the historical key-creation guide while retaining original commands |
+| Legal and third-party notices | Review navigation/provenance references; preserve license, attribution and trademark terms unchanged |
+
+### Verification performed
+
+- Local Markdown file/heading links and fenced-block balance across the full
+  first-party reference set; whitespace validation with `git diff --check`.
+- Current-source CLI/RPC regressions: **17 tests, 184 assertions** using existing
+  Composer test dependencies and a temporary loader for the working source.
+- Both WAT files and the inline quickstart module compiled with WABT 1.0.37,
+  passed the current PHP ABI/policy checks, and passed a local WebAssembly host
+  fixture's return/storage/error behavior checks.
+- Zero-reserve-budget checks, customer-funded-program boundary checks, independent
+  protocol vectors and 12 contract vectors passed.
+- Both PDFs rendered and visually reviewed; all 13 CA-guide code blocks match
+  the Markdown, and all 14 original custody pages retain their command text.
+- Digest-bound adopted governance documents and all historical JSON evidence
+  retained their bytes. Historical prose received scope notices where appropriate.
+
+### Limits of this review
+
+This is not the complete final release qualification. Native Wasmtime execution
+of the repaired examples was not rerun because a compatible Linux shared library
+was unavailable in the inspected development runtime locations. Node WebAssembly
+fixtures and ABI checks do not replace that native-runtime test. Live nodes,
+private inventories, secret material, external routing and physical acceptance
+were not inspected by this documentation pass. No service was activated.
+
+The initial operator supplied successful storage-migration results during the
+audit; [project status](PROJECT_STATUS.md) records that report separately. Final
+source review/qualification, immutable artifact rebuild and operator approval
+remain prerequisites for deployment of the newly changed runtime.
+
 ## Maintenance checklist
 
 When changing protocol-relevant code, update the relevant specification,
@@ -58,8 +112,10 @@ vectors/tests, source anchor, and public-facing guide in the same change. When
 deprecating a page, replace stale instructions with a clear link to the
 canonical reference rather than leaving plausible but invalid examples.
 
-Evidence is kept separate from the operational reference set and is not changed
-by documentation maintenance.
+Preserve digest-bound adoption records and raw historical evidence. Label dated
+prose clearly, link to the current rule or guide, and keep profile-specific names
+out of general onboarding. When changing a PDF, synchronize its source or add an
+explicit historical scope/correction notice, then render and inspect it.
 
 ---
 

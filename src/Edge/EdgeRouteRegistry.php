@@ -21,7 +21,7 @@ final class EdgeRouteRegistry
             throw new \RuntimeException('Cannot create edge registry directory');
         }
         $this->db = new PDO('sqlite:' . $directory . '/routes.sqlite', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db, 5000);
         $this->db->exec('CREATE TABLE IF NOT EXISTS edge_policy (id INTEGER PRIMARY KEY CHECK(id=1), domain TEXT NOT NULL)');
         $insert = $this->db->prepare('INSERT OR IGNORE INTO edge_policy VALUES (1, ?)');
         $insert->execute([$domain]);

@@ -1,5 +1,11 @@
 # Journal retention and governance recovery
 
+Use [project status](../PROJECT_STATUS.md) to distinguish the unreleased SQLite
+durability changes from previously built releases. The current source uses
+`DELETE` rollback journals with `synchronous=EXTRA`, and requires explicit offline
+migration for older WAL databases. See the [reference storage procedure](../../deploy/ansible/STATE_STORAGE.md);
+its specific media plan is not a generic command for another operator's host.
+
 ## Local journal archival
 
 Archival moves completed payloads out of hot SQLite tables into content-addressed
@@ -43,8 +49,10 @@ or runtime identity.
 Stop the corresponding local writer before a filesystem backup or use a consistent
 SQLite online backup plus all immutable archive files. Include archive subdirectories,
 SQLite identity/tombstone tables and service configuration. Restore ownership/modes
-and verify old bundles/audits before resuming. Never copy a live `.sqlite` file alone
-while ignoring its WAL. Never delete a protected archive to bypass a corruption error.
+and verify old bundles/audits before resuming. Never copy a live `.sqlite` file
+alone: use SQLite backup or stop writers and preserve any journal/WAL sidecars
+required by the installed revision. Do not delete sidecars to force conversion,
+or delete a protected archive to bypass a corruption error.
 An offline `VACUUM` may reclaim SQLite free pages after a verified backup; never run
 it automatically in a billing loop.
 
@@ -80,7 +88,9 @@ An enabled version-1 policy requires **all** of these fields:
 | `veto_threshold` | Explicit 1–5 existing governance signers |
 
 No default council, five-of-seven recommendation, 30-day duration or production
-custody is silently installed. Choose and ratify the parameters outside the tool.
+custody is silently installed. Use the selected network's approved parameters.
+The reference network's [November 18 adoption](../economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md)
+records its recovery choice; this does not demonstrate custody or execution.
 Key separation checks detect identical keys, not independent organizations. Recovery
 cannot cryptographically prove that a key was lost; it grants the explicitly
 configured emergency authority, with notice, expiry and ordinary-signer veto.
@@ -120,7 +130,8 @@ php scripts/economics-cli.php treasury-sign \
   /private/genesis.json /private/council.key /private/action.json CURRENT_ACCOUNT_NONCE
 ```
 
-The command produces a signed envelope; it does not broadcast. Inspect and submit
+This private-key command is human-operator-only. It produces a signed envelope;
+it does not broadcast. Inspect and submit
 through your existing authenticated transaction workflow, then verify certified
 inclusion. Use the original policy version until execution finalizes. Old signer
 keys and old version-bound approvals cannot authorize new actions afterward.

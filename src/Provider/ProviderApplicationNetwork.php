@@ -18,7 +18,7 @@ final class ProviderApplicationNetwork
         private readonly \Closure $detach,
     ) {
         $this->db = new PDO('sqlite:' . $directory . '/network.sqlite', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db, 5000);
         $this->db->exec('CREATE TABLE IF NOT EXISTS networks (application_id INTEGER, service TEXT, record TEXT NOT NULL, PRIMARY KEY(application_id,service))');
         $this->db->exec('CREATE TABLE IF NOT EXISTS network_events (id INTEGER PRIMARY KEY, application_id INTEGER, service TEXT, recorded_at INTEGER, record TEXT NOT NULL)');
     }

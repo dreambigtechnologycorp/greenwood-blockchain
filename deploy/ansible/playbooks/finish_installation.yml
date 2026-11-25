@@ -1,0 +1,97 @@
+---
+# Shared staged-installation continuation. Invoked only after fresh/resume gates.
+- name: Require complete same-run staging gates before any continuation mutation
+  hosts: all
+  become: false
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Reject direct activation without verified inputs and staging
+      ansible.builtin.assert:
+        that:
+          - greenwood_operator_secret_access_authorized | default(false) | bool
+          - greenwood_fresh_cluster_approved | default(false) | bool
+          - greenwood_activate_protocol | default(false) | bool
+          - greenwood_activate_hosting | default(false) | bool
+          - greenwood_recovery_access_confirmed | default(false) | bool
+          - not ansible_check_mode
+          - hostvars[item].greenwood_installation_staging_verified | default(false) | bool
+          - (hostvars[item].greenwood_installation_inputs_verified | default({})).source_sha | default('') == greenwood_source_sha
+          - (hostvars[item].greenwood_installation_inputs_verified | default({})).genesis_sha256 | default('') == greenwood_genesis_sha256
+          - (hostvars[item].greenwood_installation_inputs_verified | default({})).chain_config_sha256 | default('') == greenwood_chain_config_sha256
+        fail_msg: Verified staging gates are required on every target; run the guarded fresh or bounded continuation entrypoint
+      loop: "{{ groups['all'] }}"
+
+- name: Reject unsupported durable storage before any first-start mutation
+  hosts: "validators:providers:control_plane:system_runtime_hosts"
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: control_plane
+        tasks_from: storage_preflight
+
+- ansible.builtin.import_playbook: control_plane.yml
+
+- name: Start the approved validator set
+  hosts: validators
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Enable and start validators after the all-node identity gate
+      ansible.builtin.systemd_service:
+        name: greenwoodd
+        daemon_reload: true
+        enabled: true
+        state: started
+    - name: Wait for chain-specific RPC readiness
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9201/v1/chain/status
+        return_content: true
+      register: fresh_rpc
+      until: fresh_rpc.status == 200 and fresh_rpc.json.chain_id == provider_chain_id and fresh_rpc.json.genesis_hash == greenwood_expected_genesis_hash and fresh_rpc.json.finalized_height | int > 0
+      retries: 60
+      delay: 5
+
+- ansible.builtin.import_playbook: activate_rpc.yml
+
+- name: Establish provider-only HTTPS client trust
+  hosts: "providers:!validators"
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_tasks: ../tasks/rpc_client_trust.yml
+
+- name: Start approved provider identities independently of validator placement
+  hosts: providers
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Verify the configured chain endpoint before provider start
+      ansible.builtin.uri:
+        url: "{{ provider_rpc_endpoint | default('http://127.0.0.1:9201' if inventory_hostname in groups['validators'] else '') }}/v1/chain/status"
+        return_content: true
+        validate_certs: true
+      register: provider_chain_status
+      until: >-
+        provider_chain_status.status | default(0) == 200 and
+        provider_chain_status.json.chain_id | default('') == provider_chain_id and
+        provider_chain_status.json.genesis_hash | default('') == greenwood_expected_genesis_hash and
+        provider_chain_status.json.finalized_height | default(0) | int > 0
+      retries: 30
+      delay: 2
+    - name: Enable and start providers
+      ansible.builtin.systemd_service:
+        name: greenwood-provider
+        enabled: true
+        state: started
+
+# Application recovery remains staged but disabled during initial network
+# activation. Its public identity and hosted-funding configuration must be
+# reviewed before enabling hosted workloads and their recovery timer.
+- ansible.builtin.import_playbook: governed_services.yml
+- ansible.builtin.import_playbook: activate_hosting.yml

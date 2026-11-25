@@ -1,0 +1,8 @@
+---
+# Human-only: reads installed private identities without emitting them.
+- name: Validate cryptographic identity against the approved genesis
+  ansible.builtin.script:
+    cmd: "{{ playbook_dir }}/../files/validate_cluster_identity.php /opt/greenwood {{ validator_label | default('-') }} {{ provider_chain_id }} {{ greenwood_provider_public_key }}"
+    executable: /usr/bin/php
+  changed_when: false
+  no_log: true

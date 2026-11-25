@@ -8,7 +8,7 @@ final class AssignmentDistributor {
     public function __construct(private readonly \PDO $db,private readonly array $nodes,
         private readonly \Closure $authorize,private readonly \Closure $send) {
         ReceiverTopology::validate($nodes);
-        $db->setAttribute(\PDO::ATTR_ERRMODE,\PDO::ERRMODE_EXCEPTION);$db->exec('PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000');
+        $db->setAttribute(\PDO::ATTR_ERRMODE,\PDO::ERRMODE_EXCEPTION);\Greenwood\Persistence\SqliteDurability::configure($db);
         $db->exec('CREATE TABLE IF NOT EXISTS distribution(generation TEXT PRIMARY KEY, document TEXT NOT NULL, state TEXT NOT NULL)');
         $db->exec('CREATE TABLE IF NOT EXISTS distribution_ack(generation TEXT NOT NULL, node TEXT NOT NULL, evidence TEXT NOT NULL, PRIMARY KEY(generation,node))');
     }

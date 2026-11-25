@@ -1,190 +1,62 @@
 # Consensus
 
-Greenwood uses a BFT (Byzantine Fault Tolerant) consensus algorithm.
+Greenwood uses a fixed-validator BFT protocol with proposal, prevote and precommit
+phases. Membership and equal voting power come from trusted genesis. More provider
+hosts or assignment receivers do not add validators or independent operators.
+The current administrative and physical topology is in
+[project status](../PROJECT_STATUS.md).
 
-## BFT Consensus
+## Quorum and finality
 
-### Fault Tolerance
+The certificate quorum is `intdiv(2*n,3)+1`, strictly greater than two thirds of the
+validator set. The implementation requires at least three validators. Three
+validators need all three for progress; a four-validator local fixture needs three.
+Safety depends on the protocol's Byzantine-fault assumptions and preserved signing
+state; machine count alone is not evidence of independent control.
 
-- **Genesis-fixed equal-power validators**; current certificate quorum requires at least three.
-- **Strict >2/3 quorum**: `intdiv(2*n,3)+1` votes.
-- Three validators require all three; the four-validator local fixture requires
-  three and tolerates one unavailable validator for liveness.
+1. The deterministic proposer broadcasts a block for a height and round.
+2. Peers validate canonical bytes, signatures, state transitions and commitments,
+   then prevote subject to their current lock.
+3. A matching quorum of prevotes establishes a durable lock before precommit.
+4. A matching quorum of precommits finalizes the block and advances to the next
+   height. Timeouts can advance rounds without finalizing a block.
 
-### Safety Properties
+The proposer uses validators sorted by genesis ID and index
+`(height + round) % validator_count`. Timers and lock/proof handling are implemented
+in [ConsensusDriver](../../src/Consensus/Runtime/ConsensusDriver.php); this page is
+not a substitute for the full state machine.
 
-- **No double signing**: durable signing journals prevent conflicting local signatures.
-- **Finality guarantee**: verified strict-quorum certificates.
-- **Restart recovery**: Resume from finality
+## Signed messages and persistence
 
-## Consensus Phases
+[Message](../../src/Consensus/Messages/Message.php) binds kind, chain ID, genesis
+hash, height, round, validator ID, target, optional block and proof to an Ed25519
+signature. The HTTP transport wraps canonical binary bytes as
+`{"type":"prevote","payload":"<base64 canonical bytes>"}`; message fields are not
+signed as JSON and contain no wall-clock timestamp.
 
-### 1. Proposal
+[Certificate](../../src/Consensus/Messages/Certificate.php) verifies distinct
+member signatures for the same chain, genesis, phase, height, target and round.
+The daemon checks finality certificates while replaying post-genesis history.
 
-```
-Proposer broadcasts block to all validators
-```
+The validator's separate [SafetyJournal](../../src/Consensus/Journal/SafetyJournal.php)
+persists signed messages and locks. An identical signing request reuses recorded
+bytes; a conflicting one fails. Preserve this journal and `validator.initialized`
+with the matching identity. It cannot be reconstructed from finalized block files.
 
-### 2. Prevote
+## Inspection and restart
 
-```
-All validators:
-- Verify block
-- Sign prevote message
-- Broadcast to all validators
-```
-
-### 3. Precommit
-
-```
-If the required quorum of matching prevotes is received:
-- Sign precommit message
-- Broadcast to all validators
-```
-
-### 4. Finalize
-
-```
-If the required quorum of matching precommits is received:
-- Mark block as final
-- Store finality certificate
-- Begin next round
-```
-
-## Message Types
-
-The JSON below is conceptual, not the wire schema. Actual transport uses a
-`type`/base64 `payload` envelope containing canonical binary message bytes; source
-is `src/Consensus/Messages` and `src/Consensus/Network/Transport.php`.
-
-### Proposal
-
-```json
-{
-  "type": "proposal",
-  "height": 1,
-  "round": 0,
-  "block": "block_hash",
-  "timestamp": 1234567890,
-  "proposer": "validator_address",
-  "signature": "proposer_signature"
-}
+```sh
+php bin/greenwood chain status --rpc=http://127.0.0.1:9201
+php bin/greenwood chain finality --rpc=http://127.0.0.1:9201
+php bin/greenwood chain validators --rpc=http://127.0.0.1:9201
 ```
 
-### Prevote
-
-```json
-{
-  "type": "prevote",
-  "height": 1,
-  "round": 0,
-  "block": "block_hash",
-  "timestamp": 1234567890,
-  "validator": "validator_address",
-  "signature": "validator_signature"
-}
-```
-
-### Precommit
-
-```json
-{
-  "type": "precommit",
-  "height": 1,
-  "round": 0,
-  "block": "block_hash",
-  "timestamp": 1234567890,
-  "validator": "validator_address",
-  "signature": "validator_signature"
-}
-```
-
-## Finality Certificate
-
-```json
-{
-  "height": 1,
-  "round": 0,
-  "precommits": [
-    {
-      "validator": "validator_address_1",
-      "signature": "signature_1"
-    },
-    {
-      "validator": "validator_address_2",
-      "signature": "signature_2"
-    },
-    {
-      "validator": "validator_address_3",
-      "signature": "signature_3"
-    }
-  ]
-}
-```
-
-## Round-Robin Proposer
-
-Proposer selected deterministically:
-
-```
-proposer = sorted_validators[(height + round) % validator_count]
-```
-
-## Safety Journal
-
-Tracks validator behavior:
-
-```
-SigningJournal:
-- Prevents double signing
-- Detects equivocation
-- Stores signed messages
-```
-
-## Network Transport
-
-Messages sent via HTTP:
-
-```
-Validator A → Validator B: POST /consensus/proposal
-Validator B → Validator A: POST /consensus/prevote
-```
-
-## Consensus State
-
-```php
-class ConsensusState {
-    public int $height;
-    public int $round;
-    public string $proposer;
-    public ?string $proposedBlock;
-    public array $prevotes;
-    public array $precommits;
-}
-```
-
-## Recovery
-
-On restart:
-
-1. Load last finality height
-2. Load last state root
-3. Verify and replay authoritative block history from genesis
-4. Rebuild current state
-5. Join consensus at current height
-
-## RPC Endpoints
-
-```bash
-# Get finality info
-curl http://localhost:9201/v1/chain/finality
-
-# Get validators
-curl http://localhost:9201/v1/chain/validators
-
-# Get chain status
-curl http://localhost:9201/v1/chain/status
-```
+These examples assume a local listener. Validator `active: true` in RPC describes
+genesis membership, not a heartbeat. `syncing: false` is currently a constant and
+is not a peer catch-up proof. On restart the daemon validates history, rebuilds
+derived state, verifies its safety journal and resumes the next height.
+See [consensus architecture](../architecture/consensus-layer.md) and
+[recovery](../architecture/recovery.md).
 
 ---
 

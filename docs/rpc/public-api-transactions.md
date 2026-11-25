@@ -1,8 +1,8 @@
-## Transaction Endpoints
+# Transaction endpoints
 
 ### Submit Transaction
 
-```bash
+```text
 POST /v1/transactions
 
 Content-Type: application/json
@@ -32,7 +32,7 @@ Response: 422 TRANSACTION_REJECTED
 
 ### Get Transaction
 
-```bash
+```text
 GET /v1/transactions/{hash}
 
 Response: 404 NOT_FOUND
@@ -51,7 +51,7 @@ Response: 404 NOT_FOUND
 
 ### Get Transaction Status
 
-```bash
+```text
 GET /v1/transactions/{hash}/status
 
 Response:
@@ -69,7 +69,8 @@ uncertain result before any retry.
 
 ### Get Finalized Contract Receipt
 
-Local B6C implementation; physical availability requires a separately approved versioned release.
+Source implementation; see [project status](../PROJECT_STATUS.md) for current
+release and physical-acceptance evidence.
 
 `GET /v1/transactions/{hash}/receipt` returns `tx_hash`, `included_height`,
 `block_hash`, the responding node's current `finalized_height`, `receipt`, and

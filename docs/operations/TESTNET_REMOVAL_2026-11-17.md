@@ -1,5 +1,11 @@
 # Testnet removal — November 17, 2026
 
+> Historical snapshot: the findings and commands below describe their dated
+> source/infrastructure state, not the current installation procedure. Start with
+> [project status](../PROJECT_STATUS.md) and [operator onboarding](README.md).
+> Retain the recorded evidence and counts; do not repeat completed initialization,
+> removal or credential-generation steps from this snapshot.
+
 The user authorized removal of the obsolete Greenwood testnet, its deployments, identities, chain/application data and backups, while retaining OS/network access and runtime prerequisites. No replacement network was installed or activated.
 
 The deployed testnet was removed from nodes 1–4. Nodes 5–7 had no Greenwood deployment. The removal included validator/provider configuration and keys, chain and application databases, registry/application containers and images, old deployment/release trees, dedicated application logs, testnet web routes, historical state directories, and the old full node-1 root-filesystem backup on node 4's SSD. No replacement testnet backup was created. Temporary cleanup helpers were removed after evidence collection.

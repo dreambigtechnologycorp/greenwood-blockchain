@@ -1,85 +1,43 @@
 # Getting started
 
-Greenwood has three core PHP executable roles. Keeping those roles distinct is
-the quickest way to understand a deployment:
+Choose a workflow before installing anything. Greenwood has separate interfaces
+for application developers, infrastructure operators, and protocol contributors.
 
-| Program | Role | State it owns |
-|---|---|---|
-| `bin/greenwoodd` | Validator or non-signing node; consensus, block validation, and public API. | Finalized blocks, SQLite index, and—on validators—the signing journal. |
-| `bin/greenwood-provider` | Linux provider supervisor; observes finalized assignments and runs OCI work. | Provider job registry and local runtime state. |
-| `bin/greenwood` | First-party RPC client. | None; it deliberately does not read node databases or block files. |
+| You want to… | Start here |
+| --- | --- |
+| Develop the node or understand consensus | [Developer setup](development.md), then the [local network](quickstart.md) |
+| Supply compute from a homelab | [Role-based onboarding](../operations/ROLE_BASED_ONBOARDING.md), then [provider operations](../provider-operations.md) |
+| Deploy a hosted application | [Application workflow](../CURRENT_FUNCTIONALITY.md#hosted-applications), then [controller documentation](../../system-services/deployment-controller/README.md) |
+| Build a smart contract | [Contract quickstart](../contracts/quickstart.md) and [WASM ABI](../GREENWOOD_WASM_ABI_V1.md) |
+| Integrate a client | [RPC reference](../rpc-v1.md), [PHP CLI](../cli.md), [JavaScript resource SDK](../../sdk/javascript/README.md) |
+| Operate network infrastructure | [Roles and dependencies](../operations/ROLE_BASED_ONBOARDING.md), [deployment guide](../../deploy/README.md) |
 
-`bin/greenwood-cli` is intentionally narrower: it creates development keys and
-locally signs selected transaction types. It never sends private keys over RPC.
+## Concepts to establish first
 
-The separate Python CLI v0.3 manages developer keys, application registration,
-OCI publishing and signed deployment operations. It talks to the registry issuer
-and deployment controller, not the private provider operator API. For hosting,
-start with the [control-plane guide](../../deploy/ansible/CONTROL_PLANE_HANDOFF.md).
+A **validator** signs consensus votes under genesis authority. A **provider**
+executes work under eligibility and assignment rules. A **controller** coordinates
+hosted application deployment. An **edge** publishes approved routes. The registry,
+policy distribution, observers and resource services support these roles. They
+are logical responsibilities, not a required number of physical computers.
 
-## Choose a path
+Joining a network means using its approved public genesis, chain configuration,
+trust roots and endpoints. Running the local genesis helper creates a separate
+network. It cannot grant membership in an existing validator set. See
+[core concepts](../concepts/overview.md) and [current source functionality](../CURRENT_FUNCTIONALITY.md).
 
-### Local protocol exploration
+## Tools in this checkout
 
-Use a disposable four-validator genesis. The node's genesis helper produces
-four validator keys and endpoints on consecutive local ports. Start every
-validator with its own data directory and matching key; three of the four are
-required to finalize a block.
+| Entry point | Intended use |
+| --- | --- |
+| `bin/greenwoodd` | Node daemon and offline replay; validator mode needs an authorized validator identity |
+| `bin/greenwood-provider` | Linux provider supervisor using a protected configuration |
+| `bin/greenwood` | RPC queries, transaction submission and authenticated operator calls |
+| `bin/greenwood-cli` | Disposable genesis, local key creation and signing supported envelope types |
 
-See the [local quickstart](quickstart.md). This path is for protocol and API
-development, not a production topology.
+The separate Python CLI handles application registration, build/push and hosted
+deployment workflows. Check its own release and guide before using it; PHP tool
+names and flags are not substitutes.
 
-### Validator operation
-
-Validators require PHP 8.5 and the Composer dependencies, plus sodium and PDO
-SQLite. A validator's private key must match the public key assigned to its
-`--node` identity in genesis. Its signing journal is safety-critical: if a
-previously initialized data directory has lost `signing.sqlite`, the daemon
-fails closed rather than recreating signing history.
-
-Read [recovery](../architecture/recovery.md), [consensus](../concepts/consensus.md),
-and the [operator API](../operator-api.md) before operating a validator.
-
-### Provider operation
-
-Providers are Linux-only. They need containerd, a dedicated worker UID/GID,
-the configured Wasmtime/containerd runtime, and a root-owned signing key. A
-provider executes only work derived from finalized state; it never influences
-block validation by starting a container.
-
-Follow [provider operations](../provider-operations.md) and the
-[Linux execution manifest](../linux-execution-manifest.md). The
-[`config/provider.example.json`](../../config/provider.example.json) file is a
-template, not a ready-to-run network configuration.
-
-## Dependencies
-
-The Composer package requires PHP `^8.5`, `ext-sodium`, `ext-pdo_sqlite`, and
-`ext-ffi`, together with protobuf and gRPC packages. Production Linux nodes
-also need `pcntl` and `posix`; provider operation additionally requires
-containerd, runc, and `setpriv`. Contract tests and execution require the
-supported Wasmtime shared library with FFI enabled.
-
-Install project dependencies with:
-
-```bash
-composer install
-```
-
-Do not treat a successful dependency install as a readiness check for a
-provider. Provider readiness also verifies the runtime, the containerd socket,
-configured capacity, identity pins, and finalized chain access.
-
-## What to read next
-
-- [Quickstart](quickstart.md) — create a disposable local four-validator network.
-- [Architecture](../architecture/overview.md) — understand state and process boundaries.
-- [Public RPC v1](../rpc-v1.md) — integrate an application against finalized data.
-- [Contracts](../contracts/overview.md) — write deterministic WebAssembly.
-- [Compute protocol](../GREENWOOD_COMPUTE_V1.md) — understand provider work and receipts.
-
----
-
-<!-- docs-nav -->
-**Continue reading:** [Documentation hub](../README.md) · [Getting started](overview.md) · [Local quickstart](quickstart.md)
-<!-- /docs-nav -->
+For production, start with [project status](../PROJECT_STATUS.md) and the exact
+release manifest. A successful tutorial is development evidence, not acceptance
+of production custody, storage, ingress or recovery.

@@ -1,5 +1,12 @@
 # Greenwood: offline private CA and public HTTPS certificates
 
+This is an offline-custody worked example for the supported seven-node reference
+composition. Another operator selects its own [service roles](ROLE_BASED_ONBOARDING.md),
+chain, names and approved trust; do not copy reference identities. Reuse your
+existing CA, keys and issuance records. For the reference installation, credentials
+are already provisioned: use [project status](../PROJECT_STATUS.md) and the
+applicable continuation rather than repeating creation/issuance steps.
+
 Operator runbook · 21 November 2026 · chain `greenwood-prod-v1`
 
 These commands are for **you to run**, outside the AI session. Preparing this guide
@@ -41,6 +48,11 @@ ls -ld "$HOME/Persistent"
 Then disconnect networking in Tails, unplug Ethernet and keep wireless disabled.
 Do the private-CA work below offline. Do not reconnect this custody session for
 Let's Encrypt: its DNS validation belongs in the separate online environment.
+
+If you already have the Greenwood CA, skip creation in section 3. Unlock its
+existing custody directory yourself and use the existing database and serial.
+For just the new controllers, follow section 5A after reviewing sections 4-5.
+Never initialize a replacement root merely to add two leaves.
 
 ## 3. Create the offline CA once
 
@@ -122,6 +134,8 @@ Create this public plan in the CA directory:
 ```sh
 cat > services.tsv <<'PLAN'
 controller-node-1 node-1 deployment-controller
+controller-node-6 node-6 deployment-controller
+controller-node-7 node-7 deployment-controller
 receiver-node-1 node-1 assignment/node-1
 receiver-node-2 node-2 assignment/node-2
 receiver-node-3 node-3 assignment/node-3
@@ -138,18 +152,28 @@ PLAN
 cat services.tsv
 ```
 
-Each leaf gets DNS `node-N.control.greenwoodblockchain.com` and exactly one URI
-`spiffe://greenwood-prod-v1/control-plane/ROLE`. Multiple distinct service keys may
-share a node's DNS name; their URI and certificate fingerprints distinguish them.
-If the reviewed configuration also uses a separate edge-controller client, add:
+The current inventory uses role-specific DNS SANs:
 
-```text
-edge-controller-node-5 node-5 edge-controller
-```
+| Service name | DNS SAN |
+| --- | --- |
+| controller-node-N | controller-node-N.greenwoodblockchain.com |
+| receiver-node-N | assignment-node-N.greenwoodblockchain.com |
+| observer-node-N | provider-node-N.greenwoodblockchain.com |
+| edge-admission-node-5 | edge-node-5.greenwoodblockchain.com |
+
+Each leaf gets exactly one URI `spiffe://greenwood-prod-v1/control-plane/ROLE`.
+All three controllers use the supported `deployment-controller` role URI, but
+have distinct keys, certificates and fingerprints. This replaces the older
+`node-N.control.greenwoodblockchain.com` examples. Compare any previously issued
+certificates with the current inventory before reuse; do not overwrite existing
+keys or silently treat a mismatched SAN as acceptable. The selected profile has
+15 internal service leaves. Node-1 remains the sole Ansible artifact build controller;
+controllers on nodes 6 and 7 are application services using their local providers.
 
 Node-4 gets no assignment certificate. Do not replace existing validator,
 provider signing, governance, registry-token or policy-signing keys with TLS keys.
-The supplied public manifests did not contain these internal TLS certificates.
+The initial public-manifest handoff did not contain these internal TLS certificates;
+that historical observation is not a statement that current credentials are missing.
 If you already generated a matching service TLS key elsewhere, import only its
 public CSR for signing rather than generating a second identity unnecessarily.
 
@@ -168,7 +192,14 @@ role=${3:?role required}
 grep -Fx -- "$name $node $role" services.tsv >/dev/null
 case "$node" in node-1|node-2|node-3|node-5|node-6|node-7) ;; *) exit 1;; esac
 case "$name" in *[!a-z0-9-]*|'') exit 1;; esac
-dns="$node.control.greenwoodblockchain.com"
+case "$role" in
+  deployment-controller) dns="controller-$node.greenwoodblockchain.com";;
+  assignment/"$node") dns="assignment-$node.greenwoodblockchain.com";;
+  provider/"$node") dns="provider-$node.greenwoodblockchain.com";;
+  edge-admission) test "$node" = node-5
+    dns="edge-node-5.greenwoodblockchain.com";;
+  *) exit 1;;
+esac
 uri="spiffe://greenwood-prod-v1/control-plane/$role"
 test ! -e "certs/$name.pem"
 # Existing public CSR: reuse it after personally reviewing its identity.
@@ -226,6 +257,68 @@ openssl x509 -in certs/receiver-node-6.pem -pubkey -noout \
 They must match. For an imported CSR, its custodian checks against the original
 private key. Do not send that key back for review.
 
+## 5A. Add only the node-6 and node-7 controller leaves
+
+Stay offline. Use the EXISTING CA directory and the updated `issue-service.sh`
+from section 5. Save that helper yourself; do not run the section 3 initialization
+again. These commands add only the two missing public plan rows, without replacing
+your existing plan or touching other service credentials:
+
+```sh
+set -eu
+umask 077
+CA_DIR="$HOME/Persistent/greenwood-prod-v1-ca"
+cd "$CA_DIR"
+test -f openssl.cnf
+test -f index.txt
+test -f serial
+test -f certs/greenwood-root-ca.pem
+test -f services.tsv
+test -f issue-service.sh
+for node in node-6 node-7; do
+  row="controller-$node $node deployment-controller"
+  grep -Fx -- "$row" services.tsv >/dev/null || printf '%s\n' "$row" >> services.tsv
+done
+sh issue-service.sh controller-node-6 node-6 deployment-controller
+sh issue-service.sh controller-node-7 node-7 deployment-controller
+```
+
+Before signing, confirm your recorded CA fingerprint matches the existing root.
+The helper refuses existing certificate filenames. If either leaf already exists,
+stop and review it yourself; do not delete a key or certificate to force a rerun.
+If issuance stops partway through, inspect the CA database and resume only the
+missing leaf. Import an existing public CSR if appropriate rather than generating
+a duplicate private identity. Each newly generated service key is separately
+passphrase-encrypted; the CA passphrase is prompted interactively.
+
+Expected leaf identities:
+
+| Node | DNS SAN | URI SAN suffix |
+| --- | --- | --- |
+| node-6 | controller-node-6.greenwoodblockchain.com | deployment-controller |
+| node-7 | controller-node-7.greenwoodblockchain.com | deployment-controller |
+
+Both use the full URI prefix `spiffe://greenwood-prod-v1/control-plane/`,
+`CA:false` and both serverAuth/clientAuth EKUs. Verify the keys match their leaves
+locally; the following reads private keys ONLY when YOU run it on offline Tails:
+
+```sh
+for node in node-6 node-7; do
+  name="controller-$node"
+  openssl pkey -in "services/$name.key.pem" -pubout -outform DER \
+    | sha256sum
+  openssl x509 -in "certs/$name.pem" -pubkey -noout \
+    | openssl pkey -pubin -outform DER | sha256sum
+done
+```
+
+Compare each consecutive pair: they must match for that node. The two controllers
+must have distinct keys and leaf fingerprints. Back up the updated CA database,
+serial and custody directory yourself after issuance. Run section 6 to refresh
+the public handoff, including the root, both leaves, CSRs and fingerprints.
+Existing provider identities, operator tokens and policy-signing keys are reused;
+no new blockchain or treasury identity is needed for this placement change.
+
 ## 6. Export only public handoff material
 
 ```sh
@@ -264,6 +357,62 @@ existing registry CSR/key. Standard Certbot issuance does not use the existing
 CSR; the separate `--csr` workflow has different renewal requirements. Do not
 silently replace an existing identity.
 
+## 7A. Obtain separate public HTTPS certificates for controllers 6 and 7
+
+Use the separate ONLINE operator environment, with the offline CA drive removed.
+The internal leaves from section 5A are not public HTTPS certificates. Confirm
+these hostnames before issuance; each needs a separate Let's Encrypt identity.
+Cloudflare routing configuration remains in RPC_DNS_TLS_HANDOFF.md and
+PUBLIC_HTTPS_CERTBOT.md. The credential preparation required for issuance is
+included here so you can complete it yourself:
+
+```sh
+sudo apt-get update
+sudo apt-get install certbot python3-certbot-dns-cloudflare
+sudo certbot plugins
+sudo install -d -m 700 /root/.secrets/certbot
+sudo nano /root/.secrets/certbot/cloudflare.ini
+```
+
+Enter `dns_cloudflare_api_token = YOUR_TOKEN_ENTERED_LOCALLY` in that file.
+Use a token limited to Zone / DNS / Edit for greenwoodblockchain.com; never paste
+it into chat or command arguments. If this file already exists, review and reuse
+the existing credential yourself rather than replacing it unnecessarily.
+
+```sh
+sudo chmod 600 /root/.secrets/certbot/cloudflare.ini
+printf 'ACME contact email: '
+read -r CONTACT_EMAIL
+test -n "$CONTACT_EMAIL"
+for node in node-6 node-7; do
+  host="controller-$node.greenwoodblockchain.com"
+  sudo certbot certonly --dry-run --dns-cloudflare \
+    --dns-cloudflare-credentials /root/.secrets/certbot/cloudflare.ini \
+    --dns-cloudflare-propagation-seconds 60 \
+    --key-type rsa --rsa-key-size 3072 \
+    --cert-name "$host" -d "$host" --email "$CONTACT_EMAIL" || break
+done
+```
+
+Only after BOTH dry runs succeed, repeat the loop without `--dry-run` to issue
+production certificates. Review the terms prompts yourself. Do not install
+staging certificates. DNS-01 needs online DNS validation but no inbound port
+opening. These operations create HTTPS and ACME private material in your online
+custody environment, not on the offline CA drive.
+
+For each hostname, Certbot's `/etc/letsencrypt/live/HOSTNAME/` contains `cert.pem`,
+`chain.pem`, `fullchain.pem` and `privkey.pem`. Keep the last file private. Return
+only the public three files plus the actual public root CA, labelled by node and
+role, with leaf DER fingerprints and PEM checksums. Follow the existing public
+HTTPS guide to verify the complete trust chain and renewal before deployment.
+Do not reuse an internal controller key for this HTTPS certificate.
+
+The node-6 HTTPS origin is 192.168.72.105:19449; node-7 is 192.168.72.106:19449.
+Both forward to their own loopback listener on 19450. The prepared Cloudflare
+routes use public port 443. Issuing a certificate does not enable these routes or
+start any service. The current inventory expects nine public HTTPS frontends in
+all, including the retained node-1 controller.
+
 ## 8. Install internal runtime keys yourself, only after approval
 
 Greenwood's internal service does not prompt for a key passphrase. Keep the
@@ -285,6 +434,44 @@ procedure, with root ownership and key mode 0600. Do not install the CA signing 
 NFS-root client private files also reside on node-4's SSD: this is shared operator
 custody, not independent isolation. Protect that storage and recovery access.
 
+## 8A. Controller runtime export and public-only return checklist
+
+After approval, YOU can export each encrypted internal master to a separate
+installation copy. Remain offline and use encrypted operator-controlled media:
+
+```sh
+set -eu
+cd "$CA_DIR"
+umask 077
+mkdir -m 700 controller-runtime-export
+# mkdir must succeed; stop if an earlier export directory already exists.
+for node in node-6 node-7; do
+  name="controller-$node"
+  openssl pkey -in "services/$name.key.pem" \
+    -out "controller-runtime-export/$name.key.pem"
+  chmod 600 "controller-runtime-export/$name.key.pem"
+done
+```
+
+On each corresponding node, you later install its own internal key at
+`/etc/greenwood/tls/internal/controller.key`, its leaf (or leaf/intermediate chain)
+at `/etc/greenwood/tls/internal/controller.fullchain.pem`, and the public CA at
+`/etc/greenwood/tls/internal/ca.pem`. This guide's direct-root profile needs only
+the leaf in the service chain file; trust is supplied separately. Keys must be
+root-owned, mode 0600. Do not copy node-6's key onto node-7 or install the CA key.
+
+For public HTTPS, you alone transfer that hostname's four-file Certbot bundle to
+`/etc/greenwood/acme-incoming/controller/` on its matching node and run the existing
+managed import procedure from PUBLIC_HTTPS_CERTBOT.md. Do not mix internal and
+public certificate chains. Keep private exports out of public handoff directories.
+
+Bring back only the two internal leaves/CSRs, their public CA, both public HTTPS
+leaf/intermediate chains and public root certificates, role/node labels, DER
+fingerprints and PEM checksums. The assistant can then replace certificate-pin
+placeholders consistently. Provider signing public keys are not certificate pins.
+Never return runtime exports, private keys, vaults, API tokens or ACME account
+files. You retain sole control of secret installation and final activation.
+
 ## 9. Renewal, revocation and final release order
 
 - Track each internal leaf's actual expiry; begin renewal at least 30 days early.
@@ -301,7 +488,8 @@ custody, not independent isolation. Protect that storage and recovery access.
 - Bind returned public certificates and final DNS/SFTP information, finish HTTPS
   chain/renewal integration, review and commit source, rebuild and qualify the
   exact release, and approve its hashes before operator provisioning/activation.
-- Then run the existing guarded installer and physical acceptance procedure.
+- Then select the guarded fresh-install or bounded-continuation procedure that
+  matches the installed state, followed by physical acceptance.
   These certificate steps do not approve genesis or spending and do not activate
   validators, providers, registry or application hosting.
 

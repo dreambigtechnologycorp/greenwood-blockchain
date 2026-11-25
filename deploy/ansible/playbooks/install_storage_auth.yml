@@ -1,0 +1,22 @@
+---
+# Human operator only: this reads separately generated iSCSI CHAP credentials.
+# It never reads blockchain, CA, governance or policy signing keys.
+- name: Verify storage authentication placement on every exact target
+  hosts: 'node-1:node-2:node-3:node-4'
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: state_storage
+        tasks_from: auth_preflight
+
+- name: Place separate storage credentials without replacement or service changes
+  hosts: 'node-1:node-2:node-3:node-4'
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: state_storage
+        tasks_from: auth_install

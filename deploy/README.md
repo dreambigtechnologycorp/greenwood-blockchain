@@ -1,5 +1,13 @@
 # Greenwood Deployment
 
+Start with [role-based onboarding](../docs/operations/ROLE_BASED_ONBOARDING.md)
+for your own environment, then [operator runbooks](../docs/operations/README.md).
+The turnkey Ansible workflows validate explicit four- and seven-node reference
+profiles; they do not discover arbitrary homelab roles. [Project status](../docs/PROJECT_STATUS.md)
+separates current source/release state from the reference installation's progress.
+Reuse existing matching credentials and select a stage-specific continuation
+when initialization has already begun.
+
 Use [Control Plane Operations](ansible/CONTROL_PLANE_HANDOFF.md) for protected
 configuration, trust material, policy transport, service activation and recovery.
 This guide covers the current source entrypoints. Applying a playbook is a
@@ -17,7 +25,11 @@ It refuses existing Greenwood state and must not be used as an upgrade command.
 | fresh_cluster.yml | Explicit one-shot initialization with all-host preflight, protected inputs, protocol startup and hosting activation. Requires a complete approved installation manifest. |
 | activate_hosting.yml | Explicitly approved offline seed import and authenticated service activation; does not enable deployment writes or publish applications. |
 | deploy_greenwood.yml | Builds a pinned release on the controller, fetches it, stops installed protocol services, converges common/validator/provider roles. Not a rolling or read-only operation. |
-| release_runtime.yml | Controller build and runtime cutover are separate tags; target preflight precedes stopping services. Runtime targets are validators and stop/start both greenwoodd and greenwood-provider. |
+| release_runtime.yml | Build with `--tags controller`; distribute with `--tags runtime_release`. Preflight covers validators, providers, control-plane and system-runtime hosts before stopping consumers; restore only previously active consumers. |
+| prepare_state_storage.yml | Guarded initial durable-storage preparation; not a general rerun or active-cluster mover. |
+| resume_mounted_state_copy.yml | Bounded continuation after node-4 targets are active and only node-1 has its approved state volume mounted, before copying or bind mounts. |
+| verify_state_runtime.yml | After migration and rebuilt-release distribution, verify release/storage evidence and start only containerd. |
+| resume_control_plane.yml | Operator-only continuation after runtime/identity staging, with no validator initialization; preserves identities/state and resumes guarded first-start staging. |
 | control_plane.yml | Stages protected configuration, units, HTTPS frontends and policy timers; does not activate them. |
 | application_hosting.yml | Starts forwarding prerequisites and containerd as needed, stages the provider drop-in, and can publish/reload an explicitly approved Apache route. Does not restart the provider to adopt its drop-in. |
 | gateway.yml | Validates selected network interfaces. |
@@ -38,15 +50,19 @@ copy `ansible/inventory/controller.example.ini` to ignored `controller.ini` and
 replace its host and account. Never commit populated inventories or state files.
 
 The inventory generator consumes Terraform node_topology JSON on stdin.
-Its current validation enforces validator/provider A, B and C on node-1,
-node-2 and node-3, controller node-1 and gateway node-4. Physical names must
-match node-<positive integer>. Changing Terraform roles alone does not support
-arbitrary topology.
+Its validation uses [versioned topology profiles](topology/profiles.json): validators
+A/B/C stay on nodes 1–3, the sole artifact build controller is node-1 and the
+gateway is node-4. `seven` adds providers D/E on nodes 6–7 and places edge/RPC
+relay/registry services on node-5. It assigns control-plane hosts 1/2/3/5/6/7 and
+application providers 6/7. `four` retains the original groups. Select the profile
+explicitly; changing Terraform roles alone does not authorize arbitrary topology.
 
-Generated inventory includes control_plane (nodes 1/4), application_providers
-(node 1), and application_edges (node 4). Supply their protected host/group
-variables. Nodes 2/3 remain compute providers, not additional application-hosting
-operators in this fixed profile. Review addresses and group membership before use.
+The existing operator's seven-node reference composition includes application controllers on
+nodes 1, 6 and 7, each using its colocated provider. The `controller` inventory
+group still contains only node-1 for artifact builds. The public example is a
+minimal template and omits controllers on 6/7: complete their per-host service,
+HTTPS and peer configuration from reviewed public inputs. See the
+[placement and installation guide](../docs/operations/SEVEN_NODE_INSTALLATION.md).
 
 Pin greenwood_source_sha and greenwood_containerd_submodule_sha to approved full
 commits, and review repository URL, source/build paths and artifact provenance.

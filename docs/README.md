@@ -1,100 +1,110 @@
 # Greenwood documentation
 
-This directory documents the Greenwood v1 PHP reference implementation. It is
-organized around the boundaries an integrator or operator actually needs to
-understand: the protocol, the node, contracts, compute, and the two API
-surfaces. Hosted-application control-plane APIs are separate from node RPC and
-the local operator API; see [current functionality](CURRENT_FUNCTIONALITY.md).
+Use these guides to develop applications, contribute code, or bring a homelab
+online as a provider of network services. Documentation is organized by **role
+and workflow**, not by an operator's machine count. The supported inventory
+profiles remain explicit implementation constraints.
 
-## Start with the right document
+Read [project and release status](PROJECT_STATUS.md) before operational work.
+It is the single dated record of release boundaries and reported installation
+progress. A role guide describes how a service works; it does not certify a host.
 
-| If you are… | Start here | Then read |
-|---|---|---|
-| Evaluating Greenwood | [Architecture overview](architecture/overview.md) | [core concepts](concepts/overview.md), [protocol v1](GREENWOOD_PROTOCOL_V1.md) |
-| Building a client | [Public RPC v1](rpc-v1.md) | [CLI reference](cli.md), [transactions](concepts/transactions.md) |
-| Writing a contract | [Contracts overview](contracts/overview.md) | [WASM ABI v1](GREENWOOD_WASM_ABI_V1.md), [storage](contracts/storage.md) |
-| Running a validator | [Getting started](getting-started/overview.md) | [recovery](architecture/recovery.md), [operator API](operator-api.md) |
-| Operating a provider | [Provider operations](provider-operations.md) | [compute protocol v1](GREENWOOD_COMPUTE_V1.md), [compute security](compute-security-v1.md) |
-| Deploying a testnet | [Deployment foundation](../deploy/README.md) | [Linux execution manifest](linux-execution-manifest.md) |
-| Deploying hosted applications | [Current functionality](CURRENT_FUNCTIONALITY.md) | [controller](../system-services/deployment-controller/README.md), [control-plane operations](../deploy/ansible/CONTROL_PLANE_HANDOFF.md) |
-| Verifying a change | [Testing overview](testing/overview.md) | [implementation inventory](IMPLEMENTATION-INVENTORY.md) |
+## Choose your starting point
 
-## Compatibility and normative documents
+| Goal | First | Next |
+| --- | --- | --- |
+| New contributor | [Developer setup](getting-started/development.md) | [Local quickstart](getting-started/quickstart.md), [contribution guide](../CONTRIBUTING.md) |
+| Homelab operator joining the network | [Role-based onboarding](operations/ROLE_BASED_ONBOARDING.md) | [Provider operations](provider-operations.md), [Linux runtime](linux-execution-manifest.md) |
+| Application developer | [Hosted workflow](CURRENT_FUNCTIONALITY.md#hosted-applications) | [Controller](../system-services/deployment-controller/README.md), [registry issuer](../system-services/registry-auth/README.md) |
+| Contract developer | [Contract quickstart](contracts/quickstart.md) | [ABI](GREENWOOD_WASM_ABI_V1.md), [storage](contracts/storage.md) |
+| Client/SDK developer | [Public RPC](rpc-v1.md) | [PHP CLI](cli.md), [JavaScript SDK](../sdk/javascript/README.md) |
+| Validator or infrastructure operator | [Role dependencies](operations/ROLE_BASED_ONBOARDING.md) | [Deployment entrypoints](../deploy/README.md), [recovery](architecture/recovery.md) |
+| Release maintainer | [Release procedure](RELEASING.md) | [Testing](testing/overview.md), [production packaging](../deploy/production/README.md) |
 
-The following documents define the v1 compatibility boundary. When an example
-or an implementation detail conflicts with one of them, these documents win.
+Joining an existing chain uses its approved genesis and authorities. It does not
+require creating your own validators, treasury, CA or network registry. Permissions
+for compute, hosted services, independent attestation and validation are distinct;
+see the eligibility boundaries in the onboarding guide.
 
-- [**GREENWOOD_PROTOCOL_V1**](GREENWOOD_PROTOCOL_V1.md) — canonical bytes,
-  cryptography, genesis, blocks, consensus, state transitions, and recovery.
-- [**GREENWOOD_WASM_ABI_V1**](GREENWOOD_WASM_ABI_V1.md) — contract execution
-  profile, host ABI, limits, and transactional effects.
-- [**GREENWOOD_COMPUTE_V1**](GREENWOOD_COMPUTE_V1.md) — compute request,
-  assignment, provider capability, and receipt semantics.
-- [**Public RPC v1**](rpc-v1.md) and [**Operator API v1**](operator-api.md) —
-  stable HTTP/Unix-socket integration surfaces.
-
-## Reading map
-
-### Protocol and architecture
+## Protocol, roles and APIs
 
 - [Concepts](concepts/overview.md): accounts, transactions, blocks, consensus,
-  state, contracts, and compute in one place.
-- [Architecture](architecture/overview.md): process boundaries and data flow.
-- [Blockchain layer](architecture/blockchain-layer.md),
-  [state](architecture/state.md), [chain history](architecture/chain-history.md),
-  [consensus](architecture/consensus-layer.md), and
-  [recovery](architecture/recovery.md): component-level behavior.
+  contracts and compute.
+- [Architecture](architecture/overview.md): component responsibilities and data
+  flow; [chain history](architecture/chain-history.md), [state](architecture/state.md),
+  [consensus](architecture/consensus-layer.md), [recovery](architecture/recovery.md).
+- [Current functionality](CURRENT_FUNCTIONALITY.md) and
+  [implementation inventory](IMPLEMENTATION-INVENTORY.md): supported behavior,
+  restrictions, source locations and verification.
+- [Protocol v1](GREENWOOD_PROTOCOL_V1.md), [WASM ABI v1](GREENWOOD_WASM_ABI_V1.md),
+  [compute v1](GREENWOOD_COMPUTE_V1.md): compatibility specifications.
+- [Public RPC v1](rpc-v1.md), [operator API](operator-api.md),
+  [CLI](cli.md): integration surfaces. RPC detail pages cover
+  [queries](rpc/public-api-endpoints-1.md), [transactions](rpc/public-api-transactions.md)
+  and [compute](rpc/public-api-compute.md).
+- [Compute security](compute-security-v1.md), [execution requirements](linux-execution-manifest.md)
+  and [security policy](../SECURITY.md): runtime and trust boundaries.
 
-### Applications and APIs
+## Operator workflows
 
-- [CLI](cli.md): the PHP RPC/operator client and its distinction from the Python
-  application deployment CLI.
-- [Contracts](contracts/overview.md), [quickstart](contracts/quickstart.md),
-  and [storage](contracts/storage.md): deterministic WASM development.
-- [RPC endpoint details](rpc/public-api-endpoints-1.md),
-  [transactions](rpc/public-api-transactions.md), and
-  [compute](rpc/public-api-compute.md): response-level API reference.
+Start with the [operations index](operations/README.md). Select responsibilities,
+verify the release and identities, prepare durable state, provision credentials
+under operator control, then use the existing guarded installation and acceptance
+entrypoints. General participation does not require rebuilding an existing chain.
 
-### Operations and assurance
+| Task | Guide |
+| --- | --- |
+| Select and place roles | [Role-based onboarding](operations/ROLE_BASED_ONBOARDING.md) |
+| Configure services and private transport | [Control-plane handoff](../deploy/ansible/CONTROL_PLANE_HANDOFF.md) |
+| Prepare storage and migrate retained state | [Durable state storage](../deploy/ansible/STATE_STORAGE.md) |
+| Verify ingress, DNS and TLS | [DNS/TLS handoff](operations/RPC_DNS_TLS_HANDOFF.md), [public HTTPS and renewal](operations/PUBLIC_HTTPS_CERTBOT.md) |
+| Keep secret operations under human control | [Operator custody policy](../deploy/production/OPERATOR_KEY_CUSTODY.md) |
+| Qualify and operate resource services | [Metering](guides/RESOURCE_METERING.md), [resource programs](../system-services/runtime/RESOURCE_WORKFLOWS.md) |
+| Preserve evidence and recover | [Retention and recovery](guides/RETENTION_AND_RECOVERY.md), [application restart recovery](../deploy/application-recovery/README.md) |
+| Update your deployment | [Self-managed update](guides/SELF_MANAGED_UPDATE.md) |
+| Validate physical behavior | [Physical acceptance](../deploy/production/PHYSICAL_ACCEPTANCE.md) |
 
-- [Offline Tails CA and certificate custody](operations/TAILS_CA_AND_LETS_ENCRYPT.md)
-  ([downloadable operator PDF](operations/TAILS_CA_AND_LETS_ENCRYPT.pdf)): private
-  CA creation, internal certificate issuance and public-only handoff.
-- [Public HTTPS with Certbot and Cloudflare](operations/PUBLIC_HTTPS_CERTBOT.md):
-  online DNS validation, HTTPS certificate chains and renewal integration.
-- [RPC DNS and ingress handoff](operations/RPC_DNS_TLS_HANDOFF.md): seven-node
-  endpoints, Cloudflare routes and private-LAN resolution.
-- [Seven-node certificate inventory](operations/SEVEN_NODE_CERTIFICATE_HANDOFF.md):
-  required service identities and operator-controlled provisioning boundaries.
+Named four-/seven-node instructions, certificate inventories and the Tails PDFs
+are **reference-profile procedures**. They remain useful for the deployment they
+name; adapt roles only within the source's supported identity/topology contract.
+They do not prescribe another operator's addresses or custody policy.
 
+- [Seven-node installation](operations/SEVEN_NODE_INSTALLATION.md)
+- [Seven-node certificate handoff](operations/SEVEN_NODE_CERTIFICATE_HANDOFF.md)
+- [Offline CA and HTTPS custody](operations/TAILS_CA_AND_LETS_ENCRYPT.md)
+  ([operator PDF](operations/TAILS_CA_AND_LETS_ENCRYPT.pdf))
+- [Initial deployment custody PDF](operations/GREENWOOD_TAILS_KEY_CUSTODY.pdf)
 
-- [Provider operations](provider-operations.md) and
-  [compute security](compute-security-v1.md): Linux provider requirements and
-  the explicit v1 security model.
-- [Linux execution manifest](linux-execution-manifest.md): supported runtime
-  and filesystem/security requirements.
-- [Testing](testing/overview.md): test layers and commands.
-- [Troubleshooting](provider-operations.md#troubleshooting): authorization, runtime,
-  policy, recovery and routing failures.
+## Economics and policy
 
-## Documentation status
+The [economics index](economics/README.md) separates protocol invariants, editable
+policy templates, the initial operator's adopted policies and historical modeling.
+GWD amounts, GRU resource accounting, reserve budgets, customer funding and trust
+classes must not be inferred from an assumed token market price.
 
-Runtime source, reusable deployment configuration and regression tests are tracked.
-Acceptance/verification scripts, acceptance documentation and audit data belong
-only in ignored `docs/acceptance/`. Never force-add that directory. Local retained
-scripts are not release entrypoints and may require path/environment review.
+Dated adoption records retain their approved bytes. A policy example is not a
+network-wide approval for a new operator or a changed release.
 
-This is reference documentation, not a product roadmap. Commands are only
-included when they map to a checked-in entry point. Chain queries use finalized
-state; transaction lookups also inspect the mempool, and diagnostics observe local
-processes. Operational instructions avoid creating or
-modifying protocol state outside canonical transactions.
+## Tests, releases and historical material
 
-The reading map above is the operating reference set for this version. A report
-or evidence file outside that map is not an installation or activation procedure.
+- [Test overview](testing/overview.md), [unit tests](testing/unit-tests.md),
+  [integration tests](testing/integration-tests.md).
+- [Source/release procedure](RELEASING.md), [branch protection policy](branch-protection.md).
+- [Historical v0.1.0-alpha.1 release](releases/v0.1.0-alpha.1.md).
+- [Documentation coverage and audit](DOCUMENTATION-COVERAGE.md).
 
----
+Tracked reusable tests, installation code and physical-acceptance procedures are
+part of source. Operator-specific inventories, credentials, runtime state and
+private acceptance outputs are not. Ignored `docs/acceptance/` is for local retained
+material, not the only place a reusable verification script may exist.
 
-<!-- docs-nav -->
-**Continue reading:** [Get started](getting-started/overview.md) · [Explore the architecture](architecture/overview.md) · [Read the protocol](GREENWOOD_PROTOCOL_V1.md)
-<!-- /docs-nav -->
+## Reading authority
+
+Versioned specifications define compatibility. Source and tests show what the
+current implementation enforces. Guides explain those behaviors and must surface
+any mismatch instead of inventing a command or bypass. Dated evidence establishes
+only what was actually tested at its recorded revision and scope.
+
+Changes to protocol behavior require compatibility review. Changes to release
+artifacts require new qualification and approval. Editing documentation provides
+neither automatically.

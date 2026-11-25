@@ -1,0 +1,15 @@
+[Unit]
+Description=Greenwood dedicated durable state volume
+{% if inventory_hostname in ['node-1', 'node-2', 'node-3'] %}
+Wants=network-online.target
+Requires=open-iscsi.service
+After=network-online.target open-iscsi.service
+{% endif %}
+[Mount]
+What=/dev/disk/by-uuid/{{ greenwood_storage_plan.clients[inventory_hostname].filesystem_uuid }}
+Where=/var/lib/greenwood-state
+Type=ext4
+Options={{ 'rw,noatime,_netdev' if inventory_hostname in ['node-1', 'node-2', 'node-3'] else 'rw,noatime' }}
+TimeoutSec=120
+[Install]
+WantedBy={{ 'remote-fs.target' if inventory_hostname in ['node-1', 'node-2', 'node-3'] else 'local-fs.target' }}

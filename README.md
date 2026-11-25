@@ -1,272 +1,117 @@
-# Greenwood Blockchain
+# Greenwood
 
-**Experimental PHP reference implementation.** Source availability does not
-imply independent security review or production readiness.
+Greenwood connects application developers with operators who supply compute,
+storage, and network services. This repository contains the PHP blockchain node,
+WASM contract runtime, Linux provider, hosted-application control services, and
+Ansible deployment tooling.
 
-[Contributing](CONTRIBUTING.md) | [Security](SECURITY.md) |
-[Release notes](CHANGELOG.md) | [Source releases](docs/RELEASING.md)
+A homelab participates by taking on supported **roles**. It does not need to copy
+another operator's machine count, addresses, network boot arrangement, or hardware.
+Roles may share a host where the supported deployment profile and isolation rules
+allow it. Joining an existing network is separate from creating a new genesis.
 
-> **A deterministic Layer 1 for finalized state, programmable contracts, and
-> verifiable off-chain compute.**
-
-Greenwood is a PHP reference implementation of a deliberately small L1: a
-fixed-validator BFT chain, a deterministic WebAssembly contract runtime, and a
-provider network that executes digest-pinned OCI workloads. Compute jobs follow
-finalized on-chain assignments; hosted applications use finalized registry releases
-plus independently authorized, acknowledged physical assignments.
-
-The project began with a simple conviction: useful infrastructure should not
-force teams to choose between a trustworthy ledger and useful computation. In
-Greenwood, the chain establishes the canonical request, assignment, and receipt
-history; providers do the Linux/container work outside consensus. The result is
-a system whose consensus surface remains deterministic while applications can
-still reach real workloads. Contract state is queriable without a signed
-transaction — `POST /v1/contracts/{id}/call` executes the contract's
-`greenwood_call` export against finalized state and returns the result with
-no state mutation, no nonce consumption, and no consensus overhead.
-
-## What Greenwood delivers
-
-- **Finalized chain state** — Ed25519 identities, canonical binary encoding,
-  domain-separated BLAKE2b-256 hashing, Merkle commitments, filesystem-backed
-  block history, and a rebuildable SQLite state index.
-- **BFT finality** — a genesis-fixed, equal-power validator set; proposal, prevote,
-  and precommit phases; a strict `> 2/3` quorum (3-of-3 for three validators,
-  3-of-4 for four); and a
-  durable signing-safety journal.
-- **Programmable state** — deterministic, fuel-metered WebAssembly contracts
-  executed through Wasmtime with a small Greenwood host ABI, transactional
-  overlays, persistent storage, events, and rollback on failure. Contract state
-  is **queriable without a transaction** via `POST /v1/contracts/{id}/call` —
-  the eth_call equivalent for Greenwood.
-- **Compute without consensus leakage** — finalized compute requests are
-  scheduled to registered providers, which execute exact OCI image digests via
-  containerd and submit canonical receipts. Containers never run during block
-  validation.
-- **Operator-ready boundaries** — a versioned public RPC API, a bearer-token
-  operator API on a private Unix socket, a pure RPC CLI, and deployment assets
-  for Linux deployment. New-node reproducibility and physical acceptance remain
-  separate from source implementation and local tests.
-
-## Current Functionality
-
-The [source functionality guide](docs/CURRENT_FUNCTIONALITY.md) covers hosted
-applications, registry authorization, signed assignments, provider reservation,
-managed edge and Ansible staging. The Python deployment CLI is a separate
-repository; `bin/greenwood` here remains the PHP RPC/operator client. Use the
-[physical handoff](deploy/ansible/CONTROL_PLANE_HANDOFF.md) for new hardware.
-
-## Resource metering and self-managed updates
-
-Production artifact preparation, registry bootstrap and installation gates are
-documented in the [release preparation guide](deploy/production/README.md).
-
-The [seven-node infrastructure checkpoint](docs/operations/SEVEN_NODE_PREFLIGHT_2026-11-17.md)
-records verified netboot, current runtime gaps and the remaining production gates.
-
-See the [current WP0–WP10 source map](docs/guides/SOURCE_SCOPE_STATUS.md) for
-implementation evidence and the separate physical qualification gates.
-
-The source includes signed, scoped resource telemetry, Linux cgroup/block/network
-collectors, reservation-allocation adapters, NAS/object/backup operation journals,
-private meter IPC, durable evidence archives, settlement replay protection and
-explicitly configured governance recovery. The local JavaScript SDK provides
-exact-value offer disclosure and signing with explicit trust-policy consent.
-
-Start with [updating the source yourself](docs/guides/SELF_MANAGED_UPDATE.md),
-[resource metering](docs/guides/RESOURCE_METERING.md),
-[concrete source adapters](docs/guides/SOURCE_ADAPTER_INTEGRATION.md),
-[retention and recovery](docs/guides/RETENTION_AND_RECOVERY.md), and the
-[customer SDK](sdk/javascript/README.md). These guides include commands and failure
-handling. Resource catalog support does not automatically enable payment: physical
-qualification and approved service policies remain required. Operator telemetry
-is never presented as independent verification.
-
-## Architecture
-
-```text
-                         signed transactions / RPC
-                                      |
-                                      v
-                         +-----------------------+
-                         |      greenwoodd       |
-                         |  PHP reference node   |
-                         +-----------+-----------+
-                                     |
-              +----------------------+----------------------+
-              |                      |                      |
-              v                      v                      v
-       chain & consensus       WASM contracts        finalized compute state
-       blocks + SQLite         Wasmtime + ABI        requests, assignments,
-       state index             deterministic fuel    provider capabilities
-              |                      |                      |
-              +----------------------+----------------------+
-                                     |
-                               finality proof
-                                     |
-                                     v
-                         +-----------------------+
-                         |  greenwood-provider   |
-                         |  Linux supervisor     |
-                         +-----------+-----------+
-                                     |
-                                containerd
-                                     |
-                           digest-pinned OCI work
-```
-
-The authoritative record is the finalized block history. SQLite accelerates
-current-state queries and is rebuilt from genesis plus that history; it is not
-the source of consensus truth. The protocol is the durable product boundary —
-PHP is its first implementation, not its definition.
-
-## Repository map
-
-| Path | Purpose |
-|---|---|
-| [`src/`](src/) | Node, consensus, transactions, persistence, contracts, RPC, provider, and containerd integration. |
-| [`bin/`](bin/) | `greenwoodd` node daemon, `greenwood-provider` supervisor, `greenwood` RPC CLI, and local signing utility. |
-| [`docs/`](docs/README.md) | Protocol specifications, architecture, API, operations, testing, and examples. |
-| [`deploy/`](deploy/README.md) | Terraform topology, Ansible playbooks, Linux release build, and testnet verification assets. |
-| [`config/`](config/) | Provider and containerd configuration examples. |
-| [`tests/`](tests/) | Unit, integration, consensus, CLI, operator, and contract coverage. |
+**Release status:** production deployment tooling is implemented; source changes after the
+`bd529a5` baseline include unreleased storage and startup corrections. Review the
+[dated status](docs/PROJECT_STATUS.md) before deploying. Source tests, an image
+build, and a running process each establish different things; production
+acceptance must be recorded for the exact release and intended hosts.
 
 ## Start here
 
-Greenwood is intended for Linux operation. The reference runtime requires PHP
-8.5, Composer, sodium, PDO SQLite, FFI, gRPC, `pcntl`, and `posix`; contract
-execution also needs the pinned Wasmtime runtime, and provider operation needs
-containerd. See the [Linux execution manifest](docs/linux-execution-manifest.md)
-before preparing a host.
+| Your goal | Guide |
+| --- | --- |
+| Contribute code or learn the implementation | [Developer setup](docs/getting-started/development.md), then the [local quickstart](docs/getting-started/quickstart.md) |
+| Bring homelab capacity onto an existing network | [Role-based operator onboarding](docs/operations/ROLE_BASED_ONBOARDING.md) |
+| Deploy an application | [Hosted application workflow](docs/CURRENT_FUNCTIONALITY.md#hosted-applications), [controller API](system-services/deployment-controller/README.md) |
+| Build a contract or API client | [Contract quickstart](docs/contracts/quickstart.md), [public RPC](docs/rpc-v1.md), [PHP CLI](docs/cli.md) |
+| Prepare a production release | [Release procedure](docs/RELEASING.md), [deployment entrypoints](deploy/README.md) |
+| Find all guides and specifications | [Documentation index](docs/README.md) |
+
+## Roles and responsibilities
+
+| Role | Responsibility | Needs |
+| --- | --- | --- |
+| Validator | Verify blocks and transactions; sign consensus votes | Genesis-authorized identity, peer connectivity, durable signing journal |
+| Provider | Advertise eligible capacity and execute accepted work | Qualified Linux runtime, durable state, provider identity, finalized network authority |
+| Deployment controller | Coordinate hosted reservations, assignment acknowledgements, start and readiness | Approved scope, signed policy, provider/operator access, authenticated assignment services |
+| Observer and assignment receiver | Check physical/runtime facts and install exact approved assignment generations | Role-bound identities, current signed policies, durable rollback protection |
+| Edge / RPC frontend | Serve approved application routes and HTTPS API ingress | Verified destinations, TLS, route and content evidence |
+| Registry and authorization issuer | Store immutable OCI artifacts and issue scoped publishing/pull authorization | Trusted registry identity, verified chain authority, persistent storage |
+| Meter, attestor and settlement coordinator | Collect resource evidence, attest eligible usage and submit settlement | Supported resource profiles, explicit trust class, funded scope and durable evidence |
+| Infrastructure host | Supply storage, routing, DNS or optional network boot | Host-specific recovery and availability plan; no automatic protocol authority |
+
+The reference installer has explicit topology and certificate-identity profiles;
+role-based documentation does not make those code constraints disappear. See
+[supported placement and onboarding](docs/operations/ROLE_BASED_ONBOARDING.md).
+An additional provider is not automatically a validator, trusted attestor, or
+network administrator.
+
+## What the network records
+
+The chain records canonical transactions, finalized blocks, application ownership
+and release authority, compute assignments, and eligible resource settlement.
+Contracts execute deterministically through a restricted Wasmtime ABI. Workload
+execution happens on provider hosts; a receipt or successful container start is
+not independent verification of physical usage.
+
+GWD is the transferable token; GRU is resource accounting, not a second token.
+Customer-funded service programs can have zero subsidy budgets while retaining
+funding, quote, capacity and trust checks. See the [economics index](docs/economics/README.md).
+
+Consensus uses a genesis-fixed, equal-power validator set with quorum
+`floor(2 * n / 3) + 1` (minimum three validators). The local four-validator fixture
+requires three votes; a three-validator network requires all three. Operating
+several machines under one administrator does not create independent operators.
+
+## Developer setup
+
+Use PHP 8.5 (release qualification pins **8.5.12**), Composer 2, Sodium,
+PDO SQLite and FFI. Contract/source integration tests require the pinned
+**Wasmtime 48.0.1** library for the host architecture. Provider work additionally
+requires the Linux runtime described in the [execution manifest](docs/linux-execution-manifest.md).
+
+From a clean source checkout:
 
 ```bash
 composer install
-
-# Create a disposable four-validator local genesis and its development keys.
-php bin/greenwood-cli genesis ./local-genesis 9201
-
-# Start validator A. Start B, C, and D in separate terminals with their own
-# data directories and matching node/key arguments.
-php bin/greenwoodd \
-  --genesis=./local-genesis/genesis.json \
-  --data-dir=./local-data/A \
-  --node=A \
-  --key=./local-genesis/keys/A.key
-```
-
-The generated genesis contains the local endpoints for validators `A` through
-`D`; finality requires three of the four nodes. Generated keys and data folders
-are local-development material — never use or commit them for a network.
-
-For command syntax and the client/operator split, read the
-[CLI reference](docs/cli.md). For node, provider, socket, and containerd
-requirements, start with [provider operations](docs/provider-operations.md).
-
-## Documentation guide
-
-### Learn the model
-
-- [Getting started](docs/getting-started/overview.md)
-- [Core concepts](docs/concepts/overview.md)
-- [Architecture overview](docs/architecture/overview.md)
-- [Blockchain and state](docs/architecture/blockchain-layer.md),
-  [consensus](docs/architecture/consensus-layer.md), and
-  [recovery](docs/architecture/recovery.md)
-
-### Build against Greenwood
-
-- [Public RPC v1](docs/rpc-v1.md) and [operator API](docs/operator-api.md)
-- [Smart-contract overview](docs/contracts/overview.md) and
-  [contract quickstart](docs/contracts/quickstart.md)
-- [WASM ABI v1](docs/GREENWOOD_WASM_ABI_V1.md)
-- [Storage fixture](test/fixtures/reference_storage.wat) and
-  [value fixture](test/fixtures/reference_value.wat)
-
-### Run infrastructure
-
-- [Provider operations](docs/provider-operations.md)
-- [Application restart recovery](deploy/application-recovery/README.md)
-- [Compute protocol v1](docs/GREENWOOD_COMPUTE_V1.md) and
-  [compute security profile](docs/compute-security-v1.md)
-- [Testnet deployment foundation](deploy/README.md)
-- [Release builder](deploy/build-validator-release.sh)
-
-### Verify and contribute
-
-- [Testing overview](docs/testing/overview.md)
-- [Current functionality](docs/CURRENT_FUNCTIONALITY.md)
-- [Implementation inventory](docs/IMPLEMENTATION-INVENTORY.md)
-- [Protocol v1](docs/GREENWOOD_PROTOCOL_V1.md)
-
-## Protocol commitments
-
-The v1 compatibility boundary is explicit:
-
-| Specification | Defines |
-|---|---|
-| [`GREENWOOD_PROTOCOL_V1`](docs/GREENWOOD_PROTOCOL_V1.md) | Canonical encoding, hashing, transactions, blocks, genesis, and consensus messages. |
-| [`GREENWOOD_WASM_ABI_V1`](docs/GREENWOOD_WASM_ABI_V1.md) | Contract runtime policy, deterministic execution limits, and host imports. |
-| [`GREENWOOD_COMPUTE_V1`](docs/GREENWOOD_COMPUTE_V1.md) | Provider identities, assignments, resource commitments, and receipts. |
-
-Any future implementation must reproduce the same protocol bytes, hashes,
-state transitions, contract effects, and consensus decisions. Changes at that
-boundary require a new version, vectors, and compatibility review.
-
-## Verification
-
-Run the suite appropriate to the runtime you have installed:
-
-```bash
-composer run test
-
-# Source integration and contract execution need Wasmtime and PHP FFI.
+composer validate --no-check-publish
+composer run test:source
 composer run test:contracts
-
-# Separate live Linux/containerd suite; use a disposable provider host.
-composer run test:native
-
-```
-## Platform-dependent Tests
-
-This broad selection is not a guaranteed macOS-only or hermetic suite. Contract
-tests can require Wasmtime/FFI; provider and integration tests can require Linux,
-sockets or native runtime dependencies. Select tests for the available host:
-
-```bash
-php vendor/bin/phpunit --bootstrap vendor/autoload.php \
-  tests/Unit \
-  tests/Integration \
-  tests/Contracts \
-  tests/Rpc \
-  tests/Cli \
-  tests/Operator \
-  tests/Consensus
 ```
 
-The deployment directory also contains the Terraform/Ansible workflow and
-cluster verification tooling used for the reference testnet. Treat its topology,
-credentials, state files, and generated artifacts as environment-specific —
-begin with [its README](deploy/README.md), then adapt it to your own network.
+Follow [developer setup](docs/getting-started/development.md) for library paths,
+Python tooling and test boundaries. The [local quickstart](docs/getting-started/quickstart.md)
+creates disposable development identities and runs a private fixture; it never
+joins or initializes the production network.
 
-## Security posture
+## Repository map
 
-This repository prioritizes fail-closed protocol validation and operational
-separation. Private validator and provider keys are local-only; provider workers
-run under a dedicated Linux identity; operator controls are separate from the
-public listener; and immutable image digests are mandatory for provider work.
+| Path | Contents |
+| --- | --- |
+| `src/`, `bin/` | Protocol, node, provider and PHP command-line entrypoints |
+| `system-services/` | Controller, registry authorization, metering and service runtimes |
+| `sdk/javascript/` | Resource-client and signing helpers |
+| `tests/` | Protocol vectors, PHP suites, resource and release checks |
+| `deploy/` | Runtime preparation, guarded installation, storage and acceptance procedures |
+| `docs/` | Role-based guides, API references, specifications and labeled historical records |
+| `scripts/` | Source packaging, qualification, OCI builds and operator helpers |
+| `runtime/` | Pinned ABI/schema inputs and generated containerd bindings |
 
-Before exposing a node or provider beyond a controlled test environment, review
-the [provider operations guide](docs/provider-operations.md),
-[compute security policy](docs/compute-security-v1.md), and
-[operator API](docs/operator-api.md) in full.
+`bin/greenwood` is the PHP RPC/operator client. `bin/greenwood-cli` is the local
+key/genesis/signing helper. The Python application-deployment CLI lives in a
+separate repository; its commands are not interchangeable with either PHP tool.
 
-## License
+## Operations and contribution
 
-Original Greenwood code is licensed under the [Apache License 2.0](LICENSE).
-Copyright 2026 DreamBIG Technology Corporation. See [NOTICE](NOTICE) and
-[third-party notices](THIRD_PARTY_NOTICES.md) for attribution, and the
-[trademark policy](TRADEMARKS.md) for Greenwood name and logo usage.
+Production installation requires exact source/image/configuration pins, verified
+public identities, operator-controlled secret provisioning, current signed
+policies and explicit activation approval. Canonical state and containerd storage
+must use the qualified durable filesystem path. Current source uses SQLite
+`DELETE` rollback journals with `synchronous=EXTRA`; existing WAL databases require
+the guarded offline migration. Changing journal mode does not qualify NFS for
+canonical state. See [storage preparation](deploy/ansible/STATE_STORAGE.md).
 
-### Four- and seven-node deployment
-
-See [the seven-node installation guide](docs/operations/SEVEN_NODE_INSTALLATION.md) for shared topology profiles, provider-only provisioning, separate registry placement, controlled netboot preparation and gated metering activation. Templates contain no production identities or activation approval.
+Read [CONTRIBUTING](CONTRIBUTING.md), [testing](docs/testing/overview.md), and
+[SECURITY](SECURITY.md). Original Greenwood source is licensed under
+[Apache-2.0](LICENSE); [third-party notices](THIRD_PARTY_NOTICES.md) and the
+[trademark policy](TRADEMARKS.md) cover their respective materials.

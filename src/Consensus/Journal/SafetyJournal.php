@@ -10,7 +10,7 @@ final class SafetyJournal
     public function __construct(string $path,private readonly Ed25519KeyPair $key,private readonly string $genesis,private readonly string $id)
     {
         $this->db=new \PDO('sqlite:'.$path,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);
-        $this->db->exec('PRAGMA synchronous=FULL');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db);
         $this->db->exec('CREATE TABLE IF NOT EXISTS identity (id INTEGER PRIMARY KEY, genesis BLOB, validator TEXT, public_key BLOB)');
         $identity=$this->db->query('SELECT * FROM identity')->fetch(\PDO::FETCH_ASSOC);
         if (!$identity) $this->db->prepare('INSERT INTO identity VALUES (1,?,?,?)')->execute([$genesis,$id,$key->getPublicKey()]);

@@ -1,6 +1,7 @@
 # Smart Contracts
 
-Checked against current source on October 21, 2026.
+This is a source reference. See [project status](../PROJECT_STATUS.md) for
+deployment evidence and outstanding qualification.
 
 Greenwood executes bounded integer-only WASM through Wasmtime. Contracts can
 read invocation context, stage storage and balance changes, emit events and
@@ -57,7 +58,10 @@ They are derived receipt data, not a separate consensus events table.
 Attached value and transfers are staged in an ExecutionOverlay. Fatal execution
 failure discards storage, balances, events and output. A successful transaction
 commits validated effects and increments the sender nonce once. Gas is Wasmtime
-fuel, not a gas-price charge or refund mechanism against account balances.
+fuel, with no gas-price/refund mechanism. Native economic genesis separately
+charges the policy-defined transaction fee after successful execution. A read-only
+RPC query consumes no account fee. Derived execution receipts are indexed but are
+not themselves state-root commitments or separate finality certificates.
 
 ## Limits and Examples
 

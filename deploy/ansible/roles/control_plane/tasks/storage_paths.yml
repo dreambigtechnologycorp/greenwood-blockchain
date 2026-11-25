@@ -1,0 +1,19 @@
+---
+# Public path selection only: no config/credential contents are read from hosts.
+- name: Derive all first-start durable directories from public role settings
+  ansible.builtin.set_fact:
+    greenwood_durable_state_paths: >-
+      {{ {
+        'groups': group_names,
+        'validator_data': Greenwood_DATA_DIR | default('/var/lib/greenwood'),
+        'provider_data': provider_data_dir | default('/var/lib/greenwood-provider'),
+        'provider_workers': provider_workers_dir | default(''),
+        'control_services': greenwood_control_services,
+        'control_configs': greenwood_control_configs,
+        'system_services': greenwood_system_services,
+        'governed_agent_stage': greenwood_governed_service_agent_stage,
+        'governed_agent_config': greenwood_governed_service_agent_config,
+        'registry_container_storage': greenwood_registry_container_storage_directory | default('/var/lib/registry'),
+        'containerd_config': greenwood_containerd_config | default('')
+      } | greenwood_durable_storage_paths }}
+  no_log: true

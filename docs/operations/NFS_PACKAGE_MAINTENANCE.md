@@ -1,5 +1,12 @@
 # NFS-root package maintenance preparation
 
+The incident and repair results below are dated November 17 evidence. Consult
+[project status](../PROJECT_STATUS.md) before any new maintenance. The
+[authorized testnet removal](TESTNET_REMOVAL_2026-11-17.md) later removed the
+historical Greenwood package-repair backups; their paths below are provenance,
+not a claim that a recovery archive is still available. Verify current backups
+and recovery access yourself before applying this operator-only procedure.
+
 ## November 17 incident
 
 A targeted `dpkg --configure systemd` retry on node 1 reached its package script's explicit `systemctl try-restart systemd-networkd.service`. The persistent journal ended while networkd was stopping; SSH and ping then failed both directly and through node 4. Package completion was not confirmed. Do not repeat this procedure on other NFS clients while recovery access is unavailable.

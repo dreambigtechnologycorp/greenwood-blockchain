@@ -3,9 +3,9 @@
 Use the repository-local PHPUnit with Composer autoloading, from the repo root:
 
 ```sh
-php vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Unit
-php vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Unit/Crypto/ProtocolHashTest.php
-php vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Unit/ContractPayloadTest.php
+php -d ffi.enable=true vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Unit
+php -d ffi.enable=true vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Unit/Crypto/ProtocolHashTest.php
+php -d ffi.enable=true vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Unit/ContractPayloadTest.php
 ```
 
 The current tree includes canonical vectors, crypto, contract payload, compute,
@@ -18,5 +18,9 @@ Use test doubles through the implementation's interfaces and existing fixtures.
 Wasmtime-backed integration belongs in tests/Contracts with FFI enabled.
 Coverage collection additionally needs a compatible coverage driver and explicit
 source filtering; no measured 100% coverage claim is made here.
+
+Current storage changes also have focused checks under `tests/Unit/Persistence`;
+SQLite rollback-journal and stopped-service migration regressions are separate
+from physical disk durability/recovery acceptance.
 
 See [testing overview](overview.md) for suite boundaries and isolation rules.
