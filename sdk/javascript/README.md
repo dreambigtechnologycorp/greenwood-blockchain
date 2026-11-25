@@ -3,6 +3,10 @@
 Local Node.js module; it neither publishes packages nor broadcasts transactions.
 Install pinned dependencies with `npm ci --prefix sdk/javascript` from the repository
 root. Node.js 22 or newer is required. Native ledger validation remains authoritative.
+The examples assume the importing file is beside `resource-client.mjs`; from another
+directory, use its actual relative module path. This package is private and has no
+configured public RPC origin. See [project status](../../docs/PROJECT_STATUS.md)
+for current source/release and physical-qualification boundaries.
 
 ## Inspect an offer before signing
 
@@ -49,9 +53,15 @@ state instead of signing another transaction with a new nonce.
 
 `createSigner(seedBytes)` accepts an explicitly supplied 32-byte Ed25519 seed.
 Load it using your approved custody mechanism; do not put keys in source, examples,
-logs or browser storage. `prepareTreasury` and `prepareService` create signed
-native transactions; `signResourceDocument` domain-separates quote, evidence and
-telemetry signatures. Clear temporary key buffers under your custody policy.
+logs or browser storage. The signer returned by `createSigner` exposes
+`prepareTransfer`, `prepareTreasury`, `prepareService`, `prepareResourceCapability`,
+`prepareCall`, `prepareDeployment` and `signResourceDocument`; they are not separate
+module-level exports. Native transaction types 11–14 require economics-enabled
+genesis. Resource document signatures use distinct quote/evidence/telemetry domains.
+For contract deployment, apply the validator
+[512 KiB module and 600,000-byte transaction limits](../../src/Contracts/ContractTransactionLimits.php)
+before signing; SDK structural checks alone do not guarantee chain admission.
+Clear temporary key buffers under your custody policy.
 
 `recoveryAction(action, genesis, policyVersion, fields)` creates exact recovery
 payloads for the configured policy. See the

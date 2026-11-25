@@ -6,7 +6,10 @@ workflow. Contracts are WebAssembly modules accepted by
 
 ## Prerequisites
 
-- A working Greenwood node/network and a funded account with its local key.
+- A deliberately selected local development node/network and a funded development
+  account with its local key. See the [local quickstart](../getting-started/quickstart.md).
+  Examples below use a disposable local fixture; they do not provision production
+  identities or demonstrate live endpoint availability.
 - A WAT-to-WASM compiler such as `wat2wasm`.
 - The Wasmtime runtime available to validators that execute the transaction.
 
@@ -54,6 +57,10 @@ php bin/greenwood-cli contract-deploy-sign \
   '' 0 100000 0 > deploy.json
 ```
 
+`A.key` is a disposable fixture identity from the local genesis helper. Never use
+a production validator identity for application development. Choose the actual
+finalized sender nonce; `0` only fits an unused funded fixture account.
+
 The arguments after the key are: WASM path, initialization bytes, attached
 value, gas limit, and sender nonce. The helper bounds module bytes, input,
 value, and gas before signing; validators revalidate the canonical envelope.
@@ -67,8 +74,10 @@ php bin/greenwood tx status TRANSACTION_HASH --rpc=http://127.0.0.1:9201
 
 Submission returns `PENDING`, not a deployed contract. Poll until the status
 is `FINALIZED`. Contract IDs are derived deterministically from deployed WASM
-bytes using `GREENWOOD_CONTRACT_V1`; the resulting execution receipt is part of
-finalized state.
+bytes using `GREENWOOD_CONTRACT_V1`. Query
+`GET /v1/transactions/{hash}/receipt` after finality for the derived execution
+receipt and `contract_id`. The receipt describes finalized execution but is not
+a separately certified or state-root-committed record.
 
 ## 4. Design calls and storage
 
@@ -80,10 +89,21 @@ helper's implemented syntax is `contract-call-sign GENESIS KEYFILE CONTRACT_ID
 METHOD CALLDATA ATTACHED_VALUE GAS_LIMIT NONCE`; CALLDATA is the literal argument
 bytes, not automatically decoded base64. Submission is a separate signed write.
 
-Read-only queries do have an HTTP endpoint: `POST /v1/contracts/{id}/call`, exposed
-by `php bin/greenwood contract call CONTRACT_ID METHOD BASE64_CALLDATA`. It executes
-against finalized state without a transaction or persistent effects; do not
-confuse it with contract-call-sign. Never ask a public node to sign for you.
+Read-only queries use `POST /v1/contracts/{id}/call`. The PHP RPC CLI does not
+implement a `contract` command group. With `CONTRACT_ID` set to the finalized
+64-character lowercase hex contract ID, query the local example directly:
+
+```sh
+curl --fail-with-body http://127.0.0.1:9201/v1/contracts/"$CONTRACT_ID"/call \
+  -H 'Content-Type: application/json' \
+  --data '{"method":"hello","calldata":""}'
+```
+
+This executes against finalized state with a zero caller and zero attached value,
+without a transaction or persistent effects. Inspect `status`; HTTP 200 can also
+carry a runtime failure. Successful `return_data` is hex (`68656c6c6f` for this
+example). A signed `contract-call-sign` is a separate state-changing operation.
+Never ask a public node to sign for you.
 
 For host imports, status codes, input/output behavior, storage semantics, and
 the complete transaction result model, continue with:
@@ -91,7 +111,11 @@ the complete transaction result model, continue with:
 - [Contract overview](overview.md)
 - [Contract storage](storage.md)
 - [WASM ABI v1](../GREENWOOD_WASM_ABI_V1.md)
-- [Reference WAT examples](../examples/contracts/)
+- [Hello-world WAT example](../examples/contracts/hello-world/contract.wat)
+- [Counter WAT example](../examples/contracts/counter/contract.wat) (empty calldata;
+  `get`, `increment`, `decrement`; raw four-byte little-endian return value)
+- [Tested storage WAT fixture](../../test/fixtures/reference_storage.wat)
+- [Tested value WAT fixture](../../test/fixtures/reference_value.wat)
 
 ---
 

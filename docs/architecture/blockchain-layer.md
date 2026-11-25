@@ -1,7 +1,7 @@
 # Blockchain Layer
 
-Source reference: October 21, 2026. This describes the checkout, not proof that
-every current change is deployed on physical nodes.
+Source reference: the current checkout. Deployment evidence and outstanding gates
+are maintained in [project status](../PROJECT_STATUS.md).
 
 ## Blocks and Execution
 
@@ -32,9 +32,15 @@ Ed25519 signature. JSON/base64 is a transport wrapper, not the signed format.
 | 8 | ComputeAssign |
 | 9 | ComputeReceipt |
 | 10 | ProviderCapability |
+| 11 | TransferU64 |
+| 12 | Treasury action |
+| 13 | Native service action |
+| 14 | ProviderCapabilityV2 resource extension |
 
 Constants for types 4-6 remain in the class but the constructor rejects them.
-They do not implement a hosted-application deployment API. Hosted applications
+Types 11–14 require a genesis that enables native economics; acceptance by the
+envelope decoder alone does not authorize a state transition. These types do not
+implement a developer hosted-application deployment API. Hosted applications
 use finalized registry contracts and the separate controller/provider pipeline;
 a controller operation is not itself an L1 compute assignment.
 
@@ -67,5 +73,4 @@ php bin/greenwood block get 1
 
 Configure the intended endpoint using the [CLI reference](../cli.md).
 [RPC v1](../rpc-v1.md) defines response DTOs, not binary block encoding.
-See [current functionality](../CURRENT_FUNCTIONALITY.md) for physical acceptance
-boundaries.
+See [project status](../PROJECT_STATUS.md) for physical acceptance boundaries.

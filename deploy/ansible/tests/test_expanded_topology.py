@@ -47,6 +47,7 @@ class ExpandedTopologyTest(unittest.TestCase):
         seed=next(p for p in plays if 'offline seed' in p['name'])
         self.assertEqual('registry_hosts',seed['hosts'])
         fresh=yaml.safe_load((base/'playbooks/fresh_cluster.yml').read_text())
+        fresh+=yaml.safe_load((base/'playbooks/finish_installation.yml').read_text())
         self.assertEqual('all',fresh[0]['hosts'])
         self.assertTrue(any(p.get('hosts')=='providers' for p in fresh))
         provider=(base/'roles/provider/tasks/main.yml').read_text()

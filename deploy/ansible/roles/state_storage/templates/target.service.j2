@@ -1,0 +1,16 @@
+[Unit]
+Description=Greenwood dedicated state block targets
+Wants=network-online.target
+Requires=systemd-networkd.service ssh.service nfs-server.service
+After=network-online.target systemd-networkd.service ssh.service nfs-server.service
+RequiresMountsFor=/mnt/greenwood/block-volumes
+ConditionPathIsMountPoint=/mnt/greenwood
+Conflicts=rtslib-fb-targetctl.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+UMask=0077
+ExecStart=/usr/bin/python3 /etc/greenwood-storage/prepare_state_storage.py --plan-file /etc/greenwood-storage/plan.json --approved-sha256 {{ greenwood_storage_plan_sha256 }} --node node-4 --action start-target --approve-storage-changes
+# Never clear targets or disconnect clients implicitly on stop.
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+---
+- name: Verify installed public configuration hashes
+  ansible.builtin.stat:
+    path: "/etc/greenwood/{{ item.name }}"
+    checksum_algorithm: sha256
+  loop:
+    - {name: genesis.json, sha256: "{{ greenwood_genesis_sha256 }}"}
+    - {name: chain.json, sha256: "{{ greenwood_chain_config_sha256 }}"}
+  register: fresh_configs
+
+- name: Refuse any configuration mismatch
+  ansible.builtin.assert:
+    that:
+      - item.stat.checksum == item.item.sha256
+      - not item.stat.islnk
+      - item.stat.uid == 0
+  loop: "{{ fresh_configs.results }}"

@@ -1,5 +1,9 @@
 # Candidate economics simulation
 
+> **Historical scope — reviewed November 24, 2026.** These are offline scenarios, including hypothetical exchange rates and subsidies. They do not establish GWD value or override the adopted zero subsidy budget.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 Offline arithmetic only; no production authorization. Years use 365.25 days.
 
 ## Confirmed policy: 60-second target blocks

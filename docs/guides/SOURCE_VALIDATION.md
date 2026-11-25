@@ -1,5 +1,10 @@
 # Local source validation — November 16, 2026
 
+> Historical November 16 source-validation snapshot. Preserve these test counts
+> and source-scope limits as evidence of that run; they do not qualify the current
+> working tree, release or physical installation. See [project status](../PROJECT_STATUS.md)
+> and [self-managed updates](SELF_MANAGED_UPDATE.md) for the current review path.
+
 This records validation of the local, uncommitted source changes. It does not
 certify a published commit, built OCI image or physical installation.
 

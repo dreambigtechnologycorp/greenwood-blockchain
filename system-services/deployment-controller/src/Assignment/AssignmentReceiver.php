@@ -11,7 +11,7 @@ final class AssignmentReceiver {
         foreach([$storeDirectory,dirname($ledgerPath)]as$p)if(is_link($p)||!is_dir($p)||(fileperms($p)&0077)!==0||fileowner($p)!==posix_geteuid())throw new \RuntimeException('PRIVATE_RECEIVER_STORAGE_REQUIRED');
         if(is_link($ledgerPath))throw new \RuntimeException('UNSAFE_RECEIVER_LEDGER');
         $this->db=new \PDO('sqlite:'.$ledgerPath,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);chmod($ledgerPath,0600);
-        $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db, 5000);
         $this->db->exec('CREATE TABLE IF NOT EXISTS generations(generation TEXT PRIMARY KEY, app INTEGER NOT NULL, service TEXT NOT NULL, version INTEGER NOT NULL, document TEXT NOT NULL, state TEXT NOT NULL, UNIQUE(app,service,version))');
         $this->db->exec('CREATE TABLE IF NOT EXISTS receiver_nonces(nonce TEXT PRIMARY KEY, expires INTEGER NOT NULL)');
     }

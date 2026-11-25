@@ -9,7 +9,9 @@ protocol's serialization format.
 
 The `State` object contains accounts; contract code, storage, balances, and
 execution receipts; compute requests, assignments, receipts, and provider
-capabilities; and genesis-derived provider eligibility. The state root is a
+capabilities; genesis-derived provider eligibility; and, when enabled by genesis,
+the native economics ledger, resource policy and service commitments. Contract
+execution receipts are derived evidence, not state-root records. The state root is a
 domain-separated Merkle commitment over canonical logical records—not SQLite
 pages, timestamps, filesystem paths, runtime logs, or host telemetry.
 
@@ -26,8 +28,14 @@ Compute actions are state transitions, but running a container is not.
 
 ## SQLite index
 
-`StateSqlite` persists an inspected snapshot of finalized logical state with
-`PRAGMA synchronous=FULL`.
+`StateSqlite` persists an inspected snapshot of finalized logical state. In the
+current source, [SqliteDurability](../../src/Persistence/SqliteDurability.php)
+requires a disk-backed database, `journal_mode=DELETE` and `synchronous=EXTRA`. An
+existing WAL database fails startup with `SQLITE_OFFLINE_ROLLBACK_MIGRATION_REQUIRED`;
+startup does not silently checkpoint or discard WAL files. Use the reviewed,
+stopped-service migration in [state storage](../../deploy/ansible/STATE_STORAGE.md).
+Do not infer that older immutable releases contain this change or that storage
+continuation has completed; see [project status](../PROJECT_STATUS.md).
 
 | Table | Content |
 |---|---|
@@ -36,6 +44,8 @@ Compute actions are state transitions, but running a container is not.
 | `contract_code`, `contract_storage`, `contract_balances` | deterministic contract data. |
 | `contract_receipts` | indexed contract execution receipts. |
 | `compute_records`, `provider_eligibility` | compute records and eligibility. |
+| `economics_state` | optional native economic snapshot. |
+| `transactions`, `transaction_index_progress` | canonical transaction locators and index completeness anchor. |
 
 The database may make reads faster but cannot authorize an alternative state
 transition. History is replayed and this index rebuilt on startup.

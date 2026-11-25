@@ -1,7 +1,31 @@
-# Source Release Procedure
+# Source and production release procedure
 
-Greenwood's PHP distribution is an experimental source release, not a certified
-physical deployment. The Python CLI and application images are separate artifacts.
+A source archive, a qualified runtime/OCI release and a physically accepted
+installation are separate deliverables. Pin each to the reviewed source revision;
+never label an archive from committed Git objects as including uncommitted fixes.
+See [project status](PROJECT_STATUS.md) for the current release boundary.
+
+## Production release path
+
+1. Review source, documentation and dependency changes; commit the approved tree.
+2. Run the [applicable qualification suites](testing/overview.md) against that exact
+   clean revision, recording skipped/native/physical checks separately.
+3. Follow [production release preparation](../deploy/production/README.md) to build
+   the pinned runtime, validator distribution and required system-service OCI
+   artifacts, checksums, SBOMs and provenance. Keep all service images on the same
+   approved runtime digest where the build contract requires it.
+4. Bind the reviewed public configuration, genesis, policy and role identities to
+   the final release manifest. Record an explicit approval of the resulting hashes.
+5. Hand private provisioning and activation to the operator through the
+   [deployment entrypoints](../deploy/README.md); run
+   [physical acceptance](../deploy/production/PHYSICAL_ACCEPTANCE.md) on those hosts.
+
+Do not publish mutable image tags as immutable identity, invent unresolved digests,
+or count locally tested collectors as independent physical attestation. A network
+joining operator consumes the network's approved public configuration; they do
+not create a replacement genesis or network-wide signing authority.
+
+The remaining sections describe the **source archive** portion of that release.
 
 ## Prepare
 
@@ -18,10 +42,12 @@ physical deployment. The Python CLI and application images are separate artifact
    Create an annotated, preferably signed, tag bound to the approved commit.
    Never move an existing published tag.
 
-## Fresh public history
+## Initial publication of a previously private repository
 
-When starting a new public repository, copy only reviewed source files into a new
-checkout. Do not copy the old `.git` directory, local checkpoint refs, ignored
+This section applies only to an initial publication, not ordinary updates to the
+existing public repository. Do not rewrite published history as a routine release
+step. When starting a new public repository, copy only reviewed source files into
+a new checkout. Do not copy the old `.git` directory, local checkpoint refs, ignored
 runtime state, keys, dependency directories or previous distributions. Keep the
 containerd submodule pinned at its reviewed revision rather than copying its
 nested repository history. The frozen signing material in test vectors is public
@@ -65,7 +91,7 @@ bindings requires a Git checkout with pinned submodules, not this archive alone.
 Publish the immutable tag, archive, manifest, checksums and release notes together.
 Sign checksums using the maintainer's established release-signing identity; do
 not create a substitute identity just to label a release signed. State the exact
-runtime requirements and experimental status prominently. Keep private acceptance
+runtime requirements, release scope, known limitations and acceptance status. Keep private acceptance
 records outside the published repository and archive.
 
 Source checks do not prove clean-cluster installation, safe mainnet operation or

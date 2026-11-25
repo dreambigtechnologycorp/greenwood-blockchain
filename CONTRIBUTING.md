@@ -6,22 +6,23 @@ the [protocol specification](docs/GREENWOOD_PROTOCOL_V1.md) first.
 
 ## Development
 
-Use the runtime and extensions in the
-[Linux execution manifest](docs/linux-execution-manifest.md). Infrastructure
-provisioning targets PHP 8.5.12. Clone with submodules when regenerating protocol
-bindings; normal source archives already contain the generated PHP bindings.
+Start with [developer setup](docs/getting-started/development.md), then the
+[local quickstart](docs/getting-started/quickstart.md). Use the checked-in Composer
+lockfile and runtime requirements; production qualification pins PHP 8.5.12 and
+Wasmtime 48.0.1. Ordinary source archives contain generated protocol bindings.
+Initialize pinned submodules only when regenerating them.
 
-```sh
-git submodule update --init --recursive
+```bash
 composer install
-composer run test
-python3 -m unittest discover -s deploy/ansible/tests
-python3 -m unittest discover -s tests/Release
+composer validate --no-check-publish
+composer run test:source
+composer run test:contracts
 ```
 
-These commands are not a substitute for the platform-specific suites in the
-[testing guide](docs/testing/overview.md). Contract tests require Wasmtime and
-FFI; provider tests may require Linux and containerd. Report tests not run.
+The [testing guide](docs/testing/overview.md) covers Python/Ansible, resource,
+control-plane and native suites. The commands above require their development
+prerequisites and disposable state; they do not target live nodes. Report checks
+not run, runtime limitations and skips.
 
 ## Changes
 
@@ -33,9 +34,16 @@ versioning and compatibility review; passing local tests is not sufficient.
 
 Preserve generated-code provenance. Use the scripts under `scripts/` to
 regenerate bindings and record tool versions. Commit dependency lock changes
-only when intentional. Never commit credentials, node state or deployment
-evidence. Local acceptance and audit material belongs in ignored
-`docs/acceptance/`; maintained automated regression tests belong in source.
+only when intentional. Never commit credentials, private inventories, operational node state or private
+acceptance records. Local output may live in ignored `build/` or `docs/acceptance/`;
+reviewed public fixtures, reusable tests and acceptance procedures belong in source.
+Do not force-add ignored custody or runtime files.
+
+Write public guides around roles and responsibilities. Keep named machine layouts
+in explicitly labeled reference profiles. Document source-enforced placement,
+identity and eligibility constraints rather than promising an unsupported topology.
+Separate joining an existing network from creating one. Preserve approved policy
+and historical evidence bytes; use indexes to explain their scope and status.
 
 ## License and security
 

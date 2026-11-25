@@ -1,5 +1,11 @@
 # Node-4 responsibilities and proposed seven-node production cluster
 
+> Historical snapshot: the findings and commands below describe their dated
+> source/infrastructure state, not the current installation procedure. Start with
+> [project status](../PROJECT_STATUS.md) and [operator onboarding](README.md).
+> Retain the recorded evidence and counts; do not repeat completed initialization,
+> removal or credential-generation steps from this snapshot.
+
 Assessment date: November 16, 2026. Read-only inspection of the four existing, identity-verified machines. The three additional Raspberry Pi 4B 8 GB machines are user-reported hardware, not yet inspected or enrolled. Node-5/6/7 below are proposed labels, not assigned identities or addresses. This document changes neither deployment inventory nor installation authorization.
 
 See the [completed Ansible source inspection](ANSIBLE_EXPANSION_INSPECTION_2026-11-16.md) for exact role boundaries and expansion blockers.

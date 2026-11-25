@@ -17,17 +17,22 @@ When `greenwoodd` starts, it:
 4. Rejects gaps and replays every finalized block through live validation
    rules.
 5. Rebuilds `state.sqlite` from the replay result.
-6. On a validator, opens and verifies the separate safety journal before it
-   can sign another consensus message.
+
+A validator identity and its separate safety journal are checked before chain
+construction, so an identity/journal failure can prevent replay from starting.
+For a history-only check on a copy, omit `--node` and validator-key options.
 
 `--replay` performs this verification path and prints recovered height, tip
-hash, and state root instead of starting the consensus driver.
+hash, and state root instead of starting the consensus driver. It acquires the
+data-directory lock and writes/rebuilds derived SQLite state; it is not a
+filesystem-read-only command.
 
 ## Failure behavior
 
 | Condition | Expected behavior |
 |---|---|
-| Missing or stale `state.sqlite` | Rebuild from genesis and blocks. |
+| Missing or stale `state.sqlite` | Rebuild from genesis and blocks once storage opens successfully. |
+| Existing WAL database under the current rollback-journal source | Require stopped-service migration; never remove WAL sidecars by hand. |
 | Gap in block heights | Fail closed; history is not contiguous. |
 | Block/header/root mismatch | Fail closed; no repair is guessed. |
 | Missing certificate when verification is enabled | Fail closed. |
@@ -44,9 +49,15 @@ once genesis provenance is known.
 2. Restore them into a fresh data directory with restrictive permissions.
 3. For a validator, restore only its matching key and its own safety journal.
    Never copy another validator's journal.
-4. Run `greenwoodd … --replay` and compare the resulting height, tip hash, and
+4. From the repository root, run `php bin/greenwoodd --genesis=TRUSTED_GENESIS
+   --data-dir=RESTORED_DIRECTORY --replay` and compare the resulting height, tip hash, and
    state root with a trusted peer or operator record.
 5. Start consensus only after that check succeeds.
+
+For the local rollback-journal changes and persistent-mount continuation, follow
+[state storage](../../deploy/ansible/STATE_STORAGE.md). The source procedure does
+not establish that the live continuation finished; consult
+[project status](../PROJECT_STATUS.md).
 
 ## What v1 deliberately does not do
 

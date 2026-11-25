@@ -22,8 +22,10 @@ This service MUST NOT:
 Required runtime configuration:
 
 - GREENWOOD_CHAIN_ID
+- GREENWOOD_GENESIS_HASH
 - GREENWOOD_RPC_ENDPOINT
 - GREENWOOD_APP_REGISTRY_CONTRACT
+- GREENWOOD_APP_REGISTRY_WASM_HASH
 - GREENWOOD_REGISTRY_ISSUER_KEY
 - GREENWOOD_REGISTRY_AUTH_DB
 
@@ -46,8 +48,13 @@ Challenges and sessions are persisted in a protected SQLite database. The issuer
 key must be an existing readable non-symlink private file (0600), owned by root or
 the service identity. A health response is process availability, not OCI acceptance.
 
-The required RPC origin and registry contract have no usable automatic defaults.
-The default chain is `greenwood-physical-v1`; default key/database paths are in
-`src/bootstrap.php` and must be provisioned, not treated as installed artifacts.
+The chain ID, genesis hash, RPC origin, registry contract and registry WASM hash
+must be explicit; there is no default physical chain identity. Default key/database
+paths are in [bootstrap.php](src/bootstrap.php) and must be provisioned, not treated
+as installed artifacts. Changing identity pins requires a process restart.
+The local checkout uses SQLite `DELETE`/`EXTRA`; an existing WAL database requires
+the reviewed [offline migration](../../deploy/ansible/STATE_STORAGE.md).
 Align the HTTPS token realm and issuer public key with Zot's verification certificate.
-See [the physical handoff](../../deploy/ansible/CONTROL_PLANE_HANDOFF.md).
+See [the control-plane handoff](../../deploy/ansible/CONTROL_PLANE_HANDOFF.md) and
+[project status](../../docs/PROJECT_STATUS.md). Configure issuer/service URLs for
+the selected network; this service guide does not assert a live RPC endpoint.

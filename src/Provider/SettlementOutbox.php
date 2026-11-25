@@ -17,10 +17,10 @@ final class SettlementOutbox
         if(!is_dir($directory)&&!mkdir($directory,0700,true)&&!is_dir($directory))throw new \RuntimeException('Outbox directory unavailable');
         if(realpath($directory)!==$directory||is_link($directory)||fileowner($directory)!==posix_geteuid()||(fileperms($directory)&0077)!==0)throw new \RuntimeException('Private outbox directory required');
         $path=$directory.'/settlement-outbox.sqlite';
-        foreach(['','-wal','-shm'] as $suffix)if(is_link($path.$suffix)||(file_exists($path.$suffix)&&(!is_file($path.$suffix)||fileowner($path.$suffix)!==posix_geteuid()||(fileperms($path.$suffix)&0077)!==0)))throw new \RuntimeException('Unsafe outbox file');
+        foreach(['','-journal','-wal','-shm'] as $suffix)if(is_link($path.$suffix)||(file_exists($path.$suffix)&&(!is_file($path.$suffix)||fileowner($path.$suffix)!==posix_geteuid()||(fileperms($path.$suffix)&0077)!==0)))throw new \RuntimeException('Unsafe outbox file');
         $this->archive=new JournalArchive($directory.'/archive');
         $this->db=new \PDO('sqlite:'.$path,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);chmod($path,0600);
-        $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=1000');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db, 1000);
         if($this->db->query('PRAGMA quick_check')->fetchColumn()!=='ok')throw new \RuntimeException('Corrupt outbox requires operator recovery');
         $this->db->exec('CREATE TABLE IF NOT EXISTS archived_outbox(id TEXT PRIMARY KEY,sender TEXT NOT NULL,nonce INTEGER NOT NULL,digest TEXT NOT NULL,UNIQUE(sender,nonce))');
         $this->db->exec('CREATE TABLE IF NOT EXISTS identity(chain TEXT NOT NULL,genesis TEXT NOT NULL)');

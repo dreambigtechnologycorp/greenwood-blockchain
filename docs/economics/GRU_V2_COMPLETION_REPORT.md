@@ -1,5 +1,9 @@
 # GRU v2 — resource accounting implementation report
 
+> **Historical scope — reviewed November 24, 2026.** The original allocation candidates, deployment restrictions and source-gap list below describe this checkpoint, not the current role-based onboarding requirements.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 November 14, 2026. **Local candidate implementation; production HOLD.** No operating cluster was contacted, installed, reset or changed. No permanent genesis, live payment, trusted metering identity or production gate was created/enabled. Both allocations remain unratified; 10/25/30/34/1 remains the preferred modeling candidate. Sixty-second target blocks, six GWD decimals, fixed issuance, emissions and no-burn/operator fees are unchanged.
 
 ## Scope delivered

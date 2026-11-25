@@ -32,10 +32,24 @@ to the transaction ID.
 | `COMPUTE_REQUEST` | Create a finalized compute request. |
 | `COMPUTE_ASSIGN` | Record a schedulable provider assignment/generation. |
 | `COMPUTE_RECEIPT` | Record a canonical terminal provider result. |
-| `PROVIDER_CAPABILITY` | Register or change provider schedulable capability. |
+| `PROVIDER_CAPABILITY` (10) | Register or change base provider schedulable capability. |
+| `TRANSFER_U64` (11) | Transfer an integer amount using the extended native amount encoding. |
+| `TREASURY` (12) | Native governance, reserve and policy actions. |
+| `SERVICE` (13) | Native service funding, claims, settlement and retention actions. |
+| `PROVIDER_CAPABILITY_V2` (14) | Extend a provider capability with a versioned resource manifest. |
 
-The envelope implementation accepts only the protocol types above. Hosted
-application deployment is a separate controller operation, not another envelope type.
+The [envelope decoder](../../src/Transaction/Envelope.php) accepts types
+1–3 and 7–14; constants 4–6 are not accepted. Types 11–14 require native economics
+to be enabled by genesis. Each action must still pass its own state/authority
+checks. Native service actions can financially bind a hosted interval, but
+developer application deployment remains a separate controller operation.
+See [economic implementation](../economics/PRODUCTION_IMPLEMENTATION_2026-11-15.md)
+and [project status](../PROJECT_STATUS.md) for scope and qualification.
+
+On a native economic genesis, successful transactions also pay the policy-defined
+native transaction fee. WASM fuel is a separate execution limit; it is not a
+client-supplied gas price. A failed contract transition is rejected rather than
+recorded as a finalized failed receipt.
 
 ## Lifecycle
 
@@ -72,6 +86,10 @@ transfer signing, contract deployment and contract-call signing. For example:
 php bin/greenwood-cli transfer-sign GENESIS KEYFILE RECIPIENT_HEX AMOUNT NONCE > tx.json
 php bin/greenwood tx submit tx.json --rpc=http://127.0.0.1:9201
 ```
+
+`transfer-sign` chooses type 11 when the supplied trusted genesis enables native
+economics, otherwise legacy type 1. Its amount is integer base units; the helper
+does not obtain a nonce or funding from a node.
 
 Never pass a private key to public RPC, put it in a CLI configuration file, or
 ask a node to create a signature. See [CLI](../cli.md) and

@@ -1,97 +1,106 @@
 # Testing Greenwood
 
-Greenwood's tests are organized by the boundary they protect. The ordinary PHP
-suite validates protocol behavior without pretending that every runtime check
-can run on every developer machine; native contract and provider checks are
-called out separately.
+Run tests from a development checkout with disposable identities, directories and
+ports. Follow [developer setup](../getting-started/development.md) first. Tests may
+create test-only signing keys; they must never use operational custody material.
+The suites below are separate from a deployment inventory and activation approval.
 
-## Standard suite
+## Choose the right layer
 
-Install development dependencies, then run the Composer-defined suite:
+| Layer | Entry point | What it establishes |
+| --- | --- | --- |
+| Source | `composer run test:source` (`composer run test` is an alias) | Unit, integration, consensus, RPC, CLI, operator and compute behavior; excludes live containerd lifecycle cases |
+| Contracts | `composer run test:contracts` | Restricted Wasmtime ABI, execution, gas/fuel, transactional effects and replay |
+| Native provider | `composer run test:native` | Actual containerd behavior on a prepared disposable Linux host |
+| Ansible regression | `python3 -m unittest discover -s deploy/ansible/tests` | Inventory/guard/template/helper behavior using local fixtures |
+| Source packaging | `python3 -m unittest discover -s tests/Release` | Archive/release-manifest and packaging guards |
+| Resources and hosted control plane | `scripts/verify-resource-release.py` | Resource accounting, funding, metering, policies and control-plane suites with revision-bound evidence |
+| Physical acceptance | [Operator procedure](../../deploy/production/PHYSICAL_ACCEPTANCE.md) | Behavior on the intended hosts, including restart, ingress, funding and settlement |
+
+Some source tests require Wasmtime/FFI or local loopback/Unix sockets. A platform
+skip is not a pass for that feature. Native tests may create containers and
+exercise mounts/cgroups; use a dedicated prepared test environment, never an
+operational provider merely because its socket is reachable.
+
+## Standard development checks
 
 ```bash
 composer install
-composer run test
-```
-
-The `test` script selects the `source` suite in `phpunit.xml.dist`: unit,
-integration, consensus, RPC, CLI, operator, compute value-object and mocked
-containerd tests. Some source integration tests need Wasmtime/FFI and local
-loopback or Unix sockets. Live containerd tests are excluded from this suite.
-Use PHPUnit directly when narrowing to a specific file:
-
-```bash
-php vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Unit/Crypto/ProtocolHashTest.php
-php vendor/bin/phpunit --bootstrap vendor/autoload.php tests/Consensus/SafetyTest.php
-```
-
-## Runtime-dependent suites
-
-Contract coverage invokes Wasmtime through PHP FFI:
-
-```bash
+composer run test:source
 composer run test:contracts
+python3 tests/Fixtures/verify_vectors.py
+python3 tests/Fixtures/verify_contract_vectors.py
+python3 tests/Fixtures/verify_compute_vectors.py
+python3 tests/Fixtures/verify_provider_content_vectors.py
 ```
 
-Environment-specific acceptance and verification scripts, their documentation,
-and audit output belong in ignored `docs/acceptance/`. They are not shipped in
-source checkouts or invoked by Composer. Review their environment and paths
-before running any locally retained script.
+For a narrow change, run the relevant PHPUnit file or suite through PHPUnit,
+not directly as a PHP script. Examples are in [unit tests](unit-tests.md) and
+[integration tests](integration-tests.md). `phpunit.xml.dist` is the authoritative
+suite membership list.
 
-Run live containerd tests separately with `composer run test:native`; this suite
-requires a disposable Linux provider host and its runtime prerequisites. Read
-[provider operations](../provider-operations.md) and the
-[Linux execution manifest](../linux-execution-manifest.md) before running
-native container lifecycle tests.
+The Python/Ansible environment must include Ansible, PyYAML and Jinja2; see
+[setup](../getting-started/development.md). Record actual versions for qualification:
 
-## Coverage map
+```bash
+python3 --version
+ansible --version
+python3 -m unittest discover -s tests/Release
+ANSIBLE_LOCAL_TEMP=/tmp/greenwood-ansible-tests python3 -m unittest discover -s deploy/ansible/tests
+```
 
-Hosted application control-plane and Ansible checks are separate from Composer's
-default suite. From this repository root:
+These regressions may execute helper commands against temporary fixtures. They
+do not constitute a live-node Ansible preflight or prove installation idempotency.
 
-```sh
+## Resource and control-plane qualification
+
+The qualification driver includes the standalone economics, registry-auth and
+controller tests, JavaScript resource/signing tests, and syntax checks. Node.js
+is required for its JavaScript tests. Use a **new** output directory each time:
+
+```bash
+python3 scripts/verify-resource-release.py \
+  --output-dir build/qualification-local
+```
+
+For release evidence, run from the final clean committed revision and include the
+certified-history coverage:
+
+```bash
+python3 scripts/verify-resource-release.py \
+  --require-clean --certified-history \
+  --output-dir build/qualification-release
+```
+
+The second command rejects uncommitted/untracked source inputs and records the
+commit. It does not build OCI artifacts or replace the PHP, Ansible, native or
+physical suites above. Follow [release preparation](../RELEASING.md) and
+[production packaging](../../deploy/production/README.md) to bind all required
+evidence, architectures and immutable artifact digests.
+
+For focused hosted changes the standalone controller entrypoints include:
+
+```bash
 php system-services/deployment-controller/tests/orchestration.php
 php system-services/deployment-controller/tests/signed_policy.php
-php system-services/deployment-controller/tests/policy_install.php
 php system-services/deployment-controller/tests/distribution.php
 php system-services/deployment-controller/tests/edge_admission.php
-php system-services/deployment-controller/tests/release_content.php
-ANSIBLE_LOCAL_TEMP=/tmp/h8-ansible-local python3 -m unittest discover -s deploy/ansible/tests
 ```
 
-Ansible fixtures use local check mode and can need permission for a local RPC
-socket. They do not prove Linux installation. The separate Python CLI repository's
-`tests/test_cli.py`, `test_registration_gate.py` and `test_remediation.py` are
-targeted local tests; full discovery also invokes registry WASM build/execution
-fixtures and requires the PHP/AssemblyScript toolchains. Do not call full discovery
-entirely mocked or infer physical acceptance from it.
+Those scripts are direct executables, unlike PHPUnit test classes. The separate
+Python application CLI has its own tests and build prerequisites; results here
+do not qualify that repository automatically.
 
-| Area | Representative coverage |
-|---|---|
-| Codec and cryptography | canonical bounds, golden vectors, domain-separated hashing. |
-| Chain and persistence | transfer safety, block limits, replay, state-root sensitivity, atomicity. |
-| Consensus | signing safety, phase convergence, liveness, offline behavior, round catch-up, pacemaker durability. |
-| Contracts | ABI validation, execution overlays, deterministic fuel, traps, host integration, replay. |
-| Compute | request/receipt codecs, scheduling, provider capabilities, chain isolation, OCI specification security. |
-| RPC and CLI | route validation, rate limiting, transport behavior, operator authentication, pure-RPC command behavior. |
+## Evidence and maintenance
 
-## Test-writing rules
+Record the exact revision, tool versions, commands, exit results and skips. Keep
+private operational output outside source; reusable regression tests and physical
+acceptance procedures are tracked. Ignored `build/` and `docs/acceptance/` may hold
+local output, but must not be force-added with inventories, credentials or state.
 
-- Prefer protocol vectors and state-root assertions over snapshots of PHP
-  objects or SQL rows.
-- Keep a test's generated keys, paths, ports, and temporary runtime state
-  isolated; never reuse a developer's node data directory.
-- Exercise failure behavior as deliberately as success behavior: malformed
-  bytes, conflicting signatures, missing certificates, and rejected runtime
-  inputs should fail closed.
-- For a cross-layer change, add coverage at the narrowest responsible layer
-  first, then an integration test showing the composed behavior.
-
-See [unit tests](unit-tests.md) and [integration tests](integration-tests.md)
-for maintained regression commands and environment boundaries.
-
----
-
-<!-- docs-nav -->
-**Continue reading:** [Documentation hub](../README.md) · [Testing overview](overview.md) · [Implementation inventory](../IMPLEMENTATION-INVENTORY.md)
-<!-- /docs-nav -->
+Prefer assertions of canonical bytes, state transitions, conservation and failed
+unauthorized operations. Cover malformed input, uncertain starts, missing
+certificates, stale policies and interrupted storage migration. A source test,
+a native runtime test and independent measurement of hardware are different
+claims. See [project status](../PROJECT_STATUS.md) for the currently recorded
+release boundary rather than copying a historical test count into new evidence.

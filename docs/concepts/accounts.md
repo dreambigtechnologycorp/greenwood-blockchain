@@ -20,7 +20,10 @@ node or included in CLI configuration.
 Balances are non-negative integer base units; floating-point values are never
 valid consensus inputs. The nonce is a `u32` and a state transition requires
 the transaction nonce to equal the account's current nonce. A successful
-transaction advances the sender nonce exactly once.
+transaction advances the sender nonce exactly once; exhausted `u32` nonces are
+rejected. Native economic genesis uses six decimal places per GWD and charges
+policy-defined transaction fees. Legacy local fixtures use their own native units;
+do not infer their funding or economics from the production policy.
 
 This exact-match rule prevents replay and makes concurrent client submission
 explicit: sign transactions from one account in nonce order and wait for
@@ -35,6 +38,7 @@ prints its public key and address:
 php bin/greenwood-cli account create ./development-account.key
 ```
 
+This development key is not automatically funded or registered as a validator.
 The command refuses to overwrite an existing path. Use restrictive permissions
 and a proper key-management process outside development. Validator and provider
 keys have additional operational requirements in their respective guides.

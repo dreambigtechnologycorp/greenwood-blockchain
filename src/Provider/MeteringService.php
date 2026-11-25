@@ -17,7 +17,7 @@ final class MeteringService implements MeterJournal
         if(realpath($directory)!==$directory||is_link($directory)||(fileperms($directory)&0077)!==0||fileowner($directory)!==posix_geteuid())throw new \RuntimeException('Private meter journal required');
         $path=$directory.'/meter-segments.sqlite';if(is_link($path)||(is_file($path)&&((fileperms($path)&0077)!==0||fileowner($path)!==posix_geteuid())))throw new \RuntimeException('Unsafe meter journal');
         $this->archive=new JournalArchive($directory.'/archive');
-        $this->db=new \PDO('sqlite:'.$path,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);chmod($path,0600);$this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=1000');
+        $this->db=new \PDO('sqlite:'.$path,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);chmod($path,0600);\Greenwood\Persistence\SqliteDurability::configure($this->db, 1000);
         $this->db->exec('CREATE TABLE IF NOT EXISTS segments(commitment TEXT NOT NULL, runtime TEXT NOT NULL, first_sample TEXT NOT NULL, last_sample TEXT, state TEXT NOT NULL, PRIMARY KEY(commitment,runtime))');
         $this->db->exec('CREATE TABLE IF NOT EXISTS checkpoints(commitment TEXT NOT NULL,runtime TEXT NOT NULL,sequence INTEGER NOT NULL,sample TEXT NOT NULL,previous_hash TEXT NOT NULL,digest TEXT NOT NULL,PRIMARY KEY(commitment,runtime,sequence))');
         $this->db->exec('CREATE TABLE IF NOT EXISTS funded_bindings(commitment TEXT PRIMARY KEY,scope TEXT NOT NULL)');

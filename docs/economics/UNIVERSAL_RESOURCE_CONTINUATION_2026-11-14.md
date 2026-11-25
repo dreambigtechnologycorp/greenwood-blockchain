@@ -1,5 +1,9 @@
 # Universal-resource implementation — continuation checkpoint
 
+> **Historical scope — reviewed November 24, 2026.** The four-node scope, FULL/WAL journals and remaining-source matrix describe this checkpoint. Current working source uses rollback journals; deployment status is tracked separately.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 **Superseded for current scope/status:** [November 15 production checkpoint](PRODUCTION_IMPLEMENTATION_2026-11-15.md). The existing four-node cluster is the authorized destination; the disposable-host requirement below is historical.
 
 Production remains **HOLD**. This checkpoint supersedes the earlier report's descriptions of missing source components, while preserving its historical test results. The full WP0–WP10 milestone is not yet qualified or complete.

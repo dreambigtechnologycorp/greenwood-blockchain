@@ -1,5 +1,9 @@
 # Selected production allocation — November 14, 2026
 
+> **Historical scope — reviewed November 24, 2026.** Allocation arithmetic remains useful; pending-ratification language below predates the November 18 adoption. Historical JSON inputs are unchanged.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 15/25/30/25/5 is selected for a fresh 1-billion-GWD genesis: security 150 million,
 grants 250 million, subsidies 300 million, Institute treasury 250 million and
 operations 50 million. Six-decimal precision, no later minting and no burning remain.

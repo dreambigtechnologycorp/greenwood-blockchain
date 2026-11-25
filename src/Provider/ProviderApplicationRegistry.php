@@ -41,17 +41,7 @@ final class ProviderApplicationRegistry
             ]
         );
 
-        $this->db->exec(
-            'PRAGMA journal_mode=WAL'
-        );
-
-        $this->db->exec(
-            'PRAGMA synchronous=FULL'
-        );
-
-        $this->db->exec(
-            'PRAGMA busy_timeout=5000'
-        );
+        \Greenwood\Persistence\SqliteDurability::configure($this->db);
 
         $this->db->exec(
             'CREATE TABLE IF NOT EXISTS provider_applications (

@@ -1,7 +1,7 @@
 # Implementation inventory
 
-This inventory maps the Greenwood reference documentation to the current PHP
-implementation. It is not a claim that every future protocol feature exists;
+This inventory maps role-based documentation to the current PHP implementation.
+See [project status](PROJECT_STATUS.md) for the release boundary. It is not a claim that every future protocol feature exists;
 the v1 boundary is the scope described by the linked specifications.
 
 | Capability | Primary source | Primary verification |
@@ -23,6 +23,8 @@ the v1 boundary is the scope described by the linked specifications.
 | Managed edge and release content | `src/Edge`, controller `deploy/edge-reconcile.php` | `tests/Unit/Edge`, controller `tests/release_content.php` |
 | Registry authorization | `system-services/registry-auth/src` | controller `tests/registry_authority.php` |
 | Protected configuration and transport staging | `deploy/ansible/roles/control_plane` | `deploy/ansible/tests` |
+| Durable storage and SQLite policy | `src/Persistence/SqliteDurability.php`, `deploy/ansible/roles/state_storage` | `tests/Unit/Persistence`, storage/migration tests in `deploy/ansible/tests`; intended-host recovery acceptance |
+| Resource accounting and customer funding | `src/Economics`, `src/Provider` | `tests/Economics`; [resource qualification](guides/RESOURCE_METERING.md) |
 
 ## Executables
 
@@ -50,7 +52,8 @@ new consensus records. See [current functionality](CURRENT_FUNCTIONALITY.md).
 ## How to verify
 
 Run `composer run test` for the standard PHP suite, then the runtime-dependent
-scripts described in [Testing](testing/overview.md). Verify a deployed Linux
+scripts described in [Testing](testing/overview.md). Use [role-based onboarding](operations/ROLE_BASED_ONBOARDING.md) to distinguish
+network-wide services from a joining operator's responsibilities. Verify a deployed Linux
 provider through the [operations guide](provider-operations.md) and the
 deployment verification assets rather than by manipulating its internal data.
 

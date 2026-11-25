@@ -51,16 +51,18 @@ checks fail. Monitoring should record both. Prometheus text is available from
 ## Authentication boundary
 
 Read endpoints are public. Transaction submission is classified as
-`AUTHENTICATED` in the route registry but is open on private test networks in
-the current node wiring; deployers must put appropriate network policy in front
-of a public endpoint. Operator routes are a separate API on a private Unix
-socket and are never served from this listener.
+`AUTHENTICATED` in the route registry; the current node wiring has no
+transaction-token enforcement. Deployers must put the reviewed network/ingress
+policy in front of a public endpoint. Operator routes are a separate API on a
+private Unix socket and are never served from this listener.
 
 ## Detailed references
 
 - [Chain, block, and account responses](public-api-endpoints-1.md)
 - [Transaction submission and status](public-api-transactions.md)
 - [Compute query responses](public-api-compute.md)
+- [Native economics and resources](../rpc-v1.md#native-economics-and-resource-routes)
+- [Current project status](../PROJECT_STATUS.md)
 - [Operator API](../operator-api.md)
 
 ---

@@ -43,7 +43,7 @@ final class GovernedSystemServiceAgent
         }
         if($record['state']==='STAGED'){
             VacantSystemService::inspect($this->clients,$record);
-            // CAS + FULL/WAL intent is committed before containerd side effects. Only one caller wins.
+            // CAS + EXTRA/rollback-journal intent is committed before containerd side effects. Only one caller wins.
             $this->journal->transition($hash,'STAGED','STARTING',$height);
             try{$handle=(new SystemServiceRuntime($this->clients))->start($definition);$record=$this->journal->transition($hash,'STARTING','RUNNING',$height,$handle);}
             catch(\Throwable $e){$this->journal->transition($hash,'STARTING','UNCERTAIN',$height);throw $e;}

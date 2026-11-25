@@ -27,7 +27,7 @@ final class SignedPolicySnapshot
         }
         $this->db = new \PDO('sqlite:' . $ledger, null, null, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
         chmod($ledger, 0600);
-        $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db, 5000);
         $this->db->exec('CREATE TABLE IF NOT EXISTS policy_revisions(purpose TEXT PRIMARY KEY, revision INTEGER NOT NULL, digest TEXT NOT NULL)');
     }
 

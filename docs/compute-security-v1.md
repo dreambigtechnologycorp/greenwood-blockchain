@@ -1,6 +1,10 @@
 # Greenwood Compute Security V1 (Pass 4F)
 
-Status: spec-level controls frozen; Linux runtime acceptance pending on greenwood-dev.
+Reviewed November 24, 2026. This is the finite-compute V1 security profile and its
+source-level controls, not certification of a host or every runtime path. Physical
+Linux acceptance remains a separate gate; see [project status](PROJECT_STATUS.md)
+and [runtime prerequisites](linux-execution-manifest.md). The requirements apply
+to any operator deployment, independently of cluster size or node placement.
 
 ## Threat model
 
@@ -11,16 +15,20 @@ escape (namespace/mount/ptrace attacks, capability abuse), host asset access
 network abuse. The execution path must contain all of these without weakening
 receipts, scheduling, or reassignment semantics.
 
-## Sandbox guarantees (OCI spec, `OciSpecBuilder` + `ComputeSecurityProfile::V1`)
+## Finite-workload sandbox controls (`OciSpecBuilder` + `ComputeSecurityProfile::V1`)
 
 - All five capability sets empty; `noNewPrivileges = true`.
-- Private pid/ipc/uts/mount/network/cgroup namespaces. Host namespace sharing
-  and privileged mode are **not representable** — the builder has no setters
-  for them.
+- The finite-workload path uses private pid/ipc/uts/mount/network/cgroup
+  namespaces and no privileged mode. The shared builder also exposes
+  `setHostNetwork()` and `addMount()` for system-service callers. Those APIs
+  are not authority for an ordinary compute workload to use host networking
+  or host mounts; review the specific caller and its consent/policy checks.
 - Devices: exactly null/zero/full/random/urandom/tty, with a matching cgroup
   device allowlist.
-- Mounts: proc, /dev tmpfs, devpts, shm, mqueue, sysfs read-only. No host
-  bind mounts; the sole caller adds none.
+- Baseline mounts: proc, /dev tmpfs, devpts, shm, mqueue, sysfs read-only.
+  Finite compute adds no host bind mounts. Governed system services have a
+  separately validated mount/host-access boundary and must not be described
+  as having identical privileges to arbitrary customer jobs.
 - Masked: /proc/kcore, /proc/keys, /proc/sched_debug, /sys/firmware, etc.
   Read-only: /proc/bus, /proc/fs, /proc/irq, /proc/sys, /proc/sysrq-trigger.
 - Seccomp: default-allow with EPERM denylist for mount/umount2/pivot_root,
@@ -36,8 +44,10 @@ receipts, scheduling, or reassignment semantics.
 
 Private network namespace with no external interface ⇒ **no connectivity**.
 Container loopback is namespace-local; host loopback services (provider RPC,
-validator RPC) are unreachable. A future workload profile may add isolated
-outbound networking; it must be separately versioned.
+validator RPC) are unreachable. This statement applies to finite V1 jobs. Hosted applications already use a
+separate managed networking/edge path; governed system services can also have
+explicitly reviewed networking. Neither changes the finite-job wire profile or
+allows a customer request to select host networking.
 
 ## Digest enforcement
 
@@ -52,8 +62,9 @@ supervisor (`ReceiptBuilder`), never trusted from worker-local files.
 The provider worker runs as a separate UID/GID and cannot reach signing keys
 (supervisor-only signing). However, **containerd access is itself a
 privileged runtime capability**: a compromised worker could abuse the
-containerd API. This boundary is accepted for v1 launch; a narrow execution
-broker is future work. Do not overstate it.
+containerd API. This is a material privilege boundary requiring operator acceptance and
+physical isolation checks. Do not treat a separate UID as containment of a
+compromised process that can command containerd.
 
 ## Trust classes and security
 
@@ -66,11 +77,11 @@ mean privileged containers.
 - **No user namespace**: container uid 1000 maps to host uid 1000. It is
   unprivileged, but shares the host uid-1000 identity. Isolation depends on
   runc namespaces + dropped capabilities + seccomp.
-- **Writable-layer bound**: the `erofs` snapshotter enforces a fixed-size
-  writable upper layer per execution (containerd
-  `default_size`, currently provider-policy). A workload that passes the
-  bound gets ENOSPC and its backing image cannot grow. An operator-dedicated
-  containerd filesystem remains as a second, host-protection boundary.
+- **Writable-layer bound**: the selected EROFS block-mode runtime must enforce
+  a configured fixed-size writable layer. Validate exhaustion/ENOSPC behavior
+  on the exact snapshotter, kernel and filesystem; selecting a profile is not
+  proof of enforcement. A dedicated containerd filesystem provides a second
+  host-capacity boundary. Unbounded overlayfs is not equivalent.
 - **No insecure snapshotter fallback**: a provider configured for `erofs`
   that lacks a quota-capable snapshotter must fail readiness, never fall
   back to unbounded `overlayfs`.
@@ -80,15 +91,21 @@ mean privileged containers.
 ## Operator requirements
 
 - Run provider on a dedicated filesystem/partition (disk-abuse bound).
-- Keep validator and provider keys in separate UID-owned paths (already
-  required by Pass 4C); co-located dev hosts are acceptable because OCI
-  workloads never receive host mounts.
+- Keep validator/provider signing authority and worker runtime authority
+  separated. A provider joining a network does not acquire validator or
+  treasury authority. Co-location needs an explicit assessment of the
+  containerd privilege boundary and shared storage; machine count alone
+  establishes neither isolation nor independent administration.
 - Do not run the provider worker as root.
 
 ## Linux-only acceptance
 
-Namespace/cgroup/seccomp/runc acceptance is Linux-only (greenwood-dev).
-Darwin runs spec-level unit tests only; no simulated security acceptance.
+Namespace/cgroup/seccomp/runc acceptance is Linux-only and must run against the
+intended operator profile. Source/unit checks on another OS are not physical
+security acceptance. Include digest/input enforcement, resource exhaustion,
+network isolation, restart cleanup, storage failure and stale-funding behavior.
+Customer-funded operator-attested service authorization does not qualify
+independent metering or permit a weaker workload sandbox.
 
 ---
 

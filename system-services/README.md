@@ -4,10 +4,16 @@ These are network-owned bootstrap services.
 
 They are not ordinary user applications and are not hosted by Greenwood Studio.
 
-Initial services:
+Release image roles:
 
-- GREENWOOD_REGISTRY_V1
-- GREENWOOD_REGISTRY_AUTH_V1
+- Registry (`GREENWOOD_REGISTRY_V1`)
+- Registry authorization (`GREENWOOD_REGISTRY_AUTH_V1`)
+- Meter (`metering`)
+- Attestor (`attestor`)
+- Metering coordinator (`metering-coordinator`)
+
+The latter resource services have separate governed installation, consent and
+qualification gates; inclusion in a build does not enable settlement.
 
 Dockerfiles are source definitions.
 
@@ -29,6 +35,7 @@ The deployment controller is a separate PHP control-plane service in this direct
 not an application-registry owner and not a replacement OCI runtime. Its signed
 developer API drives approved provider operations and edge admission.
 
-Use [current functionality](../docs/CURRENT_FUNCTIONALITY.md) and the
+Use [project status](../docs/PROJECT_STATUS.md),
+[resource release composition](runtime/RESOURCE_WORKFLOWS.md) and the
 [physical handoff](../deploy/ansible/CONTROL_PLANE_HANDOFF.md), not historical H8
 one-off scripts, as the current installation guide.

@@ -1,6 +1,11 @@
 # Greenwood WASM ABI V1
 
-This document defines the Greenwood smart contract ABI for v1.
+This document defines the Greenwood smart contract ABI for v1. Reviewed November
+24, 2026: the pass-specific test results below remain historical checkpoints,
+not present runtime or production acceptance. See [project status](PROJECT_STATUS.md)
+and [runtime prerequisites](linux-execution-manifest.md) for the selected release
+and platform requirements. The ABI is cluster independent; each validating node
+must use the compatible approved engine and reproduce deterministic execution.
 
 ## Pass 3A runtime checkpoint — complete
 
@@ -14,7 +19,9 @@ transactions and state integration are described in the 3C section at the end.
 Bundled Wasmtime **48.0.1**, tested on macOS arm64 with PHP FFI. The binary and
 header fingerprints are recorded in `runtime/wasmtime/manifest.json`; these are
 reproducibility fingerprints, not an independent release-origin attestation.
-Other native platforms have not passed this checkpoint in this environment.
+This original checkpoint did not qualify other native platforms. Later local
+Linux/WASM checks are recorded in the [economics evidence index](economics/README.md);
+they do not establish acceptance of every operator platform or deployment.
 `GREENWOOD_WASMTIME_LIB` can select a compatible operator-supplied artifact;
 operators must match the pinned version/build layout and rerun acceptance before
 using another artifact. `getVersion()` reports the configured version.
@@ -362,7 +369,11 @@ recoverable host statuses and trap when their application wants the transaction
 to fail. Any execution failure rejects the transaction and candidate block;
 sender nonce and all contract/account state remain unchanged. Success commits
 the sealed overlay and increments sender nonce once. Gas is consumed Wasmtime
-fuel, not a charge against account balances; there is no host tariff or gas price.
+fuel, with no host tariff or gas price. On economic chains, the outer transaction
+also pays the configured flat contract-category fee; that fee is separate from
+fuel and commits atomically with the successful transaction. A rejected
+transaction changes neither balances nor nonce and charges no fee. See the
+[protocol reference](GREENWOOD_PROTOCOL_V1.md).
 
 `ContractStateView` clones the current speculative State for stable reads. The
 execution layer uses `ContractStateCommitter` to validate/apply an overlay in a

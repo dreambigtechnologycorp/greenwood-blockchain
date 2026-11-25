@@ -1,0 +1,12 @@
+---
+- name: Validate the reviewed public storage plan
+  ansible.builtin.set_fact:
+    greenwood_checked_storage_plan: "{{ greenwood_storage_plan | greenwood_state_plan(greenwood_storage_plan_sha256) }}"
+
+- name: Require final media approval and inventory machine binding
+  ansible.builtin.assert:
+    that:
+      - greenwood_checked_storage_plan.clients['node-5'].empty_media_approved
+      - greenwood_checked_storage_plan.clients['node-6'].empty_media_approved
+      - greenwood_checked_storage_plan.clients['node-7'].empty_media_approved
+      - (greenwood_checked_storage_plan.target.machine_id if inventory_hostname == 'node-4' else greenwood_checked_storage_plan.clients[inventory_hostname].machine_id) == greenwood_expected_machine_id

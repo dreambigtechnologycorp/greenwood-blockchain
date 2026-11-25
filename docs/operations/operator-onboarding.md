@@ -1,5 +1,11 @@
 # Operator onboarding candidate — 2026-11-14
 
+> Historical snapshot: the findings and commands below describe their dated
+> source/infrastructure state, not the current installation procedure. Start with
+> [project status](../PROJECT_STATUS.md) and [operator onboarding](README.md).
+> Retain the recorded evidence and counts; do not repeat completed initialization,
+> removal or credential-generation steps from this snapshot.
+
 DreamBIG is the disclosed genesis operator. A second key, VM, validator process or
 physical machine controlled by DreamBIG is not an independent administrator.
 Existing physical addresses are topology references, not qualification targets.

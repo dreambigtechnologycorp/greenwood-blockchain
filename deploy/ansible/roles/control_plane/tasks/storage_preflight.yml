@@ -1,0 +1,16 @@
+---
+- ansible.builtin.import_tasks: storage_paths.yml
+
+- name: Require durable writable filesystems before any protocol or control-plane startup
+  ansible.builtin.script:
+    cmd: >-
+      {{ role_path }}/../../files/validate_durable_storage.py
+      --paths-json {{ greenwood_durable_state_paths | to_json | quote }}
+    executable: /usr/bin/python3
+  register: greenwood_durable_storage_check
+  changed_when: false
+  check_mode: false
+
+- name: Record successful durable-storage mount-check metadata
+  ansible.builtin.set_fact:
+    greenwood_durable_storage_verified: "{{ greenwood_durable_storage_check.stdout | from_json }}"

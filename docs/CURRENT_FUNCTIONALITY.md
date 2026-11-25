@@ -1,17 +1,23 @@
 # Current Source Functionality
 
-This page describes the current checkout. Implemented functionality is not
+This page describes the current checkout by role, independently of a particular
+operator's host layout. See [project status](PROJECT_STATUS.md) for release and
+installation evidence.
+
+This page describes source behavior. Implemented functionality is not
 proof of production readiness, live service configuration or fresh-node acceptance.
 The [control-plane guide](../deploy/ansible/CONTROL_PLANE_HANDOFF.md) defines
 installation inputs, activation prerequisites and acceptance requirements.
 
-## Two Workload Paths
+## Compute jobs
 
-**Compute jobs:** finalized L1 compute requests and assignments are consumed by
+ finalized L1 compute requests and assignments are consumed by
 the provider supervisor; execution is off-chain and receipts are canonical chain
 transactions. See [compute v1](GREENWOOD_COMPUTE_V1.md).
 
-**Hosted applications:** Application Registry ownership, permissions and release
+## Hosted applications
+
+ Application Registry ownership, permissions and release
 state are finalized on-chain. The controller additionally requires protected
 execution scope and signed infrastructure allocation for an exact physical
 assignment generation. Receiver ACKs, container observations, edge admission and
@@ -22,7 +28,7 @@ Do not describe hosted deployment as an on-chain compute assignment transaction.
 
 | Component | Current source behavior | Boundary |
 | --- | --- | --- |
-| L1 consensus | Genesis-fixed equal-power validators; certificate quorum `intdiv(2*n,3)+1`, minimum 3 | Three-validator physical profile needs 3-of-3; four-validator local fixture needs 3-of-4 |
+| L1 consensus | Genesis-fixed equal-power validators; certificate quorum `intdiv(2*n,3)+1`, minimum 3 | Quorum depends on the approved validator set; host count does not establish independent operators |
 | PHP `bin/greenwood` | RPC and private operator client | Not the Python developer CLI |
 | Python CLI v0.3 | Encrypted keys, finalized registration/release workflow, scoped OCI auth, build/push, signed deploy/status/resume and durable journals | Separate repository; owner unlock remains interactive; no automatic uncertain transaction resubmission |
 | Registry issuer | Ed25519 challenge proof, finalized application permission checks, short-lived scoped sessions and bearer tokens | Existing issuer identity is externally provisioned; Zot realm/key alignment remains an installation check |
@@ -30,7 +36,7 @@ Do not describe hosted deployment as an on-chain compute assignment transaction.
 | Assignment services | Pinned mTLS identities/roles, signed revocations and allocations, rollback ledgers, atomic durable prepare/commit/status | Unknown, expired, conflicting or unacknowledged generations fail closed |
 | Provider | Authenticated reservation/start/inspection and verified retirement/replacement; container/network identity checks | Private operator surface, not developer access; no duplicate start on uncertainty |
 | Edge | Generic application routes, release-bound body/assets, provider identity/PID/namespace/digest verification, atomic Apache apply and durable journal | Separate managed listener/file; existing explicit marketing route is not automatically migrated |
-| Ansible | Protected staging, runtime-pin gates, isolated read-only policy SFTP, HTTPS units, timers and maintenance separation | No automatic control-plane activation; fresh-node installation remains unverified |
+| Ansible | Protected staging, runtime-pin gates, isolated read-only policy SFTP, HTTPS units, timers and maintenance separation | Staging and activation are separate; intended-host acceptance is required for the exact release |
 
 ## Controller Authorization and Recovery
 
@@ -44,14 +50,18 @@ It is not enabled by possession of an arbitrary administrator token.
 
 Reservation creates an exportable assignment before allocation approval or network
 distribution. The distributor must acknowledge the same canonical generation at
-both receivers. Edge admission precedes the single provider start. Start intent
+all receivers in the selected supported topology. Edge admission precedes the single provider start. Start intent
 is persisted as `START_UNCERTAIN` before the side effect; recovery inspects actual
 runtime identity rather than repeating start. READY is rechecked against authority,
 runtime, effective edge generation and public content, not cached indefinitely.
 
-The current composition retains fixed `node-1` and `node-4` receiver roles and a
-`provider_policy.provider_node` selection among node-1, node-2, node-3, node-6 and node-7. Inventory can supply addresses and identities, but arbitrary
-application admission is not a claim of arbitrary receiver topology support.
+The controller supports explicit legacy and expanded receiver/identity profiles.
+The expanded profile permits colocated controllers on eligible provider hosts;
+configuration must bind the complete expected peer set, roles and certificate
+pins. These profiles still contain named identities: arbitrary receiver placement
+is not implemented merely by changing inventory addresses. See
+[role onboarding](operations/ROLE_BASED_ONBOARDING.md) and
+[controller topology](../system-services/deployment-controller/README.md).
 Current timer admission supports initial version-1 publication; replacement still
 requires verified withdrawal support. Do not infer general rolling updates.
 
@@ -66,9 +76,12 @@ stopped tasks for provider records confirmed RUNNING, using retained container,
 digest, snapshot, lease and network binding. It refreshes the observed PID and
 networking under the per-application lock. It does not replay uncertain initial
 starts, intentionally stopped applications, image pulls or chain transactions.
-Install it explicitly on application providers; Ansible control-plane staging
-does not currently provision it. Verify actual reboot recovery on the intended
-host before claiming reboot acceptance.
+The application-provider Ansible path provisions its units, but staging keeps
+the timer inactive. The interrupted-installation completion path leaves it disabled pending the
+required public identity and funding inputs. Enable it explicitly only after the
+provider and required services have passed those checks. An interrupted installation must not use the timer as a shortcut to
+startup. Verify actual reboot recovery on the intended host before claiming
+reboot acceptance.
 
 ## Policy and Content Evidence
 
@@ -99,10 +112,11 @@ Evidence does not grant authority or override protected configuration and code.
 Vendor/containerd documentation is third-party reference, not Greenwood operating
 instructions. Normative protocol changes require compatibility review.
 
-The separate blockchain and marketing repositories remain inaccessible under
-macOS permissions. Their documentation is not audited by this checkout review.
-Full CLI discovery, Linux SFTP/PAM and new rendered unit/Apache acceptance, runtime
-artifact provenance and fresh-node two-pass idempotency remain separately tracked.
+This audit covers this repository's root documents, `docs/`, and referenced
+first-party deployment/service guides. Other repositories and third-party vendor
+documentation are outside this audit. Physical runtime, routing, policy transport
+and two-pass installation acceptance remain evidence for a particular deployment,
+not universal consequences of source implementation.
 
 ## Source Anchors
 
@@ -117,15 +131,12 @@ artifact provenance and fresh-node two-pass idempotency remain separately tracke
 - [Managed edge entrypoint](../system-services/deployment-controller/deploy/edge-reconcile.php)
 - [Ansible control-plane role](../deploy/ansible/roles/control_plane/tasks/main.yml)
 
-## Documentation Audit Scope
+## Documentation audit scope
 
-The current operating reference set covers getting started, configuration,
-provider/controller operations, troubleshooting, Ansible provisioning and testing.
-The documentation hub links that set. Evidence records are not operating guides.
-Local Markdown file links and section anchors have been checked across the
-first-party PHP and CLI documentation sets. This does not validate external URLs or establish the
-correctness of unreviewed third-party specifications. The inaccessible repository
-review remains outside this operating-guide reconciliation.
+See the [coverage ledger](DOCUMENTATION-COVERAGE.md) for reviewed areas and checks.
+Historical reports are labeled and retained; adopted policy bytes are preserved.
+Role-based onboarding is separate from named deployment examples. Documentation
+checks do not inspect private credentials or qualify live hosts.
 
 ## Universal resource implementation
 
@@ -152,5 +163,5 @@ It does not automatically submit or declare finality. See the
 [metering guide](guides/RESOURCE_METERING.md), and
 [retention/recovery guide](guides/RETENTION_AND_RECOVERY.md).
 
-The [current source scope map](guides/SOURCE_SCOPE_STATUS.md) records the concrete
+The [historical November 16 source scope map](guides/SOURCE_SCOPE_STATUS.md) records the concrete
 storage I/O, allocation, host collector and Studio integration additions.

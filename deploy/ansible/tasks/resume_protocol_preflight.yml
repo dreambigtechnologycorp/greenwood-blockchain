@@ -1,0 +1,73 @@
+---
+- name: Inspect protocol initialization markers without reading state contents
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    get_checksum: false
+  loop:
+    - /var/lib/greenwood/validator.initialized
+    - /var/lib/greenwood/state.sqlite
+    - /var/lib/greenwood/state.sqlite-wal
+    - /var/lib/greenwood/state.sqlite-shm
+    - /var/lib/greenwood/signing.sqlite
+    - /var/lib/greenwood/signing.sqlite-wal
+    - /var/lib/greenwood/signing.sqlite-shm
+    - /var/lib/greenwood/blocks
+  register: resume_protocol_state
+
+- name: Refuse initialized validator state
+  ansible.builtin.assert:
+    that: not item.stat.exists
+    fail_msg: Validator state already exists; preserve it and reconcile explicitly instead of using first-start continuation
+  loop: "{{ resume_protocol_state.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Inspect staged protocol units without starting or stopping them
+  ansible.builtin.command:
+    argv: [systemctl, show, "{{ item }}", --property=LoadState, --property=ActiveState, --property=MainPID]
+  loop: "{{ ['greenwood-provider.service'] + (['greenwoodd.service'] if inventory_hostname in groups['validators'] else []) }}"
+  register: resume_protocol_units
+  changed_when: false
+
+- name: Require installed inactive protocol units
+  ansible.builtin.assert:
+    that:
+      - "'LoadState=loaded' in item.stdout_lines"
+      - "'ActiveState=inactive' in item.stdout_lines or 'ActiveState=failed' in item.stdout_lines"
+      - "'MainPID=0' in item.stdout_lines"
+    fail_msg: Protocol units must be installed and inactive; reconcile partial startup without deleting state
+  loop: "{{ resume_protocol_units.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Require the reviewed provider data path
+  ansible.builtin.assert:
+    that:
+      - provider_data_dir | default('/var/lib/greenwood-provider') == '/var/lib/greenwood-provider'
+    fail_msg: Bounded continuation requires the reviewed provider data directory
+
+- name: Check retained provider stores for identity-bound empty startup state
+  ansible.builtin.script:
+    cmd: >-
+      {{ playbook_dir }}/../files/validate_unstarted_provider.py
+      --data-dir /var/lib/greenwood-provider
+      --chain-id {{ provider_chain_id }}
+      --public-key {{ greenwood_provider_public_key }}
+      {{ '--network-policy /etc/greenwood/application-network.json' if inventory_hostname in groups['application_providers'] else '' }}
+    executable: /usr/bin/python3
+  changed_when: false
+
+- name: Inspect containerd for any existing provider workload
+  ansible.builtin.command:
+    argv: [ctr, --namespace, greenwood, "{{ item }}", list, --quiet]
+  loop: [tasks, containers]
+  register: resume_provider_workloads
+  changed_when: false
+
+- name: Refuse existing workloads instead of treating them as empty startup
+  ansible.builtin.assert:
+    that: item.stdout | trim == ''
+    fail_msg: Existing containerd workloads require explicit reconciliation; they will not be stopped or deleted by continuation
+  loop: "{{ resume_provider_workloads.results }}"
+  loop_control:
+    label: "{{ item.item }}"

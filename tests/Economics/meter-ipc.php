@@ -20,7 +20,7 @@ $stop=static function(int $signal=15)use(&$process,&$pipes):void{if(is_resource(
 $commitment=str_repeat('a',64);$runtime=str_repeat('b',64);$sample=fn(int $cpu)=>['version'=>1,'verification_level'=>'C','source'=>'local_cgroup_v2','runtime_identity'=>$runtime,'cpu_ms'=>(string)$cpu];
 try{
  $start();$client=new MeteringSocketClient($directory.'/meter.sock');$client->begin($commitment,$sample(10));$client->checkpoint($commitment,$sample(30));check($client->segmentState($commitment,$runtime)==='OPEN','Real private service stores open segment');
- $stop(9);$start();check($client->segmentState($commitment,$runtime)==='OPEN','SIGKILL/restart preserves FULL/WAL segment and reconciles stale socket');
+ $stop(9);$start();check($client->segmentState($commitment,$runtime)==='OPEN','SIGKILL/restart preserves EXTRA/rollback-journal segment and reconciles stale socket');
  rejects(fn()=>$client->begin($commitment,$sample(40)),'Service restart cannot reset open CPU counters');rejects(fn()=>$client->bundle($commitment),'Crash leaves missing terminal telemetry unverified');
  $client->finish($commitment,$sample(50));$bundle=$client->bundle($commitment);check($bundle['cpu_ms']==='40'&&!$bundle['subsidy_eligible'],'Actual IPC service returns conserved nonpayable counter delta');
  $next=str_repeat('e',64);$client->begin($next,$sample(60));check($client->openSegments($runtime)[0]['commitment']===$next,'Private IPC exposes bounded current runtime ownership');

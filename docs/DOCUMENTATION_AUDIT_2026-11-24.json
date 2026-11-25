@@ -1,0 +1,1067 @@
+{
+  "audit_date": "2026-11-24",
+  "source_baseline": "bd529a5254bbaf1eb2f16cadf89b5c53ccb09f1e",
+  "scope": "Documentation review against source changes after bd529a5, before artifact rebuild. Not final release qualification or live acceptance.",
+  "coverage": {
+    "tracked_docs_entries_at_start": 163,
+    "reviewed_content_files": 193,
+    "new_documentation_pages": 5,
+    "all_starting_tracked_docs_reviewed": true,
+    "by_extension": {
+      ".md": 123,
+      "[no extension]": 2,
+      ".txt": 4,
+      ".json": 60,
+      ".wat": 2,
+      ".pdf": 2
+    }
+  },
+  "audience": "Role-based contributor, application developer and homelab operator onboarding. Named installations are scoped reference profiles.",
+  "authority_boundaries": [
+    "Joining an existing chain is distinct from a new genesis.",
+    "Provider, validator, hosted deployment, publishing, governance and independent attestation authorities remain distinct.",
+    "Source-enforced reference topology restrictions are documented, not removed.",
+    "Existing private credentials remain under operator control."
+  ],
+  "validation": [
+    {
+      "check": "Markdown local path/heading links and fence balance",
+      "result": "PASS",
+      "files": 123,
+      "links": 897,
+      "external_urls_revalidated": false
+    },
+    {
+      "check": "CLI/RPC working-source regressions",
+      "result": "PASS",
+      "tests": 17,
+      "assertions": 184
+    },
+    {
+      "check": "WAT examples and inline quickstart",
+      "result": "PASS",
+      "modules": 3,
+      "compiler": "WABT 1.0.37",
+      "checks": [
+        "WebAssembly compile",
+        "current PHP ABI/policy",
+        "Node local host behavior"
+      ]
+    },
+    {
+      "check": "Zero reserve and customer-funded boundary checks",
+      "result": "PASS",
+      "note": "80 zero-budget checks; 63 customer-funded checks additionally rerun the zero-budget suite."
+    },
+    {
+      "check": "Independent protocol and contract vectors",
+      "result": "PASS",
+      "contract_vectors": 12
+    },
+    {
+      "check": "Historical JSON parsing and template/catalog boundary review",
+      "result": "PASS",
+      "files": 60,
+      "disabled_catalog_entries": 36,
+      "enabled_entries": 0,
+      "policy_templates": "Intentionally incomplete templates rejected as expected."
+    },
+    {
+      "check": "PDF rendering, visual review and source-text preservation",
+      "result": "PASS",
+      "ca_pages": 8,
+      "custody_pages": 15,
+      "matching_ca_code_blocks": 13,
+      "preserved_custody_original_pages": 14
+    },
+    {
+      "check": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "preserved_policy_hashes": {
+    "docs/economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md": true,
+    "docs/economics/proposals/PRODUCTION_GOVERNANCE_EPOCH0_DRAFT_2026-11-18.md": true,
+    "docs/economics/proposals/HYPERSCALER_APP_BUDGET_DRAFT_2026-11-18.md": true
+  },
+  "historical_json_evidence_modified": false,
+  "limitations": [
+    "No full final-revision release suite or OCI rebuild performed in this audit.",
+    "Native Wasmtime execution of repaired examples was not rerun; inspected locations lacked a compatible Linux library.",
+    "No live hosts, private inventories, private keys, routing configuration or physical acceptance inspected.",
+    "License/notice text preserved; this is not a legal review.",
+    "The generated audit record itself is excluded from content hashes to avoid a self-referential checksum."
+  ],
+  "operator_report": {
+    "storage_migration": "Supplied seven-host Ansible recap: zero failed/unreachable; state preserved, bound and migrated.",
+    "services": "Completion explicitly reported containerd and Greenwood stopped.",
+    "interpretation": "Operator-reported installation milestone, not independent physical qualification."
+  },
+  "files": [
+    {
+      "path": "CHANGELOG.md",
+      "disposition": "updated",
+      "sha256": "ea37e5f763562cac471cf99f6f725043267b2fb645d5c9b026a1cfa012b2ec3b"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "disposition": "updated",
+      "sha256": "c2e4981306bc0b797b62c34ef9ce549f81a3dc6101a9394b808df393388cfa33"
+    },
+    {
+      "path": "LICENSE",
+      "disposition": "reviewed unchanged",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "LICENSES/Apache-2.0.txt",
+      "disposition": "reviewed unchanged",
+      "sha256": "4bbe3b885e8cd1907ab4cf9a41e862e74e24b5422297a4f2fe524e6a30ada2b4"
+    },
+    {
+      "path": "LICENSES/containerd-NOTICE.txt",
+      "disposition": "reviewed unchanged",
+      "sha256": "03f0b4bcaecfdb491ef5a7d320e2c2adf886c732d34e3fff87d52dbaec64d8c3"
+    },
+    {
+      "path": "NOTICE",
+      "disposition": "reviewed unchanged",
+      "sha256": "984644347a7f2681a0069148f537b00d4ca6a10f266c883688ff0cf8b8410d7d"
+    },
+    {
+      "path": "README.md",
+      "disposition": "updated",
+      "sha256": "da6bbd2b030526da12604bcb675cdea578774cfde17c354cd9dd2a2f32851bf8"
+    },
+    {
+      "path": "SECURITY.md",
+      "disposition": "updated",
+      "sha256": "74ccc5b0fa011381b1504fa4fe1e7fab5c2a4e217d2e0c2635f02f441145293a"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "disposition": "reviewed unchanged",
+      "sha256": "34e7e630a63260459dc3976ea4636c95ebdc40da2346b5702cda5d2c39a119b9"
+    },
+    {
+      "path": "TRADEMARKS.md",
+      "disposition": "reviewed unchanged",
+      "sha256": "acc1e919a4597f66b9566d57286d3c14d859d11cc0b92f824a6d95c492faa4c4"
+    },
+    {
+      "path": "deploy/README.md",
+      "disposition": "updated",
+      "sha256": "851e02f05c41ebd40cc923399ef7a0051a3f30c10b923dc16d7a3745107c5306"
+    },
+    {
+      "path": "deploy/ansible/CONTROL_PLANE_HANDOFF.md",
+      "disposition": "updated",
+      "sha256": "ecf92cd3ffe0220b1982563c0c3366d95757ee75be1ffce34b2567e686deba97"
+    },
+    {
+      "path": "deploy/ansible/FRESH_CLUSTER.md",
+      "disposition": "updated",
+      "sha256": "42188bdb455d74ee01b31a6c38a73824e34bd578dcc5b256703e24a2d767ce78"
+    },
+    {
+      "path": "deploy/ansible/STATE_STORAGE.md",
+      "disposition": "new",
+      "sha256": "670f5921397c5e84cc3d3ebbdc811a4d195922b7827b3095c58e90d636e194ed"
+    },
+    {
+      "path": "deploy/application-recovery/README.md",
+      "disposition": "updated",
+      "sha256": "a6e7a3ca57a2d9001f83579aacd5f06549eb94574ba56ea6cb31f9198ea89499"
+    },
+    {
+      "path": "deploy/production/OPERATOR_KEY_CUSTODY.md",
+      "disposition": "updated",
+      "sha256": "7ef1c8753175ea38528c34159d95f332a65c33eaa3814ef542f58a58055613e2"
+    },
+    {
+      "path": "deploy/production/PHYSICAL_ACCEPTANCE.md",
+      "disposition": "updated",
+      "sha256": "8bf32a847656708d47c41ae4344a0f92ff7d9c9e6dba42712e937d37fde6bc50"
+    },
+    {
+      "path": "deploy/production/README.md",
+      "disposition": "updated",
+      "sha256": "81cf50dd36916510f92e2f8c6575fb8b5f43140bc607cbb8dd9e8563893b2515"
+    },
+    {
+      "path": "docs/CURRENT_FUNCTIONALITY.md",
+      "disposition": "updated",
+      "sha256": "2d2f51010a45b041b66cc7d690504ba391040e718177a03ee3f4515c5ab82175"
+    },
+    {
+      "path": "docs/DOCUMENTATION-COVERAGE.md",
+      "disposition": "updated",
+      "sha256": "f29c37c1637d66837281b4b148af075d783f8506e46c7255b246d77f1c4b07a0"
+    },
+    {
+      "path": "docs/GREENWOOD_COMPUTE_V1.md",
+      "disposition": "updated",
+      "sha256": "be522c200a1c73e1a31891ce3d609983f58bd7603c403c6d3c31f7103483a3ed"
+    },
+    {
+      "path": "docs/GREENWOOD_PROTOCOL_V1.md",
+      "disposition": "updated",
+      "sha256": "d8b4c290c0191208a5d73f8eefd2856ec64872afa30e1ea2d4dab2bf59e22c5a"
+    },
+    {
+      "path": "docs/GREENWOOD_WASM_ABI_V1.md",
+      "disposition": "updated",
+      "sha256": "53130881a81c808aa84f3d2dd39a43e44a865906ed35c120eac8c01cd27cc6a7"
+    },
+    {
+      "path": "docs/IMPLEMENTATION-INVENTORY.md",
+      "disposition": "updated",
+      "sha256": "6ed01c3471682d3b58fd564455717f13125dac0e0bf84984035c53c3180e9d33"
+    },
+    {
+      "path": "docs/PROJECT_STATUS.md",
+      "disposition": "new",
+      "sha256": "d9e56a5c5dea9a4001c31c775f3c8251b084f49e0bc5e4c4b934516c1e116bac"
+    },
+    {
+      "path": "docs/README.md",
+      "disposition": "updated",
+      "sha256": "8263edc1d32699a342318ad998980b3d67289d517e165014cafedbaa3b1048d6"
+    },
+    {
+      "path": "docs/RELEASING.md",
+      "disposition": "updated",
+      "sha256": "b9ff4f17017ba776515a1a0533fe3093abbcedccd8dbf09df47ddb005fd5b3d5"
+    },
+    {
+      "path": "docs/architecture/blockchain-layer.md",
+      "disposition": "updated",
+      "sha256": "481735af2ce5b279ba14a480b0c14455aeaa6283378e85d2639e63c221077b3f"
+    },
+    {
+      "path": "docs/architecture/chain-history.md",
+      "disposition": "updated",
+      "sha256": "716c4320eb8706316912b763e95b4299949c6b5f181757225fe062eb8ed1295c"
+    },
+    {
+      "path": "docs/architecture/consensus-layer.md",
+      "disposition": "updated",
+      "sha256": "3368297692df24422579925fa7106ad38639caa420a8b8a28c3bc602f8abdedf"
+    },
+    {
+      "path": "docs/architecture/overview.md",
+      "disposition": "updated",
+      "sha256": "374e75ae510bb559bcc2086d551e5650789ee95a94626b94101fa7d05b915b32"
+    },
+    {
+      "path": "docs/architecture/recovery.md",
+      "disposition": "updated",
+      "sha256": "f4d8f46455c6ceb839fcd90bed3ab3ec31dde88b7f457c839a5acff48f0d37e7"
+    },
+    {
+      "path": "docs/architecture/state.md",
+      "disposition": "updated",
+      "sha256": "7a5b7d1e0882e5de1870238a13b6b82391a781717dd97ac8366b71e4a22a78cb"
+    },
+    {
+      "path": "docs/branch-protection.md",
+      "disposition": "updated",
+      "sha256": "c0c57f5772f372d92fa1be3230bd1ca849aae773a4c0c21bd65566cb16f01ba2"
+    },
+    {
+      "path": "docs/cli.md",
+      "disposition": "updated",
+      "sha256": "a62838243e026917a638f782abaf666cbe9f9c8cf5a7158dea50dd75fdc192f2"
+    },
+    {
+      "path": "docs/compute-security-v1.md",
+      "disposition": "updated",
+      "sha256": "8064693cfb46ecb6ffe20a7d1088bd0b670ab306a318e7804ad43f858dbc2b70"
+    },
+    {
+      "path": "docs/concepts/accounts.md",
+      "disposition": "updated",
+      "sha256": "6109373697cabd9047fe60a9d73b7a6686afc83318d3ef2549cb6509c5e7134d"
+    },
+    {
+      "path": "docs/concepts/blocks.md",
+      "disposition": "updated",
+      "sha256": "ec960c5541b9cf358da93807a9181a454efb7549ac8e7e810c872a0892f2ee05"
+    },
+    {
+      "path": "docs/concepts/consensus.md",
+      "disposition": "updated",
+      "sha256": "e8020eadee2d037009625a60fdb52e5880b993eeed36fa50a149f3fe50a6e074"
+    },
+    {
+      "path": "docs/concepts/hashing.md",
+      "disposition": "reviewed unchanged",
+      "sha256": "0e142e461c437ab5c82ab8b27270cdf636bc3b719ab50a0edc3c7c5d0b3ff076"
+    },
+    {
+      "path": "docs/concepts/merkle-trees.md",
+      "disposition": "reviewed unchanged",
+      "sha256": "05319e732b633ae514a442f02b1c71079dcd9e7979cb65db1730b8a9f12bd1a9"
+    },
+    {
+      "path": "docs/concepts/overview.md",
+      "disposition": "updated",
+      "sha256": "548319c3e0603451b73faf2c53413cde3f434ef21122bbdd8626f4d28eb88b50"
+    },
+    {
+      "path": "docs/concepts/transactions.md",
+      "disposition": "updated",
+      "sha256": "c6dd2711a17b44c9a128b7112a31f6feb0c3da03d4b53d5e2c05813ea8fba2dc"
+    },
+    {
+      "path": "docs/contracts/overview.md",
+      "disposition": "updated",
+      "sha256": "9fe56ed9d64f6a7983d4754f5af941faf509e70cc15d18a368f97d042e8e9aad"
+    },
+    {
+      "path": "docs/contracts/quickstart.md",
+      "disposition": "updated",
+      "sha256": "b76cac45225e44921794d2ed6e4d1ca5d5d160e582646226a335a863e2081548"
+    },
+    {
+      "path": "docs/contracts/storage.md",
+      "disposition": "updated",
+      "sha256": "2d711abd6ca33b4c1bfd7e1af622f09eabb1472979fef29c5266e89899a28468"
+    },
+    {
+      "path": "docs/economics/CANDIDATE_POLICY.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "1108715d62d1accf140c91071df4035ae0910ee61af406a2c78b9cedd60d92a1"
+    },
+    {
+      "path": "docs/economics/COMPLETION_REPORT.md",
+      "disposition": "updated",
+      "sha256": "3f098efe47b8c10e6c934e258afbbc0ff432d8477989297535667f03bf69f929"
+    },
+    {
+      "path": "docs/economics/ECONOMIC_DESIGN_COMPARISON.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "b768b7f6566af6f4a3d7e2c4f2c953c0481279138e17bce092a6aea4c02e6b7f"
+    },
+    {
+      "path": "docs/economics/ECONOMIC_DESIGN_COMPARISON.md",
+      "disposition": "updated",
+      "sha256": "9bb02774634486b220db59661e663a67393c39ac14a566e94953cb65faa01d15"
+    },
+    {
+      "path": "docs/economics/GRU_SETTLEMENT_REPORT.md",
+      "disposition": "updated",
+      "sha256": "87d9b370e2f2504d9c8df6842ec130c9e76cd54bcdeb4e908dd31f71f69590c9"
+    },
+    {
+      "path": "docs/economics/GRU_V2_COMPLETION_REPORT.md",
+      "disposition": "updated",
+      "sha256": "9e13dd96fecb7a31d1663ccb596fde1b3e3678a050dbd6414d67b0732c8e9166"
+    },
+    {
+      "path": "docs/economics/HOSTED_SETTLEMENT_REPORT.md",
+      "disposition": "updated",
+      "sha256": "5357ef372ce59b86d5852840aa0aa877d013225b95d39249d37ad2c14e5d5eac"
+    },
+    {
+      "path": "docs/economics/IMPLEMENTATION_PLAN.md",
+      "disposition": "updated",
+      "sha256": "22cd7d709890ad18cf0619604db38f79f08fb9a49570747f952320f603989e0b"
+    },
+    {
+      "path": "docs/economics/INDEPENDENT_CPU_METERING_PLAN.md",
+      "disposition": "updated",
+      "sha256": "836cabd2f8f771f7b330247dbdec398205824d25f7efd8d84c1681692800a513"
+    },
+    {
+      "path": "docs/economics/INSTITUTE_TREASURY_DECISION.md",
+      "disposition": "updated",
+      "sha256": "fe528a385aedf35059dfd221437552f47191810aa6a935d0b75f2ea8f3bd977f"
+    },
+    {
+      "path": "docs/economics/PRODUCTION_IMPLEMENTATION_2026-11-15.md",
+      "disposition": "updated",
+      "sha256": "3090b993099ff133020c6e10ba83ccb471c440485323dbe031728af4c6a15709"
+    },
+    {
+      "path": "docs/economics/PRODUCTION_POLICY.template.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "7a8a1dff8847813dc3faf62cf7125c0f3d49dd54ac27c5f6be9501b1c88271bf"
+    },
+    {
+      "path": "docs/economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md",
+      "disposition": "reviewed unchanged",
+      "sha256": "036330e5cee0a5a660f2f517fbd8519894aea15f5ac048b47d3876c920055ed3"
+    },
+    {
+      "path": "docs/economics/PRODUCTION_TOPOLOGY.template.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "2b006284672226e89903ad71611bf1e43084d14ceb316839da524c3e3caadacc"
+    },
+    {
+      "path": "docs/economics/PROPOSED_10_25_30_34_1_POLICY.template.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "81b1cd3f8e3bd34a701063c26828daa11901a7d12b42388f84c46209f30dce3e"
+    },
+    {
+      "path": "docs/economics/README.md",
+      "disposition": "new",
+      "sha256": "20da200c8c671496e8945aae8f74c978865bcd451023af70f41e24baf8795b61"
+    },
+    {
+      "path": "docs/economics/RESOURCE_CATALOG_V2.disabled.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "fb08d74aed2d2152e43daae79027bcaa23734e358f7081c30992016624883bfd"
+    },
+    {
+      "path": "docs/economics/SIMULATION_RESULTS.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "4c11ecf221157987e2ad69f1ed2e5fbb7b849fea033485dee1ca04e38cb5b5f0"
+    },
+    {
+      "path": "docs/economics/SIMULATION_RESULTS.md",
+      "disposition": "updated",
+      "sha256": "5646dbe4b8337d95ccfc2fca144285a1036b127c2981e881db51a90cb07d1a81"
+    },
+    {
+      "path": "docs/economics/UNIVERSAL_RESOURCE_CONTINUATION_2026-11-14.md",
+      "disposition": "updated",
+      "sha256": "b5172d0cd14a24a51888f902fd4cdd7eede26892f16a33d1f5cd3a12cfdbdcd4"
+    },
+    {
+      "path": "docs/economics/UNIVERSAL_RESOURCE_IMPLEMENTATION_2026-11-14.md",
+      "disposition": "updated",
+      "sha256": "daec26a05a1c2e44cfd0b2b8fb926f5d726906b53dfe048e1ecc492b0d9ba7da"
+    },
+    {
+      "path": "docs/economics/evidence/certified-chain.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "26d590795f5cd23e5e9b9b0642f0331e4456ba28547a9a4c529217c6f9bd757d"
+    },
+    {
+      "path": "docs/economics/evidence/certified_chain_proposed_allocation.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "91c8f05820bdfedb9cbc02f13d14845fd1a8589b8322e98d8775a68a94eeb3e6"
+    },
+    {
+      "path": "docs/economics/evidence/core.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "0192866c2f7dd2096eef020856d127b3f469983b16272af007ef41e71de92ad0"
+    },
+    {
+      "path": "docs/economics/evidence/core_proposed_allocation.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "f67ae95ecd8dfdbf9e292424ded46f76d28e3de0e1f3a442f4783233185bd813"
+    },
+    {
+      "path": "docs/economics/evidence/deployment-regressions.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "950593b3b6876f12d7ea869e69a954d4daf6acfa32bfd9be89aa5da1d552327d"
+    },
+    {
+      "path": "docs/economics/evidence/design-review-summary.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "75a5bd56f4d3e752638df777c3112a177081424aae0fd608f7ef386b417eda77"
+    },
+    {
+      "path": "docs/economics/evidence/gru-integration-summary.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "78fdcfe136e70156b7c37e502e3f4590168e854ca40d28bd8463e19b8a289542"
+    },
+    {
+      "path": "docs/economics/evidence/gru-integration-tests.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "a6c57ab127bbcc4bfb891ff7089145a67e77f1671c4251222ce9de4ca13caa3d"
+    },
+    {
+      "path": "docs/economics/evidence/gru-lint.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "213fb28afe95dbdf40276cb921dc99a36d5d832a5a43eaba07990e976d7dafff"
+    },
+    {
+      "path": "docs/economics/evidence/hosted-certified-history.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "47b644a9ffaba51f796fcf65967f6a0af3dc89e754b79e973f6f2745289598d5"
+    },
+    {
+      "path": "docs/economics/evidence/hosted-deployment-regressions.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "950593b3b6876f12d7ea869e69a954d4daf6acfa32bfd9be89aa5da1d552327d"
+    },
+    {
+      "path": "docs/economics/evidence/hosted-fresh-mtls.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "2376f569a821ec610ce36abbb24666a6825a6802c32f2318326b6a466dda9d7c"
+    },
+    {
+      "path": "docs/economics/evidence/hosted-integration-summary.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "41a83bce31b476d3697dfcbd3e883ca604d41bedd72ac2b0b964d44cfbc6b142"
+    },
+    {
+      "path": "docs/economics/evidence/hosted-integration-tests.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "4f5feeff892b029e3916f335d38993866d197ee8a2e8b1d6f287e0ca3284cd56"
+    },
+    {
+      "path": "docs/economics/evidence/hosted-lint.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "d948d33322424327adae61ac56956ccad25602301f3998d79f1a01c33d2287fd"
+    },
+    {
+      "path": "docs/economics/evidence/hosted-registry-artifact.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "e8768f241b7eee009fe22d545b9786d54456d176d470e9a26750ebf575467d8f"
+    },
+    {
+      "path": "docs/economics/evidence/hyperscaler-pricing-2026-11-18/inputs.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "df137202634ba95fd98ae273696d96d84cc5b3e35b833b6136643f9cb077f342"
+    },
+    {
+      "path": "docs/economics/evidence/hyperscaler-pricing-2026-11-18/results.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "5b37e535c2600ca7354082de725694f894ae06151fe7efec048a6eebaf74c352"
+    },
+    {
+      "path": "docs/economics/evidence/hyperscaler-pricing-2026-11-18/source-extracts.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "4c5eb7780e0fcd5ceadcac15917727c2e4f6f543a13c06f07fcd55c392cac87f"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/certified-history.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "f3f147451ff4286ab3b9744af447c9ec5b65879068c80642b2e3e06fbf3eef1e"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/contracts-suite.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "c71fd195024265fe63a480b681e21cb60c294d52a529be0964ea0e095e352ac4"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/deployment-tests.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "c862e2bc366bc91048ade620284de67ec3295d577892f25bb6ce29dbe70d0c70"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/final-local/verification.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "6e064d0c29c0b4330e963e1763665a16f89fc26a260083fb22865f236bccc2ce"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/native-unavailable.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "135c4fa0bbaabc4c6f5d786b7443137395193e72de8ecc3cd360884a2f7a9977"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/production-validation.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "47f7903f1d7dea7d89ed06206b1bd01510212562c733c4a8df02c932616dd960"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/reviewed-source-suite.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "c35154f95c1c27f3e4c426e3a15b73c3a3c017d17fab80061772018ea0806757"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/source-suite.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "5363ab4945ad0e3934f0267b4445e43d4de2a58058e17199ec293f90c9c0bcd4"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/strict-policy/verification.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "e9c8e3fb50e87ee7d54c7f21989e290959ebdfbab4b5513aa0156448359dc9fc"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/studio-tests.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "fdc0d836924811784d5db23c2ee13f4b94518231795589597fb8a789104ea2cf"
+    },
+    {
+      "path": "docs/economics/evidence/production-release-2026-11-15/verification.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "3c6465d6b8b17018468f9775daa0e8346e5206d4b4ed95d513207716ea62896d"
+    },
+    {
+      "path": "docs/economics/evidence/resource-v2-certified-history.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "2c88bb8f56c09c5e9a3e50aa9b671b87eef0022ea04b076db3a4dd9c18932da4"
+    },
+    {
+      "path": "docs/economics/evidence/resource-v2-deployment-regressions.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "950593b3b6876f12d7ea869e69a954d4daf6acfa32bfd9be89aa5da1d552327d"
+    },
+    {
+      "path": "docs/economics/evidence/resource-v2-lint.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "432b0d958a93008cf3491e747d5caffbebef5f39ca7404c5291abc08a5ea93bb"
+    },
+    {
+      "path": "docs/economics/evidence/resource-v2-local-observation.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "0e61ccf660df1750554f5cb90862e446ea15677a25190c823a9d62d1eb685350"
+    },
+    {
+      "path": "docs/economics/evidence/resource-v2-summary.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "51af3a096bec7e6c9cb8c5c3c847bb9dabc6d5c9428fe743c1616dae4ed87c3c"
+    },
+    {
+      "path": "docs/economics/evidence/resource-v2-tests.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "b8622f131387fed67f1979c55de63bdb016518f7b8b09940f4c58a53ef1e2c1e"
+    },
+    {
+      "path": "docs/economics/evidence/signing.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "0566b4fc279e5ca81fa68377b7cd6e174aaa676fe274512da185e51ef97a18eb"
+    },
+    {
+      "path": "docs/economics/evidence/source-integration-2026-11-16/focused.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "af9bf1ee5b859bbb233646a633bda87648caea96dc3a38abb524b99a97c23c87"
+    },
+    {
+      "path": "docs/economics/evidence/summary.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "75a5bd56f4d3e752638df777c3112a177081424aae0fd608f7ef386b417eda77"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/baseline.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "18504bf2a6f5e17edb9b3b0c48e711846eb00540054898c3cd9d3898aebce7c4"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/certified-history-original-archival.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "71c10a61f99789168c9f06c11735b7daca5a285c9c4f6a4799443426757d6724"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/certified-history.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "7464f2f99d0d2751fe59a8a54de27fb51ddf8831349bdff76fa79faef554645e"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/continuation/archive-rpc.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "4b47997e318dcbfd45279bd85cd959ef36f664ffb2771e2b3c610cc7a6524e89"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/continuation/certified-history.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "782c55c8e8ac0083d6f54774d7ebfd13279fb851a47b8124740a2b9dcbf56294"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/continuation/meter-ipc.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "c811d3a6390bff08d8ffbd92ae7efe74c2b1680e9606add1337bef559b075757"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/continuation/sdk-signing.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "3abd86ddf32c93cf24c2dbafc59bc9800fcfaecb41ffc9726c64d4c6c31c2be7"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/continuation/verification.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "2bd28115a0d225f78434c6be6b3872c2cd427b22f74a49ad3d655e05dfc14a87"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/local-observation.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "1db187d60b5d149c336fd31ae30364d19d1fa332716677dbe45e36fa26c01668"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/meter-checkpoint-final.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "b26f077f0ef0b4517265cd23e484282ac0dcfbd7f005e1d7b183ef714e5d60f4"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/sdk-signing.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "48042f54c6229498175864b5a00079fb615af87c6e5987c1b8d205935075ae9a"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/source-input-hashes.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "a328e19a56d9748ee01bcb1a0086fc469d3f7d7a69982eed2070d4a1caa22c8b"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/universal-resource-implementation-summary.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "d659594b3dc3c3d0234aa7ddc1566e603cea2f628b34b1e4b18e617fdfa72522"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/verification.json",
+      "disposition": "reviewed unchanged",
+      "sha256": "3022ac08734d2e38597f43162de74d6b847a7b46b0511365b1a6cea8f31d127a"
+    },
+    {
+      "path": "docs/economics/evidence/universal-resource-2026-11-14/working-tree.txt",
+      "disposition": "reviewed unchanged",
+      "sha256": "64dd77c3c7d75c25ccee64fd8c6ec79311e82b4a8111cfe1ab840783444cd7f3"
+    },
+    {
+      "path": "docs/economics/proposals/ECONOMICS_REVIEW_2026-11-14.md",
+      "disposition": "updated",
+      "sha256": "2e6c782a92a3ee85ad60984a1e4a5ea8035a3d99ee67837eb6025eb6ae6b8a78"
+    },
+    {
+      "path": "docs/economics/proposals/ECONOMIC_DESIGN_2026-11-14.md",
+      "disposition": "updated",
+      "sha256": "f8baa62d2f00f0e74d84b1fbc40d8994bec43e7ab9ca16189ac80bbb5e564516"
+    },
+    {
+      "path": "docs/economics/proposals/GENESIS_TOKENOMICS_PROPOSAL.md",
+      "disposition": "updated",
+      "sha256": "b5553a640a3a191e5673b88b56b81ffb89357d1ffaecd69421ffd29e6cfb621b"
+    },
+    {
+      "path": "docs/economics/proposals/GREENWOOD_ATTESTATION_TRUST_V1.md",
+      "disposition": "updated",
+      "sha256": "03852b54089ba7b18d6fe0d9c1f2f4987c38b5b896bd4359ac78385be7b919a9"
+    },
+    {
+      "path": "docs/economics/proposals/GREENWOOD_CODEX_IMPLEMENTATION_PLAN_2026-11-14.md",
+      "disposition": "updated",
+      "sha256": "363d9a5f72f92ae1bc7d30f734571b56c108207dc7c1d005e15a78c9d48707f4"
+    },
+    {
+      "path": "docs/economics/proposals/GREENWOOD_CODEX_KICKOFF_PROMPT_2026-11-14.txt",
+      "disposition": "updated",
+      "sha256": "2235ea76f0cf392f41964e4cd5a12401371636ce57079314ddbf328497fc7698"
+    },
+    {
+      "path": "docs/economics/proposals/GREENWOOD_DECENTRALIZATION_EPOCHS_V1.md",
+      "disposition": "updated",
+      "sha256": "1b284ea47cadfbc4f733405298f84a36907c9b15364d7977c7b332be1386783b"
+    },
+    {
+      "path": "docs/economics/proposals/GREENWOOD_NETWORK_SYSTEM_SERVICES_V1.md",
+      "disposition": "updated",
+      "sha256": "34e3c94dc869a6d3783feaf844339e35ccc811a1a39f9be8cae672468dd8f37b"
+    },
+    {
+      "path": "docs/economics/proposals/GREENWOOD_UNIVERSAL_RESOURCES_V1.md",
+      "disposition": "updated",
+      "sha256": "bdf23030c3c89a543f64dd692cbda9d7d9cbf6f56db8c4f579c936138ecf57b4"
+    },
+    {
+      "path": "docs/economics/proposals/GRU_ECONOMIC_MODEL.md",
+      "disposition": "updated",
+      "sha256": "31bac9929443b5e789dca1b3985386a5b1c7d0cf4417b4610749e8c88e1825a8"
+    },
+    {
+      "path": "docs/economics/proposals/GRU_IMPLEMENTATION_REVIEW_2026-11-14.md",
+      "disposition": "updated",
+      "sha256": "d4088a3f26a9e120bb9fe250d8769cf26b8da614a8fc5bb58267ada44b8337af"
+    },
+    {
+      "path": "docs/economics/proposals/GRU_INFRASTRUCTURE_INTEGRATION_2026-11-14.md",
+      "disposition": "updated",
+      "sha256": "3b5b903ad2e7ce0015f846d638f1f53de14e90f1cd61a7c2fa105287543a347a"
+    },
+    {
+      "path": "docs/economics/proposals/GRU_V2_UNIVERSAL_RESOURCES_2026-11-14.md",
+      "disposition": "updated",
+      "sha256": "766f1240cffb4951760954969b25cd9f14be992566f5f20bd3db10fa56619090"
+    },
+    {
+      "path": "docs/economics/proposals/HOSTED_REVIEW_AND_ACCEPTANCE_2026-11-14.md",
+      "disposition": "updated",
+      "sha256": "7a62878c56542571fb3fde55f73ba9a3ab8494c290d07c39a659fbcefea72c49"
+    },
+    {
+      "path": "docs/economics/proposals/HYPERSCALER_APP_BUDGET_DRAFT_2026-11-18.md",
+      "disposition": "reviewed unchanged",
+      "sha256": "7058542558801f1b9feb8a29f10f8b9284700665356b33247be82acff081de3d"
+    },
+    {
+      "path": "docs/economics/proposals/PRODUCTION_GOVERNANCE_EPOCH0_DRAFT_2026-11-18.md",
+      "disposition": "reviewed unchanged",
+      "sha256": "426e47ec0660f6471f582e2d13c1ef30023c8975131de386a0efaf28c8bf506f"
+    },
+    {
+      "path": "docs/economics/proposals/RELEASE_GATES_UNIVERSAL_RESOURCES.md",
+      "disposition": "updated",
+      "sha256": "cca6549aa1ddcd037b9e67988bad9da6ac320909ecff993daad450e3c4c79db3"
+    },
+    {
+      "path": "docs/examples/contracts/counter/contract.wat",
+      "disposition": "updated",
+      "sha256": "f7e4d55b619b38f84538131b8bf335888c3e5c4924b404bda9fe3fab71c06bae"
+    },
+    {
+      "path": "docs/examples/contracts/hello-world/contract.wat",
+      "disposition": "updated",
+      "sha256": "3170360fb5b9f9416900875d364f414196ad6c609944e9e6db239543c6eda1f4"
+    },
+    {
+      "path": "docs/getting-started/chain-features.md",
+      "disposition": "updated",
+      "sha256": "255dcb4da8043aa56c1f926a7a5d1c3591d1fa29922a5d2d28609fe735ddc6e1"
+    },
+    {
+      "path": "docs/getting-started/development.md",
+      "disposition": "new",
+      "sha256": "605072ee2979d552a2a9fb8059c7925f6b76b019ee218c7dfa247d5d5058e5f8"
+    },
+    {
+      "path": "docs/getting-started/overview.md",
+      "disposition": "updated",
+      "sha256": "a0bbb3e07184be6c6da06ca558e2744101e9e983bf609b9d024b5431e72efb8e"
+    },
+    {
+      "path": "docs/getting-started/quickstart.md",
+      "disposition": "updated",
+      "sha256": "9487518410f667b5f6cf9a68fe8f87d4e4b964b9582b35da2f6326aeb35ec291"
+    },
+    {
+      "path": "docs/guides/RESOURCE_METERING.md",
+      "disposition": "updated",
+      "sha256": "f5c2171572c7a40d1bf91f14d9232e208c3ca9562f490b470799b56820b5ed02"
+    },
+    {
+      "path": "docs/guides/RETENTION_AND_RECOVERY.md",
+      "disposition": "updated",
+      "sha256": "37548a2c7cc39fca2cecbf1cde3a1f2b6f3fc008c218761b9ebd3399d2a2d131"
+    },
+    {
+      "path": "docs/guides/SELF_MANAGED_UPDATE.md",
+      "disposition": "updated",
+      "sha256": "71704125edc321afe8b4827442fce366b22d5e54537c5b63e110c622904ecfdf"
+    },
+    {
+      "path": "docs/guides/SOURCE_ADAPTER_INTEGRATION.md",
+      "disposition": "updated",
+      "sha256": "f82d8941aa8eed60a84361544e257a494fdaa84bc12c34807c0779ded2b2e0d4"
+    },
+    {
+      "path": "docs/guides/SOURCE_SCOPE_STATUS.md",
+      "disposition": "updated",
+      "sha256": "3de26c07cbbfa480886499c21e3e6fd5264a9691b2e01fa47cb0e466eda2cb17"
+    },
+    {
+      "path": "docs/guides/SOURCE_VALIDATION.md",
+      "disposition": "updated",
+      "sha256": "84b34c2b6d040818ed2c0c5fdc2df021e60d7ab5b4989b83d7e78f1ae258251f"
+    },
+    {
+      "path": "docs/linux-execution-manifest.md",
+      "disposition": "updated",
+      "sha256": "abb6fc8024355b0ed4377e9460403ba5b7fd8507a7c8f39727dfec1a361068f4"
+    },
+    {
+      "path": "docs/operations/ANSIBLE_EXPANSION_INSPECTION_2026-11-16.md",
+      "disposition": "updated",
+      "sha256": "a1814f2f5b506e85cb082aa1fa85041ab64f8a16724188802622309c9b20784e"
+    },
+    {
+      "path": "docs/operations/CAPACITY_AUDIT_2026-11-18.md",
+      "disposition": "updated",
+      "sha256": "1ca3e8ee6ea0e4846a27b97f153b5454526a48e0e86730f9f94ea2782c5d1979"
+    },
+    {
+      "path": "docs/operations/GREENWOOD_TAILS_KEY_CUSTODY.pdf",
+      "disposition": "updated",
+      "sha256": "4758943883ef99902e87d4690c5ce0ae98afd5389dc023edfd17d1b3b69c0562"
+    },
+    {
+      "path": "docs/operations/NETWORK_START_READINESS.md",
+      "disposition": "updated",
+      "sha256": "2d44b37c1b320de8c04754e46b3e61ea67453fa1472a53a1c0e7d09de06250ca"
+    },
+    {
+      "path": "docs/operations/NFS_PACKAGE_MAINTENANCE.md",
+      "disposition": "updated",
+      "sha256": "41e3a20c11addf1314cfe35d31db409dc6d1bd2cc3aa893cb5cad78ea14c1796"
+    },
+    {
+      "path": "docs/operations/NODE4_AND_SEVEN_NODE_ASSESSMENT_2026-11-16.md",
+      "disposition": "updated",
+      "sha256": "e405a9d843cdcc44190e4f465963db012aac6ec4e3911e1378bf8e6200e667ec"
+    },
+    {
+      "path": "docs/operations/OPERATOR_KEY_GENERATION.md",
+      "disposition": "updated",
+      "sha256": "b51ea4fc762a6767697bb43ef877626c2f80c8fedb4b562cc20f35f4892752fa"
+    },
+    {
+      "path": "docs/operations/PRODUCTION_POLICY_RELEASE_REVIEW_2026-11-18.md",
+      "disposition": "reviewed unchanged",
+      "sha256": "691bc39242253235c77bc1f6fba8c6c306f07fc8c5187cc9c1c2bd229d4c0416"
+    },
+    {
+      "path": "docs/operations/PRODUCTION_PREPARATION_2026-11-15.md",
+      "disposition": "updated",
+      "sha256": "2a15151a95c444ab750719f5fac0a77ed21deaee2cd9ceb79a47fc59c2afc456"
+    },
+    {
+      "path": "docs/operations/PRODUCTION_REBUILD.md",
+      "disposition": "updated",
+      "sha256": "75f9835d06be5cadaf5796cf490d41ebcc29d46d9a1a16d456ccc059aafa1f99"
+    },
+    {
+      "path": "docs/operations/PUBLIC_HTTPS_CERTBOT.md",
+      "disposition": "updated",
+      "sha256": "873a8468337ae0a931e10c8c44330dcccbad92c9f4eec4583facb4bc35f45f2c"
+    },
+    {
+      "path": "docs/operations/README.md",
+      "disposition": "new",
+      "sha256": "cc91ad4a6fc7e0c4ceebb1cd4221a569b0591a7b4e1fc0db81e4ea154942864e"
+    },
+    {
+      "path": "docs/operations/ROLE_BASED_ONBOARDING.md",
+      "disposition": "new",
+      "sha256": "b358121b78680a709e6dfcf9500787c6d9cc33a3e536823384789d40e0fdf2f3"
+    },
+    {
+      "path": "docs/operations/RPC_DNS_TLS_HANDOFF.md",
+      "disposition": "updated",
+      "sha256": "be1c175fe6e1e98ea8774d99d6ca6b3476cc4d566e9f5ec4f64f981e1a5bfadb"
+    },
+    {
+      "path": "docs/operations/RUNTIME_PREREQUISITES.md",
+      "disposition": "updated",
+      "sha256": "f095c495b655511f48a0c24cf98b17c158ce6850964675c54598dd78632c93be"
+    },
+    {
+      "path": "docs/operations/SEVEN_NODE_CERTIFICATE_HANDOFF.md",
+      "disposition": "updated",
+      "sha256": "228e62421e0db8a350b0506e0c0c49794b8389b1e67eb1fbc06f267b3c63106e"
+    },
+    {
+      "path": "docs/operations/SEVEN_NODE_INSTALLATION.md",
+      "disposition": "updated",
+      "sha256": "e62ea7629da8378fce31960115d2b10762766f49dec3d5bdd56d82722e7372e4"
+    },
+    {
+      "path": "docs/operations/SEVEN_NODE_PREFLIGHT_2026-11-17.md",
+      "disposition": "updated",
+      "sha256": "b87d8a658a58a719ec2a4beb6254c333a296acc0df16d8cc660d28746e2d0a42"
+    },
+    {
+      "path": "docs/operations/TAILS_CA_AND_LETS_ENCRYPT.md",
+      "disposition": "updated",
+      "sha256": "cc63e8a9eb63a7d287881c1d879fd4e73cc99af85ad49fe8fd8218a4ca7db250"
+    },
+    {
+      "path": "docs/operations/TAILS_CA_AND_LETS_ENCRYPT.pdf",
+      "disposition": "updated",
+      "sha256": "ea29dc414ef6913815979a60b1d01a288487d65a20aab4b3372f2e3fee81dd26"
+    },
+    {
+      "path": "docs/operations/TESTNET_REMOVAL_2026-11-17.md",
+      "disposition": "updated",
+      "sha256": "42bdd91a9400083ab24c2e8324791bbf27dfe1c7fadb9089ba7a7b704eb9ffe7"
+    },
+    {
+      "path": "docs/operations/operator-onboarding.md",
+      "disposition": "updated",
+      "sha256": "3a0a739e736cf8983d76ff9047be9df398e9154c7bc449484f0580640247b716"
+    },
+    {
+      "path": "docs/operations/resource-metering.md",
+      "disposition": "updated",
+      "sha256": "9824c64d727ef3ec918f2dd335a958164c088b9617deb7ecad6707ace2eeff92"
+    },
+    {
+      "path": "docs/operator-api.md",
+      "disposition": "updated",
+      "sha256": "69989d0f2eff9d4c290043cd3ab8bb9113422d51de26886fd90298499833d229"
+    },
+    {
+      "path": "docs/provider-operations.md",
+      "disposition": "updated",
+      "sha256": "2512ff7dd0f08b5881941330b0d636543d90499fe972bdfa2ca71cea2cbeccf2"
+    },
+    {
+      "path": "docs/releases/v0.1.0-alpha.1.md",
+      "disposition": "updated",
+      "sha256": "7444e31043080e92ebd451f1301272d35ddd2c4d4a2a2cf9ec67c936c2be70b9"
+    },
+    {
+      "path": "docs/rpc-v1.md",
+      "disposition": "updated",
+      "sha256": "41d7dd61faf768483173ac0ff2943409d70495cbe034aa1634428d31927d2a5b"
+    },
+    {
+      "path": "docs/rpc/operator-api.md",
+      "disposition": "updated",
+      "sha256": "3f9e66f8f82be2f6c21296d3f6d14de9ba58bb45145e0b82b05c79e72cc0dacc"
+    },
+    {
+      "path": "docs/rpc/public-api-compute.md",
+      "disposition": "updated",
+      "sha256": "7840f5f35434a03e3c1b5f48b74cb27f7fef4f505f00c4b032a9536f30863515"
+    },
+    {
+      "path": "docs/rpc/public-api-endpoints-1.md",
+      "disposition": "updated",
+      "sha256": "785e053cb60c910f1cad255961fbff02eef3f10777cd1fdfdd46797279ab4477"
+    },
+    {
+      "path": "docs/rpc/public-api-transactions.md",
+      "disposition": "updated",
+      "sha256": "baa1f708d0f9fadd581e89a01c76218e16778eb6b87284a85332371b95f1dc2e"
+    },
+    {
+      "path": "docs/rpc/public-api.md",
+      "disposition": "updated",
+      "sha256": "ea78b2355d85f0c1809d8f369febd4f9c2dd9ebd568772387a902e99965e494f"
+    },
+    {
+      "path": "docs/testing/integration-tests.md",
+      "disposition": "updated",
+      "sha256": "6b6077a581d4da4768806da84a9a02f9999c85095e05d7c971a8a2bb064e3ab5"
+    },
+    {
+      "path": "docs/testing/overview.md",
+      "disposition": "updated",
+      "sha256": "0f69f70a11366cadf1e807b20fa34de24f5f739e0e225ed42a700e0a1ef4879d"
+    },
+    {
+      "path": "docs/testing/unit-tests.md",
+      "disposition": "updated",
+      "sha256": "a1d0b72373a2557070a12b1ff764cf30d19e0e4f5204604fab704352133c26b9"
+    },
+    {
+      "path": "sdk/javascript/README.md",
+      "disposition": "updated",
+      "sha256": "df0b0d8fcca7429c673b0572a77ccc31a4232c8560e44fb244d1c4730b00d6d8"
+    },
+    {
+      "path": "system-services/README.md",
+      "disposition": "updated",
+      "sha256": "4c960a7bcae9c194955703af2e1f330cc02e7f4f70e74b5f3b75ed334f4380fa"
+    },
+    {
+      "path": "system-services/deployment-controller/README.md",
+      "disposition": "updated",
+      "sha256": "19b18d9cff0098625cde027d5649ba04371749e4e760a47e4540ab0c0f4963f7"
+    },
+    {
+      "path": "system-services/metering/README.md",
+      "disposition": "updated",
+      "sha256": "a8253ec0b01f84c81661210fbbea37d951e3feca901d739f7e03c00127cb82c0"
+    },
+    {
+      "path": "system-services/registry-auth/README.md",
+      "disposition": "updated",
+      "sha256": "e43335abcd87174d0edde333301517b527120e411ec5bcce0661bcff3820b696"
+    },
+    {
+      "path": "system-services/registry/README.md",
+      "disposition": "updated",
+      "sha256": "43c7b48bb0d462bbdbe35f8d93b0f00de476ad04480caf7c6f4ddc099150ce92"
+    },
+    {
+      "path": "system-services/runtime/RESOURCE_WORKFLOWS.md",
+      "disposition": "updated",
+      "sha256": "dcbfff22468bbf41226a0c3fcfbf52e71a92a7090493e060a1d7fcbb08a465b7"
+    }
+  ]
+}

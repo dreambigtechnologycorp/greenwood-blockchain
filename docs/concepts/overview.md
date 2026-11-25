@@ -2,8 +2,8 @@
 
 Greenwood is a finality-first Layer 1 with a deliberately narrow separation of
 concerns: canonical state transitions happen on the fixed-validator chain;
-WebAssembly contracts extend that state deterministically; OCI work happens
-off-chain only after the chain has finalized an assignment.
+WebAssembly contracts extend that state deterministically; finite compute OCI work follows finalized assignments; hosted applications use a
+separate finalized-registry/controller pipeline and its funding and admission gates.
 
 ## Accounts and transactions
 
@@ -25,7 +25,9 @@ list, and carries the candidate resulting state root. The proposer is selected
 deterministically from the genesis-fixed validator set. Validators execute
 the candidate independently, then use proposal, prevote, and precommit phases.
 A strict `> 2/3` quorum is `intdiv(2*n,3)+1`: three of three validators in the
-physical profile, or three of four in the local fixture profile.
+three-validator profile, or three of four in the local fixture profile. Provider
+hosts and control-plane receivers do not change validator membership. See
+[project status](../PROJECT_STATUS.md) for the current physical topology.
 
 Finality evidence is persisted beside the binary block history. The signing
 journal prevents a validator from emitting conflicting phase signatures after a
@@ -34,8 +36,8 @@ restart. See [blocks](blocks.md), [consensus](consensus.md), and
 
 ## Logical state
 
-The chain commits to normalized logical records for accounts, contracts, and
-compute. SQLite is a local derived index; it is rebuilt from genesis and
+The chain commits to normalized logical records for accounts, contracts,
+compute and, when enabled by genesis, native economics and resource policy. SQLite is a local derived index; it is rebuilt from genesis and
 authoritative block files. Consequently, editing a database is never a protocol
 operation and cannot change a finalized root. See [state architecture](../architecture/state.md).
 

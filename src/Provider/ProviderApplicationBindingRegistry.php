@@ -24,7 +24,7 @@ final class ProviderApplicationBindingRegistry
         $this->slots=min(intdiv($size,4),$lastPort-$firstPort+1);
         if(!is_dir($directory)&&!mkdir($directory,0700,true)&&!is_dir($directory))throw new \RuntimeException('Cannot create binding registry');
         $this->db=new PDO('sqlite:'.$directory.'/bindings.sqlite',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
-        $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db, 5000);
         $this->db->exec('CREATE TABLE IF NOT EXISTS binding_policy (id INTEGER PRIMARY KEY CHECK(id=1), fingerprint TEXT NOT NULL)');
         $this->db->exec('CREATE TABLE IF NOT EXISTS application_bindings (application_id INTEGER NOT NULL, service TEXT NOT NULL, slot INTEGER NOT NULL UNIQUE, application_port INTEGER NOT NULL, PRIMARY KEY(application_id,service))');
         $fingerprint=hash('sha256',json_encode([$subnet,$firstPort,$lastPort]));

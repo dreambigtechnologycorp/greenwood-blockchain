@@ -96,7 +96,7 @@ final readonly class ProviderApplicationNetworkPolicy
     {
         $bindings = new ProviderApplicationBindingRegistry($directory, $this->subnet, $this->firstPort, $this->lastPort);
         $db = new \PDO('sqlite:' . $directory . '/bindings.sqlite', null, null, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
-        $db->exec('PRAGMA busy_timeout=5000; PRAGMA synchronous=FULL');
+        \Greenwood\Persistence\SqliteDurability::configure($db);
         $db->exec('CREATE TABLE IF NOT EXISTS platform_network_policy (id INTEGER PRIMARY KEY CHECK(id=1), fingerprint TEXT NOT NULL)');
         $fingerprint = hash('sha256', json_encode(get_object_vars($this), JSON_THROW_ON_ERROR));
         $insert = $db->prepare('INSERT OR IGNORE INTO platform_network_policy VALUES (1,?)');

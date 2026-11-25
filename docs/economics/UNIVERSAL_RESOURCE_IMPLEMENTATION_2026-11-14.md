@@ -1,5 +1,9 @@
 # Universal resource implementation report — November 14, 2026
 
+> **Historical scope — reviewed November 24, 2026.** The work-package labels and FULL/WAL journal descriptions below are historical. Later source integration and uncommitted rollback-journal changes have separate evidence.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 **Source implementation remains incomplete. Production remains HOLD.** This report distinguishes completed local mechanisms from partial work packages; passing listed tests is not a claim that an entire WP or physical qualification is complete. Existing work and historical evidence were preserved.
 
 The local increment adds timelocked resource-network policy, role/domain/participation qualification and E0–E2 logic, opt-in service definition validation, explicit independent-program restrictions, durable meter checkpoints and signed nonpayable observations, exact-byte outbox, GAP SDK types 13/14, bounded RPC/consent/status tools, terminal archival and provider stale-head restriction. It does not complete automated service distribution, authoritative hardware collectors or the end-to-end operator/product workflow.

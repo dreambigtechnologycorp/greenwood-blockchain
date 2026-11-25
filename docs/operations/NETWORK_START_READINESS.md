@@ -1,5 +1,9 @@
 # Network-start readiness review
 
+For the current release and installation boundary, use [project status](../PROJECT_STATUS.md).
+This is a checklist of required evidence, not a claim that every listed input is
+still missing. Existing credentials and the recorded policy adoption are retained.
+
 This is a source/deployment-input audit, not physical acceptance. No production keys or cluster services are used by the local tests.
 TLS and signing tests use disposable local fixtures. Do not label this the final rebuild until
 the exact configuration is complete and the final reviewed revision is qualified.
@@ -61,15 +65,16 @@ operator steps. An empty initial allocation must not overwrite an existing polic
 
 | Gate | Required completion |
 | --- | --- |
-| Final source/artifacts | Review and merge the complete pending changes; qualify/build once from the final commit; replace source/image pins. Old 1d8a0bd lacks these fixes. |
-| Genesis/policy | Approve exact public genesis, policy and chain-config hashes; record custody review. Identity bindings and validation alone are not approval. |
+| Final source/artifacts | Review and merge the complete release changes; qualify/build from the final commit; replace source/image pins. Previously built artifacts do not establish inclusion of subsequent source fixes. |
+| Genesis/policy | Bind exact public genesis, adopted policy and chain-config hashes; record remaining custody/evidence review. [Policy adoption](../economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md) is recorded, distinct from activation. |
 | RPC TLS | Four issued RPC certificates, per-node private keys installed by operator, public CA PEM checksum and DER fingerprint; all matching protected paths. |
 | Internal resolution | Node-5 and providers 6–7 must resolve node-1's RPC name to its LAN IP for direct 8443 HTTPS; no tunnel login dependency. |
 | Complete control-plane inputs | Per-host controller/observer/receiver/edge configs, provider identity/URI bindings, signed policy snapshots, renewal/SFTP transport and public trust. Blank dictionaries are not a deployable composition. |
 | Application hosts | Approved provider/edge addresses, nftables/network policy, hosted funding configuration and application receiver settings for nodes 6–7. |
 | Registry bootstrap | Exact offline seeds and system-service definitions, issued TLS, separate token issuer identity, bearer realm, volume/network settings and reviewed publisher authorization. |
-| Operator provisioning | Actual local credential locations, required modes/owners, matching identities. No AI key access. |
-| Host/recovery | Fresh identity verification and recovery access; existing gateway/NFS preserved. Read-only runtime checks do not establish outage recovery. |
+| Operator provisioning | Retain the already-provisioned identities; operator verifies paths, modes/owners and matches. No AI key access or duplicate generation. |
+| Durable state | Verified copy/bind/offline SQLite migration, rebuilt `DELETE`/`EXTRA` runtime, canonical release checks and restored containerd readiness; see [state storage](../../deploy/ansible/STATE_STORAGE.md). |
+| Host/recovery | Verify existing installed identities and actual recovery access; preserve gateway/NFS/iSCSI infrastructure. Read-only runtime checks do not establish outage recovery. |
 | Authorization | Explicit scoped installation, secret provisioning, protocol and hosting approvals. Keep false until operator action. |
 
 Cloudflare DNS/ingress and access policy must be ready before public cutover, but

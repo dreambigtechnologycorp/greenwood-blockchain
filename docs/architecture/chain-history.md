@@ -40,8 +40,10 @@ written first, the immutable block file is the history commit point, and the
 SQLite index is then refreshed from already verified state. An orphaned
 certificate is harmless; missing, gapped, or conflicting history is not.
 
-The implementation rebuilds SQLite whenever a `Chain` is constructed. A stale,
-missing, or corrupted derived database therefore cannot override history.
+The implementation rebuilds the logical index whenever a `Chain` is constructed.
+A stale or missing index cannot override history. An unreadable/corrupt database or
+one requiring offline WAL migration can fail before replay; preserve evidence and
+follow [recovery](recovery.md) instead of deleting files automatically.
 
 ## Backup and restore
 
@@ -50,7 +52,10 @@ stopped or using an operator-approved filesystem snapshot. Preserve the
 validator safety journal separately from ordinary chain data.
 
 To restore, place trusted genesis and contiguous history in a fresh data
-directory and run `greenwoodd … --replay` before starting consensus. Never
+directory and run `php bin/greenwoodd --genesis=TRUSTED_GENESIS
+--data-dir=RESTORED_DIRECTORY --replay` from the repository root before starting
+consensus. Replay writes derived state and may initialize empty genesis history;
+use an investigation copy when diagnosing a failure. Never
 combine block files from different genesis files, copy a safety journal between
 validator identities, or fill a missing height with a guessed block.
 

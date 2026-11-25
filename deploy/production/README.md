@@ -1,12 +1,23 @@
 # Greenwood production release preparation
 
-The release target is the existing seven-node cluster. Testnet ledger state is
-retired, not migrated. This directory contains public templates only; fill private
+For service participation in your own environment, use
+[role-based onboarding](../../docs/operations/ROLE_BASED_ONBOARDING.md). This
+directory covers network-release preparation and supported reference profiles.
+[Project status](../../docs/PROJECT_STATUS.md) separates the current source/release
+boundary from the reference deployment. Prior artifacts do not include pending
+local startup, storage and SQLite durability fixes.
+
+The selected reference release targets a seven-node composition; other operators
+should use their network's approved roles and chain inputs. Its obsolete testnet
+was retired without state migration. This directory contains public templates and
+selected public inputs; fill private
 inventory and operational configuration outside Git. No template authorizes a
 reset, permanent genesis, treasury spending or registry publication.
 
 See [operator-only key custody](OPERATOR_KEY_CUSTODY.md) before running any
-provisioning or signing command. Release preparation stops before key generation.
+provisioning or signing command. Release preparation does not generate keys.
+Reuse existing matching identities; the reference operator has already provisioned
+its credentials. Generation is only for genuinely missing or explicitly replaced identities.
 
 ## Build and identify the source
 
@@ -133,10 +144,12 @@ billing basis, meter version, approved evidence digest and explicit trust policy
 Independent profiles cannot accept operator-only evidence; bootstrap has zero
 subsidy authority. Leave unsupported profiles absent/disabled.
 
-Formal allocation ratification (15/25/30/25/5), spending limits, fees, bootstrap
-funding, related-party rules, signer custody and lost-quorum recovery remain
-unresolved until approval evidence is recorded. Hardware recovery access and
-explicit destructive-installation authorization remain mandatory.
+For the selected reference policy, the [November 18 adoption](../../docs/economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md)
+records allocation, spending, fees, bootstrap, related-party and recovery decisions.
+Bind that exact evidence rather than treating those selected terms as unresolved.
+Actual custody review, endpoint/service evidence and physical recovery remain
+separate. A different network needs its own approved inputs. Destructive
+replacement is a separate operation; it is not required for a runtime continuation.
 
 See `PHYSICAL_ACCEPTANCE.md` for post-install execution and evidence requirements.
 
@@ -146,8 +159,10 @@ The operator adopted the latest Epoch 0 terms in
 `docs/economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md`. Start from
 `release.selected-2026-11-18.json`; it selects
 `https://registry.greenwoodblockchain.com` and binds the policy adoption hash.
-Actual custody, public identities, origin TLS and physical acceptance remain unset.
-The operator generates all production keys. Disposable test-only keys are permitted
+This selected file is a historical public input, not the current completed
+installation manifest. Its unset fields must be reconciled with actual reviewed
+public inputs; do not infer that existing identities need generation again.
+The operator alone generates and provisions production keys. Disposable test-only keys are permitted
 for local release qualification; they must never become production identities.
 
 After committing reviewed source, building services and passing clean qualification,
@@ -170,8 +185,9 @@ reference, and records remaining activation gates. It does not sign, upload,
 install or enable services. An old runtime may be reused at its verified immutable
 digest; the five service images and qualification must bind the new source commit.
 
-A Cloudflare 502 at the selected endpoint means the origin is not serving the
-request. Before clients pull images, the operator must bootstrap Zot and registry-auth
+The historical endpoint check returned Cloudflare 502; that result is not a
+current health observation. If a new check returns 502, investigate origin
+connectivity and service configuration. Before clients pull images, the operator must bootstrap Zot and registry-auth
 from the offline archives, configure the reviewed issuer/public authorization policy,
 and configure edge routing and origin TLS. Verify `/v2/` returns the expected registry
 response (typically 401 with the correct bearer challenge before authentication),

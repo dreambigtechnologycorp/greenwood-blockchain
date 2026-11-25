@@ -1,5 +1,9 @@
 # Independent CPU measurement — production qualification boundary
 
+> **Historical scope — reviewed November 24, 2026.** This plan governs independent CPU qualification. Separately adopted customer-funded Epoch 0 operator-attested services are permitted with zero subsidy; they do not satisfy this independent-measurement gate.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 Status: **not demonstrated**. Native signatures authorize claims; they do not prove truthful counters. Neither local hosted tests nor certificate replay qualifies Institute-subsidized production usage.
 
 The current adapter bills bounded consumed CPU milliseconds. It does not bill RAM-hours, storage, egress, GPU, application uptime or block-target time. A hosted interval has an explicit accepted CPU budget; 60-second target blocks are not a CPU measurement or a guaranteed wall-clock interval.

@@ -1,0 +1,24 @@
+---
+# Exact continuation: running prepared targets, Node 1 mounted but not copied,
+# and every other client still untouched. No target recreation or restart.
+- name: Validate the complete interrupted storage phase before continuation
+  hosts: all
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: state_storage
+        tasks_from: resume_copy_preflight
+
+- name: Continue Node 1 copying then prepare the remaining clients serially
+  hosts: 'validators:providers:control_plane:system_runtime_hosts'
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 1
+  tasks:
+    - ansible.builtin.import_role:
+        name: state_storage
+        tasks_from: client
+      when: greenwood_storage_operation == 'apply'

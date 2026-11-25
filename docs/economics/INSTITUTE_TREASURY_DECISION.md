@@ -1,5 +1,9 @@
 # Greenwood Mainnet — Institute Treasury and Token Security
 
+> **Historical scope — reviewed November 24, 2026.** The burn proposal, unset percentages and missing-implementation findings below are superseded: current policy uses no burn, six decimals and the selected 15/25/30/25/5 allocation.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 **Decision: Adopt the proposed 1 billion GWD genesis supply and protected-reserve architecture as the production design, subject to implementation and security validation.**
 
 This resolves the central question of how Greenwood's initial token issuance should work.

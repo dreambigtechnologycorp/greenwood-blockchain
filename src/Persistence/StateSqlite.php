@@ -34,9 +34,10 @@ class StateSqlite
             mkdir($dir, 0755, true);
         }
 
-        $this->pdo = new PDO('sqlite:' . $this->dbPath);
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->pdo->exec('PRAGMA synchronous=FULL');
+        $pdo = new PDO('sqlite:' . $this->dbPath);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        SqliteDurability::configure($pdo);
+        $this->pdo = $pdo;
         $this->createSchema();
         $this->isOpen = true;
     }

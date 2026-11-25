@@ -1,8 +1,12 @@
 # Institute treasury: production implementation specification
 
+> **Historical scope — reviewed November 24, 2026.** This is the November 13 baseline plan. Later source implements native settlement, hosted/resource integration and recovery; selected policy is recorded in the November 18 adoption.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 Status: architecture adopted by the user; consensus implementation and production qualification NOT complete. November 13, 2026.
 
-Update: [Candidate GWD/GRU policy](CANDIDATE_POLICY_REVIEW.md) records the newly supplied provisional allocations and six-decimal simulation inputs. The user explicitly selected **no fee burn; operator compensation**. That supersedes the burn candidate in earlier proposals; historical source documents remain unchanged.
+Update: [Historical candidate GWD/GRU data](CANDIDATE_POLICY.json) records the newly supplied provisional allocations and six-decimal simulation inputs. The user explicitly selected **no fee burn; operator compensation**. That supersedes the burn candidate in earlier proposals; historical source documents remain unchanged.
 
 Authority: [Institute treasury decision](INSTITUTE_TREASURY_DECISION.md). This specification records the implementation work and unresolved parameters. It does not authorize or generate permanent genesis, choose allocation percentages, change the live network, or certify infrastructure acceptance.
 

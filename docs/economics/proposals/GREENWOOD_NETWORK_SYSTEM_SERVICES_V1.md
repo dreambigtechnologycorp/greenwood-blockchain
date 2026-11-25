@@ -1,5 +1,9 @@
 # Network system services — candidate
 
+> **Historical scope — reviewed November 24, 2026.** The distribution/installer/coordinator source gaps below were addressed in later source checkpoints. This does not establish successful physical installation.
+> Read the [economics index](../README.md) for current source and policy precedence,
+> and [project status](../../PROJECT_STATUS.md) for release/installation and qualification.
+
 Native version-1 `resource_network` records use existing treasury policy governance,
 not a second ledger. Records commit role, digest/source, command, configuration schema,
 budget reference, revision, activation, grace and rollback fields. Local opt-in is

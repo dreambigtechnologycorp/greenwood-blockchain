@@ -34,7 +34,9 @@ class OperatorKeyBoundaryTest(unittest.TestCase):
                     self.assertEqual(result.returncode == 0, allowed, result.stdout + result.stderr)
 
     def test_fresh_identity_gates_deny_by_default(self):
-        for name in ['fresh_preflight.yml', 'fresh_identity.yml']:
+        fresh = yaml.safe_load((ROOT / 'tasks/fresh_preflight.yml').read_text())
+        self.assertEqual('installation_preflight.yml', fresh[0]['ansible.builtin.import_tasks'])
+        for name in ['installation_preflight.yml', 'fresh_identity.yml']:
             gate = yaml.safe_load((ROOT / 'tasks' / name).read_text())[0]
             with self.subTest(task=name), tempfile.TemporaryDirectory() as directory:
                 work = Path(directory)

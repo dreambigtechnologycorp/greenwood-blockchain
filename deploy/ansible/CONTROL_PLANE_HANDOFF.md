@@ -1,5 +1,11 @@
 # Control Plane Operations
 
+Start with [role-based onboarding](../../docs/operations/ROLE_BASED_ONBOARDING.md).
+This procedure composes controller, observer, receiver, edge and registry roles.
+Node-number mappings below are supported reference profiles, not required homelab
+hardware. [Project status](../../docs/PROJECT_STATUS.md) distinguishes pending local
+fixes from released artifacts and records the reference installation separately.
+
 This guide describes the current source-controlled installation process.
 Staging, activation, deployment authorization and physical acceptance are
 separate operations. Review the intended hosts and scope before each operation.
@@ -28,12 +34,16 @@ force: false preserves files but does not attest their content; compare approved
 fingerprints independently. Never commit private keys, passwords or policy
 signing material to inventory.
 
-The enabled controller composition currently requires node-1/node-4 receiver
-roles, an explicit provider_policy.provider_node (node-1, node-2, node-3, node-6 or node-7),
+The seven-node controller composition requires the complete assignment receiver
+map for nodes 1, 2, 3, 5, 6 and 7. The node-1/node-4 map belongs only to the legacy
+four-node composition. Each controller requires an explicit
+provider_policy.provider_node (node-1, node-2, node-3, node-6 or node-7),
 and unix:///run/greenwood-provider/operator.sock. The selected provider account
 must match the bounded write scope and its certificate must pin the same provider/node-N URI.
 The controller composition must run alongside that provider for local operator access;
 this change does not expose the operator socket remotely.
+In the current seven-node reference composition, application controllers run on nodes 1, 6 and 7 with distinct TLS
+identities and their local providers. Only node-1 builds release artifacts.
 Addresses are configurable; this is not arbitrary topology support.
 
 ## Runtime and Seed Artifacts
@@ -124,6 +134,14 @@ Ports/request limits must be YAML integers. Distinct listener/name validation,
 root-owned ancestry, key permissions, certificate/key match, CA fingerprint,
 chain validity, expiry and hostname/IP checks precede activation.
 
+Managed HTTPS renewal uses `renewal.minimum_validity_seconds`, an integer from
+3600 through 2592000; the prepared production inventory selects 86400 (24 hours).
+The inventory filter accepts Ansible's tagged integer values while rejecting
+booleans, strings, floats and out-of-range values. With Ansible 2.19, an older
+filter using exact Python type identity incorrectly rejects valid inventory
+integers. Update the filter rather than changing the approved validity threshold
+or bypassing certificate checks.
+
 Standalone Apache units configtest before startup and omit request logs that
 could retain signed query strings. Keep backends private and preserve unrelated
 sites. Verify Zot bearer realm matches the issuer token endpoint and issuer
@@ -141,10 +159,13 @@ repositories; TLS alone does not establish scoped push/pull authorization.
    /etc/greenwood/control-plane/NAME-https.conf for each frontend on Linux.
 4. Start containerd/provider and the required receivers, observer, edge admission,
    controller and HTTPS frontends in dependency order.
-   Install and enable the [application recovery timer](../application-recovery/README.md)
-   on application providers; fresh_cluster.yml installs it automatically, while
-   standalone control_plane.yml does not stage it. Containerd
-   startup alone does not restore application tasks after reboot.
+   The [application recovery timer](../application-recovery/README.md) is staged
+   but left disabled during fresh installation and its bounded continuation.
+   Before enabling it, complete the pinned public provider identity and protected
+   hosted-funding configuration, then validate recovery after protocol/provider
+   readiness. Standalone control_plane.yml does not stage it. Its unit can start
+   the provider, so never enable it during the pre-start storage migration.
+   Containerd startup alone does not restore application tasks after reboot.
 5. Confirm authenticated developer access, finalized owner/release authority,
    scoped registry credentials, exact-generation receiver ACKs and independent
    release-bound content evidence. Negative cases must fail closed.

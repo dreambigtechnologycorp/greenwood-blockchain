@@ -30,3 +30,4 @@
     daemon_reload: true
     enabled: true
     state: started
+  when: greenwood_application_recovery_activate | default(true) | bool

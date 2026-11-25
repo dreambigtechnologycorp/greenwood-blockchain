@@ -1,5 +1,11 @@
 # Greenwood resource metering candidate — 2026-11-14
 
+> Historical snapshot: the findings and commands below describe their dated
+> source/infrastructure state, not the current installation procedure. Start with
+> [project status](../PROJECT_STATUS.md) and [operator onboarding](README.md).
+> Retain the recorded evidence and counts; do not repeat completed initialization,
+> removal or credential-generation steps from this snapshot.
+
 **November 15 continuation:** source implementation/publication and replacement of
 the existing four-node testnet are now the authorized objective, subject to the
 ordered gates in `PRODUCTION_REBUILD.md`. Earlier authorization and missing-source

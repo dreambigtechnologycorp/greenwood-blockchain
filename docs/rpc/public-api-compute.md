@@ -1,6 +1,6 @@
 # Compute Query Responses
 
-Checked against src/Rpc/HttpApi.php on October 21, 2026. These are finalized L1
+Checked against src/Rpc/HttpApi.php in the current checkout. These are finalized L1
 compute views, not the hosted-application controller's reservation or status API.
 
 ## Requests and History
@@ -50,5 +50,10 @@ not a probe of free host memory or container health.
 GET /v1/compute/providers/{id}/reservations returns provider_id, aggregate reserved
 (cpu_millis, memory_bytes, pids, jobs), and finalized_height. It is not a per-job
 reservations array; use request history for assignment records.
+
+The native resource extension is available separately at
+`GET /v1/resources/providers/{id}`. Compute receipt finality alone does not mean
+a service commitment is financially settled; use the native service views in
+[RPC v1](../rpc-v1.md#native-economics-and-resource-routes).
 
 [Public RPC v1](../rpc-v1.md) | [Provider operations](../provider-operations.md)

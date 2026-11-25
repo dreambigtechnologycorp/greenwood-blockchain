@@ -51,7 +51,10 @@ Under an approved Epoch 0 profile, DreamBIG may operate customer-funded services
 using `BOOTSTRAP_OPERATOR_ATTESTED` evidence, explicitly disclosed as operator
 attestation. This never authorizes an independent-verification subsidy or downgrades
 an existing independent-attestation commitment. Governance and Epoch 0 approvals
-remain required; the current governance document is still a draft.
+remain required. The reference network's [November 18 adoption](../economics/PRODUCTION_POLICY_ADOPTION_2026-11-18.md)
+records its selected policy terms; it is distinct from on-chain execution,
+custody verification and physical acceptance. Other networks need their own
+approved program and trust policy.
 
 Keyless regression: `php tests/Economics/customer-funded-programs.php` exercises
 policy validation, program governance, reserve checks and restored-fixture
@@ -110,8 +113,10 @@ it world-readable. The daemon needs no containerd socket or privileged cgroup mo
 the authorized host collector reads counters and submits bounded frames.
 
 The journal directory contains SQLite databases and immutable `archive/` files.
-Back up the entire directory, including its `resources/` child, not just one SQLite
-file. See [retention and recovery](RETENTION_AND_RECOVERY.md).
+Use a supported durable filesystem and the exact installed revision's SQLite
+policy. Current source uses `DELETE`/`EXTRA`; old WAL databases require
+explicit offline conversion before this release starts. Back up the entire
+directory consistently, including its `resources/` child, not just one SQLite file. See [retention and recovery](RETENTION_AND_RECOVERY.md).
 
 ## Bind exactly one funded interval
 
@@ -208,7 +213,9 @@ php scripts/resource-metering.php telemetry-append \
   /private/greenwood-meter/resources COMMITMENT signed-frame.json
 ```
 
-The key is an explicitly supplied, current-user-owned 0600 Greenwood 96-byte key
+Signing is a human-operator or explicitly provisioned service action; never return
+production private keys or tokens for documentation review. The key is an
+explicitly supplied, current-user-owned 0600 Greenwood 96-byte key
 file. The command never generates keys. Node clients may use
 `signer.signResourceDocument('telemetry', frame)` and send its `body` and
 `approval.signature` as `{body,signature}`. The bound source key is checked locally.

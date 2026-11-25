@@ -35,16 +35,17 @@ class FreshClusterTest(unittest.TestCase):
 
     def test_fresh_order_and_destructive_guards(self):
         plays = yaml.safe_load((ROOT / "playbooks/fresh_cluster.yml").read_text())
+        plays += yaml.safe_load((ROOT / "playbooks/finish_installation.yml").read_text())
         imports = [p["ansible.builtin.import_playbook"] for p in plays if "ansible.builtin.import_playbook" in p]
         self.assertLess(imports.index("bootstrap_greenwood.yml"), imports.index("deploy_greenwood.yml"))
         self.assertEqual("activate_hosting.yml", imports[-1])
         self.assertTrue(plays[0]["any_errors_fatal"])
-        preflight = (ROOT / "tasks/fresh_preflight.yml").read_text()
+        preflight = (ROOT / "tasks/fresh_preflight.yml").read_text() + (ROOT / "tasks/installation_preflight.yml").read_text()
         for guard in ("greenwood_fresh_cluster_approved", "not ansible_check_mode", "/var/lib/greenwood/signing.sqlite", "not item.stat.exists"):
             self.assertIn(guard, preflight)
 
     def test_identity_never_generates_keys_or_overwrites(self):
-        source = (ROOT / "tasks/fresh_identity.yml").read_text()
+        source = (ROOT / "tasks/fresh_identity.yml").read_text() + (ROOT / "tasks/validate_installed_identity.yml").read_text()
         self.assertIn("force: false", source)
         self.assertIn("no_log: true", source)
         self.assertIn("validate_cluster_identity.php", source)

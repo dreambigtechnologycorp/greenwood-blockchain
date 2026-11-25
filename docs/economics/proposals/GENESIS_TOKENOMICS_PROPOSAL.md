@@ -1,4 +1,9 @@
 # Greenwood Blockchain — Genesis Tokenomics Proposal
+
+> **Historical scope — reviewed November 24, 2026.** The 40/20/15/24/1 allocation, burn candidate and illustrative block cadences were superseded. Current selected policy has no burning and a 60-second target.
+> Read the [economics index](../README.md) for current source and policy precedence,
+> and [project status](../../PROJECT_STATUS.md) for release/installation and qualification.
+
 **Greenwood Blockchain Institute | Mainnet Economic Policy v1**
 
 **Recommendation: 1 billion GWD, six decimal places, five funded reserves at genesis, and protocol-enforced spending controls.**

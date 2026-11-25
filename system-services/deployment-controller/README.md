@@ -3,6 +3,7 @@
 Canonical server source lives in this repository. The separate Python CLI ships no
 controller implementation. Deployment writes require a protected, current,
 release-scoped authorization and genuine physical dependencies.
+For current release/qualification evidence, see [project status](../../docs/PROJECT_STATUS.md).
 Use [control-plane operations](../../deploy/ansible/CONTROL_PLANE_HANDOFF.md)
 for installation, protected inputs, activation and recovery.
 
@@ -11,7 +12,7 @@ for installation, protected inputs, activation and recovery.
 `public/index.php` → `Bootstrap` → `DeveloperRoutes` → Ed25519 challenge/request
 verification → fresh finalized registry authority → SQLite operation/journal →
 `DeploymentCoordinator` → provider reservation and approved plan → canonical
-assignment distribution → both protected-store acknowledgments → edge content
+assignment distribution → every configured protected-store acknowledgment → edge content
 admission → one provider start and inspect → fresh observer evidence → effective timer generation
 → authenticated readiness service / verified public HTTPS body → READY.
 
@@ -22,8 +23,8 @@ READY is discarded before each new observation and authorization check.
 `AssignmentDistributor` journals one canonical generation before network I/O.
 `AssignmentEndpoint` connects `AssignmentReceiver` to existing `MutualTlsChannel`
 framing, pinned identities, certificate revocation and response challenges. Prepare,
-commit and fresh status acknowledgments must match at both nodes. The receivers
-check independent authority/allocation approvals, persist their generation ledger,
+commit and fresh status acknowledgments must match at every configured receiver.
+The receivers check independent authority/allocation approvals, persist their generation ledger,
 and atomically fsync private assignment files. A crash after file sync can be
 reconciled using the identical generation. Conflicts and older versions cannot
 replace newer assignments. Replacement is disabled without a verified withdrawal
@@ -74,9 +75,20 @@ readiness closures. Missing adapters fail closed. There are no
 example provider/observer/edge ports treated as deployed defaults. The observer's
 role pins and release-content evidence must match the protected configuration.
 Generic reconciliation has no fixed application-ID allowlist. Write enablement
-still requires `node-1`/`node-4` receiver roles and an explicit `provider_policy.provider_node` (node-1, node-2, node-3, node-6 or node-7); arbitrary
-applications do not imply arbitrary control-plane topology. Do not borrow another
-service's identity.
+still requires an explicit supported receiver profile and provider role.
+[ReceiverTopology](src/Assignment/ReceiverTopology.php) currently accepts exactly
+the legacy profile (`node-1`, `node-4`) or the expanded profile (`node-1`, `node-2`,
+`node-3`, `node-5`, `node-6`, `node-7`). All configured receivers must acknowledge
+the same generation. `provider_policy.provider_node` is currently restricted by
+[WriteEnablement](src/Deployment/WriteEnablement.php) to `node-1`, `node-2`,
+`node-3`, `node-6` or `node-7`, and enabled controllers require the colocated
+`unix:///run/greenwood-provider/operator.sock`.
+
+These names are source-enforced profile/identity labels, not a universal physical
+layout for outside operators. Map actual hosts, addresses, storage and certificates
+through protected configuration and the supported deployment profile. Arbitrary
+receiver sets or remote provider execution require an implementation change and
+qualification. Do not borrow another service's identity.
 
 The Ansible role stages loopback controller HTTP, standalone Apache TLS frontends
 and private peer services without starting them. Request logs are omitted to avoid
@@ -104,7 +116,7 @@ actual PHP/WASM VM. See [testing overview](../../docs/testing/overview.md)
 for the separation between source tests and physical acceptance.
 
 
-### Fresh-chain economic integration (November 14, 2026)
+## Chain identity and native service funding
 
 Protected controller configuration now requires `deployment_identity` with explicit
 `chain_id`, `genesis_hash`, `registry_contract_id`, and `registry_wasm_hash`. There
@@ -114,16 +126,18 @@ policies and SPIFFE identities must use the configured chain. Registry-auth also
 requires `GREENWOOD_GENESIS_HASH` and `GREENWOOD_APP_REGISTRY_WASM_HASH`, alongside
 its explicit chain and registry ID.
 
-Hosted starts on native-economic chains deliberately fail with
-`HOSTED_SERVICE_SETTLEMENT_NOT_QUALIFIED`: recurring service intervals and a
-finalized funding guard are not yet integrated. Do not remove that gate to launch.
-The finite-compute adapter and remaining production requirements are described in
-`../../docs/economics/GRU_SETTLEMENT_REPORT.md`.
+Hosted starts on native-economic chains fail with
+`HOSTED_SERVICE_SETTLEMENT_NOT_QUALIFIED` unless the protected
+`hosted_settlement_candidate_enabled` flag is explicitly enabled. The implemented
+candidate uses `hosted_provider_public_key` and actual finalized funded-interval
+reads before assignment distribution and controller progress. Provider
+start/recovery and expiry reconciliation require the corresponding configured
+funding guard. A flag is not physical or economic qualification; do not bypass a
+missing funded interval. See [the hosted report](../../docs/economics/HOSTED_SETTLEMENT_REPORT.md)
+and [project status](../../docs/PROJECT_STATUS.md).
 
-
-The local hosted CPU candidate adapter is now implemented. Production remains on
-HOLD. `hosted_settlement_candidate_enabled` defaults false; the disposable-cluster
-composition uses a configured provider key and actual funded-interval reads before
-assignment distribution, controller start/resume, provider start/recovery and expiry
-reconciliation. See [the hosted report](../../docs/economics/HOSTED_SETTLEMENT_REPORT.md)
-for exact configuration and the independent-metering/physical acceptance boundary.
+The current working checkout also uses rollback-journal SQLite (`DELETE`/`EXTRA`)
+for operation, assignment and policy ledgers. Preserve these authorization and
+progress records across restarts and follow the reviewed
+[state-storage migration](../../deploy/ansible/STATE_STORAGE.md); source presence
+does not update older release artifacts.

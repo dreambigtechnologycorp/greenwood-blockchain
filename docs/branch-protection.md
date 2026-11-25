@@ -1,12 +1,10 @@
 # Protecting main
 
-Use the protections supported by the repository's ownership, visibility and plan.
-GitHub Free supports protected branches in public repositories; the current
-private repository requires a supporting paid plan for enforcement. A saved rule
-is not evidence that GitHub is enforcing it. Verify enforcement after changing
-visibility or plan.
+This is a recommended repository policy, not a live audit of GitHub settings.
+Verify the rules actually enforced for the repository before relying on them.
+A saved configuration or a green local test is not evidence of enforcement.
 
-For the current solo-maintainer workflow, protect `main` with:
+For a solo-maintainer repository, protect `main` with:
 
 - Pull requests required, with no mandatory approving review count.
 - Required checks `Source policy and packaging` and `PHP unit checks`, from
@@ -17,9 +15,8 @@ For the current solo-maintainer workflow, protect `main` with:
 
 Self-approval does not satisfy an independent review requirement. When a second
 trusted maintainer is available, require one approval and dismiss stale approvals.
-On personal repositories, separate push allowlists may be unavailable; requiring
-PRs without bypass prevents direct updates by accounts with write access. Review
-collaborator access separately and grant write access only where needed.
+Review collaborator access separately and grant write access only where needed.
+Confirm the chosen protection or ruleset covers direct pushes and bypass actors.
 
 The `CI` workflow runs existing PHP unit, packaging and independent vector checks
 on pushes and pull requests with read-only permissions and without repository

@@ -1,7 +1,7 @@
 # Contract Storage
 
-Checked against ContractHost, ExecutionOverlay and ContractLimits on October 21,
-2026. Storage is raw byte key/value data scoped to the executing contract ID,
+The source authorities are ContractHost, ExecutionOverlay and ContractLimits.
+Storage is raw byte key/value data scoped to the executing contract ID,
 not a filesystem path or automatically base64-encoded string.
 
 ## Host Calls

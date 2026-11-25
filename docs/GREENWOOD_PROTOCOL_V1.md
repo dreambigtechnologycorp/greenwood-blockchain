@@ -1,13 +1,20 @@
 # GREENWOOD_PROTOCOL_V1
 
-> Implementation reconciliation, October 20, 2026: the original specification
-> below describes a four-validator profile. Current `Certificate::quorum()` and
-> `ConsensusDriver` derive quorum/proposer selection from the genesis set size
-> (minimum three for certificate verification), and the physical profile uses
-> three validators. Do not interpret `validator_count=4`, `mod 4` or fixed vote
-> counts below as a current source-enforced universal limit. This annotation
-> records the divergence; it is not a new protocol-version or compatibility
-> approval. Local four-validator vectors retain their original meaning.
+Reviewed against source on November 24, 2026. This reference describes the shared
+V1 envelope, consensus and contract formats, with the later native economics and
+compute extensions identified explicitly. Checkpoint test results below retain
+their original scope; they are not a current production-acceptance claim. See
+[project status](PROJECT_STATUS.md), [compute protocol](GREENWOOD_COMPUTE_V1.md),
+and [economics policy/source map](economics/README.md).
+
+Network roles are independent of physical placement. A non-validator can replay
+trusted history; a provider can register permitted capacity; neither automatically
+joins consensus. Validator membership is fixed by genesis. The configuration
+loader accepts 3–128 equal-power validators, but bounded certificate/message sizes
+and physical capacity still constrain deployability. This is not a claim that a
+128-validator deployment is qualified. Quorum is `floor(2N/3) + 1`: 3-of-3 for
+three validators, 3-of-4 for four. Multiple keys under one operator do not prove
+independent control or tolerance of that operator's failure.
 
 This is the repaired PHP reference protocol for Passes 1, 2 and 3C. The old prototype
 encodings are incompatible and are preserved under `archive/php-prototype` only.
@@ -24,7 +31,7 @@ String ordering is unsigned bytewise lexical order. All decoders reject
 truncation, overflow, oversized fields and trailing bytes.
 
 Chain IDs are nonempty and at most 128 bytes. Validator IDs match
-`[A-Za-z][A-Za-z0-9_-]{0,31}`. Four unique public keys, equal power 1, are required.
+`[A-Za-z][A-Za-z0-9_-]{0,31}`. The configured validator keys must be unique, each with equal power 1.
 Maximum transaction size: 600,000 bytes. Maximum block: 1,048,576 bytes and 1000
 transactions. Maximum consensus message: 1,100,000 bytes. Maximum quorum proof:
 4096 bytes. Maximum HTTP body: 1,500,000 bytes; headers: 16,384 bytes; concurrent
@@ -61,13 +68,15 @@ short(chain_id)
 sender_address[32]
 sender_public_key[32]
 u32 nonce
-u8 type                            # 1=Transfer, 2=DeployContract, 3=CallContract
-bytes(payload)                     # Transfer payload is exactly 36 bytes
+u8 type                            # supported types listed below
+bytes(payload)                     # type-1 Transfer is exactly 36 bytes
 u16 signature_length=64
 signature[64]
 ```
 
-Payload is `recipient_address[32] | u32 amount`. Unsigned bytes end after payload
+Type-1 payload is `recipient_address[32] | u32 amount`. Type 11 uses
+`recipient_address[32] | u64 amount` (40 bytes) on an economic genesis.
+Unsigned bytes end after payload
 (no empty signature prefix). Signature is Ed25519 over
 `H(GREENWOOD_TX_SIGN_V1, unsigned_bytes)`. Transaction hash is
 `H(GREENWOOD_TX_V1, complete_signed_envelope)`.
@@ -75,9 +84,16 @@ Payload is `recipient_address[32] | u32 amount`. Unsigned bytes end after payloa
 Verify expected chain ID, public-key-to-address binding, signature, exact current
 nonce, positive amount, sufficient funds, recipient balance overflow, and nonce
 exhaustion before any mutation. Successful execution subtracts amount from
-sender, adds to recipient, and increments sender nonce. Self-transfer preserves
-balance and increments nonce. A missing recipient is created with nonce zero.
-Unknown/unsupported types reject; types 2 and 3 are specified below; 4..6 remain reserved.
+sender, adds to recipient, and increments sender nonce. The principal leg of a
+self-transfer preserves balance; economic chains additionally charge the configured
+fee, including for a self-transfer. A missing recipient is created with nonce zero.
+Unknown/unsupported types reject. Types 2 and 3 are specified below; 4–6 remain
+reserved and rejected. The envelope also accepts types 7 request, 8 assignment,
+9 receipt V2, 10 base provider capability, 11 u64 transfer, 12 treasury, 13 service
+finance and 14 resource capability. Types 11–14 require native economics enabled
+by genesis. Types 12–14 have canonical JSON payloads bounded to 65,536 bytes.
+See [Envelope](../src/Transaction/Envelope.php), [State](../src/State/State.php)
+and [compute formats](GREENWOOD_COMPUTE_V1.md).
 
 ## Merkle commitments
 
@@ -96,11 +112,18 @@ then key, both bytewise. Active records:
 | validators | validator ID | public_key[32], u32 power=1 |
 
 Zero-balance accounts remain once created. The complete fixed validator set is
-included. Local journal/lock state, height metadata, endpoints, logs, SQLite
+included. Local journal/lock state, local tip-height metadata, endpoints, logs, SQLite
 internals, clocks and paths are excluded. Genesis, speculative execution,
-SQLite inspection and sequential replay use this same commitment. Future
-provider/workload record schemas must be frozen before their passes. Contract
-record schemas are frozen in the 3C section below.
+SQLite inspection and sequential replay use this same commitment.
+
+Current compute namespaces are `compute_requests`, `compute_assignments`,
+`compute_receipts`, `provider_capabilities` and `provider_resource_capabilities`;
+[ComputeState](../src/Compute/Protocol/ComputeState.php) supplies their canonical
+records, including their finalized inclusion heights. Economic chains also commit namespace `economics`, key `native-v1`,
+whose value is the canonical native-ledger snapshot (including service finance
+and governed resource policy). Contract records are specified below. These are
+one logical state tree; a service or meter does not maintain a second monetary
+ledger.
 
 ## Genesis
 
@@ -111,7 +134,7 @@ u32 protocol_version=1
 u32 wasm_abi_version=1
 u32 compute_version=1
 short(chain_id)
-u32 validator_count=4
+u32 validator_count=N
 repeated validators sorted by ID:
     label(id), public_key[32], u32 power=1
 u32 initial_account_count
@@ -123,6 +146,15 @@ Account labels are 1..32 bytes. Duplicate account public keys reject in runtime
 configuration. Maximum initial account count is 10,000. Nonces start at zero.
 Genesis hash is `H(GREENWOOD_GENESIS_V1, canonical_genesis_configuration)`.
 Endpoints are configured separately and do not change the genesis hash.
+When native economics is configured, the canonical genesis bytes append
+`bytes("GREENWOOD_ECONOMICS_V1") | bytes(canonical_economic_policy_json)`.
+That policy commits exact issuance, allocations, fees, reserve/operations limits,
+public authorities and recovery choice. It changes genesis identity; node-local
+settings cannot override it. Fresh-production validation enforces the selected
+15/25/30/25/5 allocation, six decimals, no burn and explicit service trust profiles.
+Historical non-economic or alternative-allocation genesis files remain replay
+inputs, not approved fresh-production templates. See
+[Genesis](../src/Genesis/Genesis.php) and [Policy](../src/Economics/Policy.php).
 
 The genesis block has height and round zero, zero parent and previous-state
 hashes, an empty transaction tree, the complete initial logical state root,
@@ -183,7 +215,8 @@ fields must be empty. Every ID resolves exclusively through trusted genesis.
 A valid signature never excuses wrong chain, genesis, position or proposer.
 
 Quorum certificate: `u32 vote_count | repeated bytes(signed_vote)` sorted by
-validator ID. Count must be 3 or 4. All signatures must be valid, signers unique,
+validator ID. Verified count must be at least `floor(2N/3)+1` and at most `N`.
+All signatures must be valid, signers unique,
 and chain/genesis/height/round/phase/non-nil target identical. Claimed voting
 power is never transmitted or trusted. A FinalityCertificate contains Precommits;
 a proposal's prior-round proof contains Prevotes. Certificate round cannot
@@ -208,8 +241,8 @@ configured proxy.
 ## Rounds, locks and signing recovery
 
 Sort genesis validator IDs bytewise. Proposer is
-`validators[(height + round) mod 4]`. Finality requires strict >2/3, exactly
-three unique votes with this fixed set.
+`validators[(height + round) mod N]`. Finality requires strict >2/3
+of the genesis-fixed equal-power set.
 
 1. Proposer builds a block or reproposes its highest valid block with its
    prior-round prevote proof. New blocks have the current round/proposer.
@@ -217,26 +250,30 @@ three unique votes with this fixed set.
    to the same target, or presented with a valid earlier-round proof strictly
    newer than the local lock. Otherwise prevote nil. A proof must predate the
    proposal round and cannot predate the block construction round.
-3. Three same-round prevotes for a known valid non-nil block establish a valid
+3. A quorum of same-round prevotes for a known valid non-nil block establishes a valid
    block/proof. Persist its height-scoped lock before signing a precommit.
-4. Three unique precommits for a known block produce a FinalityCertificate and
-   trigger the same independent execution/persistence path on every node.
+4. A quorum of unique precommits for a known block produces a FinalityCertificate and
+   triggers the same independent execution/persistence path on every node.
 5. Missing proposals/vote quorums cause nil votes and timed round advancement.
    Locks survive round changes and restarts. Round advancement never unlocks.
    Two distinct authenticated next-round validators justify catching up by one
    round, but do not authorize any vote by themselves.
 
-Local phase timing unit is `min(10, 1 + round/2)` seconds: proposal timeout at
-one unit, nil precommit at two, next round at three. Proposers wait at least
-250ms after entering a height/round. Timing affects only scheduling, never
-signed timestamps or state. Messages rebroadcast every 350ms; sequential sync
-polls every 500ms. Runtime retains a bounded window of consensus rounds, plus
-separate durable lock/valid proof. Old messages may reject; valid finality can
-always arrive through verified sequential sync.
+Local phase timing uses `min(10, 1 + round/2)` seconds: nominal proposal timeout
+at one unit, nil precommit at two and round advancement at three, subject to the
+implemented authenticated liveness/phase-hold rules. The height-level proposal
+gate uses the configured block target (60 seconds for native economics) and is
+not reset by entering another round. This supersedes the original 250ms gate;
+see [ConsensusDriver](../src/Consensus/Runtime/ConsensusDriver.php). Local timing
+schedules messages; it does not create trusted block timestamps or a guaranteed
+wall-clock timelock. Messages rebroadcast about every 350ms and sequential sync
+polls about every 500ms. A bounded round window and separate durable lock/valid
+proof are retained. Old messages may reject; valid finality can arrive through
+verified sequential sync.
 
 Signing position is `(genesis, validator, height, round, phase)`. Before a signed
 message can escape, store unsigned and signed bytes durably in a separate SQLite
-journal with synchronous FULL and a unique position constraint inside
+journal with the configured durability policy and a unique position constraint inside
 BEGIN IMMEDIATE/COMMIT. Same bytes return the prior signature; different bytes
 at the position reject. Never prune safety records. On startup verify journal
 identity and persisted signatures, restore locks/proofs and current-height
@@ -247,13 +284,20 @@ increase a signer's power beyond one.
 
 ## Persistence, sync and crash recovery
 
-One daemon holds a data-directory file lock. For a finalized block:
+One daemon holds a data-directory file lock. The source changes after `bd529a5` use
+[SqliteDurability](../src/Persistence/SqliteDurability.php): disk-backed SQLite
+`journal_mode=DELETE`, `synchronous=EXTRA`, with bounded busy timeout. A database
+still in WAL mode fails startup and needs the documented stopped-service migration;
+startup does not delete/checkpoint sidecars automatically. This source change
+requires rebuilt artifacts; its presence here does not prove deployment. Follow
+[storage operations](../deploy/ansible/STATE_STORAGE.md) and
+[project status](PROJECT_STATUS.md). For a finalized block:
 
 1. Verify certificate and independently execute speculatively.
 2. Write certificate temp, fsync, rename, fsync directory.
 3. Write block temp, fsync, rename, fsync directory (history commit point).
 4. Replace accounts, validators, contracts, derived receipts and tip metadata in SQLite with
-   BEGIN IMMEDIATE/COMMIT and synchronous FULL.
+   BEGIN IMMEDIATE/COMMIT and the configured durability policy.
 5. Publish finalized state; gossip finality afterward.
 
 Conflicting authoritative block files reject. An orphan certificate/temp file is
@@ -280,12 +324,14 @@ by tests.
 Run `php composer.phar test` and `python3 tests/Fixtures/verify_vectors.py`.
 Environment-specific acceptance scripts and their output are local-only under
 ignored `docs/acceptance/`, separate from maintained regression tests.
-Multi-node contract acceptance, compute and full client APIs remain later gates.
+The results below describe their original checkpoints. Current implementation
+and remaining physical acceptance are tracked in [project status](PROJECT_STATUS.md).
 
 ## Contract transactions and logical state (Pass 3C)
 
-Only transaction types **1 Transfer, 2 DeployContract and 3 CallContract** are
-active. The common authenticated envelope, signing digest, transaction hash,
+At the historical Pass 3C checkpoint, the active types were **1 Transfer,
+2 DeployContract and 3 CallContract**. The transaction map above lists later
+accepted extensions. The common authenticated envelope, signing digest, transaction hash,
 transaction commitment and block header are unchanged. Contract payloads use the
 same `bytes(x) = u32(len(x)) | x` encoding and unsigned big-endian integers.
 Decoders consume their entire payload and reject trailing or truncated bytes.
@@ -356,8 +402,11 @@ including sender nonce.** This deliberately follows existing Transfer semantics.
 A block containing such a transaction is invalid; failed calls are not finalized
 as nonce-consuming transactions. No code, storage, balance, attached value, event
 or output survives. A failed transaction can be retried at the same nonce if its
-preconditions change. There are no gas-price or fee economics: gas_limit is the
-Wasmtime fuel budget, gas_used is fuel consumed, with no additional host tariff.
+preconditions change. `gas_limit` is the Wasmtime fuel budget and `gas_used` is consumed fuel, with no
+additional host tariff or gas price. Economic chains separately charge the
+configured flat contract-category transaction fee inside the same atomic
+transition. Rejected transactions charge no fee; the historical non-economic
+checkpoint had no transaction fees.
 
 Build, independent block execution, finalization and replay all use this same
 state transition. A rejected candidate never changes live finalized State or

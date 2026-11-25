@@ -1,202 +1,73 @@
 # Blocks
 
-Blocks are the fundamental unit of chain history.
+A block is a canonical binary header followed by an ordered list of signed
+transaction envelopes. Its hash is the domain-separated BLAKE2b-256 hash of the
+header, whose transaction root commits to the full ordered transaction list.
+See [protocol hashing](hashing.md) and [Protocol v1](../GREENWOOD_PROTOCOL_V1.md).
 
-## Block Structure
+## Header and execution
 
-```json
-{
-  "version": 1,
-  "height": 1,
-  "timestamp": 1234567890,
-  "prev_block_hash": "genesis_or_previous_hash_hex",
-  "transactions": [
-    "tx_hash_1_hex",
-    "tx_hash_2_hex"
-  ],
-  "state_root": "state_root_hash_hex",
-  "validator": "validator_address_hex",
-  "signature": "validator_signature_hex"
-}
+[Header](../../src/Block/Header.php) contains version, chain ID, height, round,
+parent hash, previous state root, transaction root, resulting state root,
+proposer account, genesis hash and timestamp. Version is `u8`; height, round and
+timestamp are `u32`. The current chain requires timestamp **zero**, not a Unix
+clock reading. There is no single validator-signature field in a block.
+
+[Chain](../../src/Node/Chain.php) selects the expected proposer from validators
+sorted by genesis ID, using `(height + round) % validator_count`. Each validator
+checks authorization and executes transactions in their encoded order on cloned
+state. On an economic genesis it also applies the native end-of-block economic
+transition before comparing the resulting state root. Host container execution
+and wall-clock telemetry are outside this deterministic path.
+
+The block bounds are 1,000 transactions and 1 MiB serialized bytes. The current
+proposer iterates its local mempool and selects transactions that execute and fit
+its byte budget; it does not sort by a user-supplied fee. Ordering is committed by
+the proposed block and independently validated by peers.
+
+## Finality and timing
+
+Proposal, prevote and precommit messages establish a strict `> 2/3` certificate
+quorum: `intdiv(2*n,3)+1` for `n` equal-power genesis validators. Three validators
+require all three signatures; a four-validator development fixture requires three.
+A finalized certificate is stored separately from the block. API admission of a
+transaction is not finality. See [consensus](consensus.md).
+
+The default proposal cadence is 60 seconds in
+[ChainConfig](../../src/Node/ChainConfig.php); local fixtures may configure another
+interval. This is a proposal gate, not a promise of wall-clock finality. Round
+progress, peer availability and execution still determine when finality occurs.
+
+## Persistence and recovery
+
+```text
+<data-dir>/blocks/
+  0000000000000000-block.bin
+  0000000000000001-block.bin
+  0000000000000001-cert.bin
 ```
 
-### Fields
+Genesis is deterministic and has no post-genesis precommit certificate. Later
+blocks must link to the trusted genesis and previous tip. Existing block files
+are immutable: an identical write is allowed, conflicting bytes fail closed.
+SQLite is rebuilt from verified history; it cannot replace missing history or a
+validator's separate safety journal. Follow [recovery](../architecture/recovery.md)
+instead of deleting databases to diagnose startup failure.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| version | u32 | Block format version |
-| height | u64 | Block position in chain |
-| timestamp | u64 | Unix timestamp |
-| prev_block_hash | hex64 | Previous block hash |
-| transactions | array | Transaction hashes |
-| state_root | hex64 | Root of state Merkle tree |
-| validator | hex64 | Proposer address |
-| signature | hex | Proposer signature |
+## Querying blocks
 
-## Block Production
+Against a deliberately configured local node, from the repository root:
 
-### 1. Proposer Selection
-
-- Round-robin through validator set
-- Deterministic based on height and validator order
-
-### 2. Transaction Collection
-
-- Mempool transactions sorted by fee
-- Fuel limit enforced per block
-- Deterministic ordering
-
-### 3. Execution
-
-- Transactions executed in order
-- State updated incrementally
-- State root calculated
-
-### 4. Consensus
-
-- Proposer broadcasts block
-- Validators prevote
-- 3+ prevotes → precommit
-- 3+ precommits → finalize
-
-## Block Storage
-
-### Filesystem Layout
-
-```
-blockchain/
-├── 0000000000000001.json  # Block 1
-├── 0000000000000002.json  # Block 2
-└── ...
+```sh
+php bin/greenwood block get 1 --rpc=http://127.0.0.1:9201
+php bin/greenwood chain finality --rpc=http://127.0.0.1:9201
 ```
 
-### Block File Format
-
-```json
-{
-  "header": { ...block header... },
-  "transactions": [
-    {
-      "hash": "tx_hash",
-      "envelope": "base64_envelope"
-    }
-  ],
-  "finality_certificate": {
-    "height": 1,
-    "round": 0,
-    "votes": [...]
-  }
-}
-```
-
-## Block Hash Calculation
-
-```
-SHA3_256(
-  version ||
-  height ||
-  timestamp ||
-  prev_block_hash ||
-  transactions_root ||
-  state_root ||
-  validator ||
-  signature
-)
-```
-
-## Genesis Block
-
-The first block (height 0):
-
-```json
-{
-  "version": 1,
-  "height": 0,
-  "timestamp": 1234567890,
-  "prev_block_hash": "0000...0000",
-  "transactions": [],
-  "state_root": "initial_state_root",
-  "validator": "genesis_validator",
-  "signature": "genesis_signature"
-}
-```
-
-## RPC Endpoints
-
-```bash
-# Get block by height
-curl http://localhost:9201/v1/blocks/1
-
-# Get block by hash
-curl http://localhost:9201/v1/blocks/hash/<hash>
-
-# Get chain status
-curl http://localhost:9201/v1/chain/status
-
-# Get finality info
-curl http://localhost:9201/v1/chain/finality
-```
-
-## Block Finality
-
-### Finality Certificate
-
-```json
-{
-  "height": 1,
-  "round": 0,
-  "precommits": [
-    {
-      "validator": "validator_address",
-      "signature": "signature"
-    }
-  ]
-}
-```
-
-### Finality Requirements
-
-- **4 validators** in default config
-- A strict `>2/3` quorum of the genesis validator set is required (3-of-3 for
-  three validators, 3-of-4 for four).
-- **Certificate** stored with block
-
-## Chain History
-
-### Rebuilding State
-
-State can be rebuilt from blocks:
-
-```bash
-# Reset state
-rm ~/greenwood-data/state.sqlite
-
-# Restart node
-bin/greenwood start --data-dir=~/greenwood-data
-```
-
-Node replays all blocks and rebuilds state.
-
-### Verification
-
-Each block's state root must match:
-
-1. Execute all transactions
-2. Calculate new state
-3. Compare to state_root in block
-4. Reject if mismatch
-
-## Block Time
-
-- **Target**: ~1 second per block
-- **Adjustable**: Based on network conditions
-- **Consensus-driven**: Finality determines time
-
-## Security
-
-- **Immutable**: Cannot modify past blocks
-- **Chain of custody**: Each block links to previous
-- **Validator signatures**: Prevents tampering
+The block RPC DTO contains `height`, `round`, `block_hash`, `parent_hash`,
+`state_root`, `previous_state_root`, `transactions_root`, `proposer`, transaction
+hashes and `finality_certificate_present`. It is a query representation, not the
+canonical binary encoding. See [RPC responses](../rpc/public-api-endpoints-1.md).
+Current deployment evidence is maintained in [project status](../PROJECT_STATUS.md).
 
 ---
 

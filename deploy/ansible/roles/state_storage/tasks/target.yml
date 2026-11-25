@@ -1,0 +1,81 @@
+---
+- ansible.builtin.import_tasks: install_tools.yml
+
+- name: Install iSCSI target library without starting package services
+  ansible.builtin.apt:
+    name: [python3-rtslib-fb, e2fsprogs]
+    state: present
+    policy_rc_d: 101
+
+- name: Disable unscoped automatic target restoration
+  ansible.builtin.systemd_service:
+    name: rtslib-fb-targetctl.service
+    enabled: false
+    masked: true
+    state: stopped
+
+- name: Inspect target metadata directory ancestry without reading stored configuration
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    follow: false
+    get_checksum: false
+    get_mime: false
+    get_attributes: false
+  loop: ['/', /etc, /etc/rtslib-fb-target]
+  register: greenwood_target_metadata_paths
+
+- name: Require protected real directories for the target library metadata
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists or item.item == '/etc/rtslib-fb-target'
+      - >-
+        not item.stat.exists or
+        (item.stat.isdir and not item.stat.islnk and
+         item.stat.uid == 0 and item.stat.gid == 0 and
+         item.stat.mode in ['0700', '0750', '0755'])
+    fail_msg: Target library metadata ancestry must be root-owned real directories; preserve existing configuration and review its metadata
+  loop: "{{ greenwood_target_metadata_paths.results }}"
+
+# Ubuntu's package service normally makes this directory before targetctl
+# restore. We suppress that unscoped restore, so provide only its directory
+# prerequisite. Never read, load or overwrite a saved target configuration.
+- name: Create missing target library metadata directory without restoring targets
+  ansible.builtin.file:
+    path: /etc/rtslib-fb-target
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: not greenwood_target_metadata_paths.results[-1].stat.exists
+
+- name: Create and format only three new exclusive preallocated backing files
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - /etc/greenwood-storage/prepare_state_storage.py
+      - --plan-file
+      - /etc/greenwood-storage/plan.json
+      - --approved-sha256
+      - "{{ greenwood_storage_plan_sha256 }}"
+      - --node
+      - node-4
+      - --action
+      - create-target-files
+      - --approve-storage-changes
+  when: not greenwood_storage_resume_prepared_target | bool
+
+- name: Install only the scoped target restoration unit
+  ansible.builtin.template:
+    src: target.service.j2
+    dest: /etc/systemd/system/greenwood-state-target.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Start the approved storage targets without touching network boot services
+  ansible.builtin.systemd_service:
+    name: greenwood-state-target.service
+    daemon_reload: true
+    enabled: true
+    state: started
+  no_log: true

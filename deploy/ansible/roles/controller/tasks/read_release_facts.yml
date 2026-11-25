@@ -1,0 +1,24 @@
+---
+# Import this through the controller role so inventory pins and custom paths
+# override role defaults. Loading defaults through vars_files reverses precedence
+# and replaces the approved source SHA with the empty default.
+- name: Require an approved source revision before resolving the release path
+  ansible.builtin.assert:
+    that:
+      - greenwood_source_sha is match('^[a-f0-9]{40}$')
+    fail_msg: "An approved source revision is required to read controller release facts"
+
+- name: Read recorded release facts
+  ansible.builtin.slurp:
+    src: "{{ greenwood_build_dir }}/artifacts/latest-release.json"
+  register: release_facts_raw
+
+- name: Parse release facts
+  ansible.builtin.set_fact:
+    release_facts: "{{ release_facts_raw.content | b64decode | from_json }}"
+
+- name: Require release facts to identify the pinned runtime source
+  ansible.builtin.assert:
+    that:
+      - release_facts.source_sha == greenwood_source_sha
+    fail_msg: "Controller release facts do not identify the pinned runtime source"

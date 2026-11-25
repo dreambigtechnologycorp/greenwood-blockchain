@@ -1,5 +1,9 @@
 # GRU settlement integration — November 14, 2026
 
+> **Historical scope — reviewed November 24, 2026.** This finite-CPU milestone predates hosted/resource settlement, explicit Epoch 0 profiles, SDK integration and recovery implementation.
+> Read the [economics index](README.md) for current source and policy precedence,
+> and [project status](../PROJECT_STATUS.md) for release/installation and qualification.
+
 Latest update: [HOSTED_SETTLEMENT_REPORT.md](HOSTED_SETTLEMENT_REPORT.md) supersedes this finite-compute milestone report for hosted support and service-history replay. The text below records the earlier milestone and its then-outstanding work.
 
 Status: finite compute CPU settlement implemented locally. The complete requested production milestone is **incomplete**. Hosted recurring billing, operational independent metering/attestation, lost-quorum recovery, a real operating budget and distributed acceptance remain outstanding. No permanent genesis, keys, live payments, deployment or remote push occurred.

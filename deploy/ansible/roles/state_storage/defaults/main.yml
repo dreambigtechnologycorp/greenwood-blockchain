@@ -1,0 +1,8 @@
+---
+greenwood_storage_plan: {}
+greenwood_storage_plan_sha256: ''
+greenwood_storage_preparation_approved: false
+greenwood_operator_secret_access_authorized: false
+greenwood_storage_operation: check
+greenwood_storage_resume_prepared_target: false
+greenwood_storage_resume_mounted_client: ''

@@ -1,5 +1,9 @@
 # Attestation trust — candidate
 
+> **Historical scope — reviewed November 24, 2026.** Its rejection of all payable bootstrap funding is superseded: current source permits explicitly governed customer-funded Epoch 0 services with zero subsidy, while preserving independent-profile requirements.
+> Read the [economics index](../README.md) for current source and policy precedence,
+> and [project status](../../PROJECT_STATUS.md) for release/installation and qualification.
+
 DEV_SIMULATED is synthetic development evidence. BOOTSTRAP_OPERATOR_ATTESTED is
 explicitly provider-origin and the signed observation format is always nonpayable.
 INDEPENDENT_ATTESTED is a new opt-in native program restriction requiring E2 and

@@ -22,10 +22,10 @@ final class SystemServiceInstallJournal
         if(!is_dir($directory)&&!mkdir($directory,0700,true)&&!is_dir($directory))throw new \RuntimeException('Service journal unavailable');
         if(realpath($directory)!==$directory||is_link($directory)||fileowner($directory)!==posix_geteuid()||(fileperms($directory)&0077)!==0)throw new \RuntimeException('Private service journal required');
         $path=$directory.'/system-service-installs.sqlite';
-        foreach(['','-wal','-shm'] as $suffix)if(is_link($path.$suffix)||(file_exists($path.$suffix)&&(!is_file($path.$suffix)||fileowner($path.$suffix)!==posix_geteuid()||(fileperms($path.$suffix)&0077)!==0)))throw new \RuntimeException('Unsafe service journal file');
+        foreach(['','-journal','-wal','-shm'] as $suffix)if(is_link($path.$suffix)||(file_exists($path.$suffix)&&(!is_file($path.$suffix)||fileowner($path.$suffix)!==posix_geteuid()||(fileperms($path.$suffix)&0077)!==0)))throw new \RuntimeException('Unsafe service journal file');
         $this->archive=new JournalArchive($directory.'/archive');
         $this->db=new \PDO('sqlite:'.$path,null,null,[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);chmod($path,0600);
-        $this->db->exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=1000');
+        \Greenwood\Persistence\SqliteDurability::configure($this->db, 1000);
         if($this->db->query('PRAGMA quick_check')->fetchColumn()!=='ok')throw new \RuntimeException('Service journal corrupt');
         $this->db->exec('CREATE TABLE IF NOT EXISTS archived_installs(policy_hash TEXT PRIMARY KEY,container_id TEXT UNIQUE NOT NULL,digest TEXT NOT NULL)');
         $this->db->exec('CREATE TABLE IF NOT EXISTS identity(chain TEXT NOT NULL,genesis TEXT NOT NULL)');

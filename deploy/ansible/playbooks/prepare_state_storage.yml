@@ -1,0 +1,35 @@
+---
+# Human-controlled storage preparation only. No credentials, chain state or
+# existing media are deleted; protocol activation is a later guarded step.
+- name: Check all exact machines media approvals and networking before storage changes
+  hosts: all
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: state_storage
+        tasks_from: preflight
+
+- name: Prepare only the dedicated Node 4 state targets
+  hosts: node-4
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: state_storage
+        tasks_from: target
+      when: greenwood_storage_operation == 'apply'
+
+- name: Preserve and bind each exact client state volume
+  hosts: 'validators:providers:control_plane:system_runtime_hosts'
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 1
+  tasks:
+    - ansible.builtin.import_role:
+        name: state_storage
+        tasks_from: client
+      when: greenwood_storage_operation == 'apply'

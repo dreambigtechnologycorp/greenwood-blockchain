@@ -1,257 +1,80 @@
-# Consensus Layer
+# Consensus layer
 
-The consensus layer implements BFT finality.
+[ConsensusDriver](../../src/Consensus/Runtime/ConsensusDriver.php) implements the
+proposal/prevote/precommit state machine around the shared
+[Chain](../../src/Node/Chain.php) executor. Consensus is restricted to the trusted,
+genesis-fixed equal-power validator set. Current physical acceptance and operator
+topology are recorded in [project status](../PROJECT_STATUS.md).
 
-## BFT Algorithm
+## State machine
 
-Greenwood uses a variant of Tendermint consensus.
+At each height, the driver tracks round, proposals, known blocks, authenticated
+votes, locks and valid quorum proofs. The proposer is selected from validators
+sorted by ID using `(height + round) % validator_count`. Each candidate is executed
+against cloned state before votes can authorize finality.
 
-### Algorithm Properties
+A matching strict quorum of prevotes supplies the proof for a durable lock. The
+lock is persisted before the precommit signature is emitted. A matching strict
+quorum of precommits finalizes a known block. Nil votes and timeouts permit round
+progress; they do not create a finalized block. A higher-round proof can permit
+voting beyond an earlier lock under the implemented validation rules.
 
-- **Safety**: No two validators finalize different blocks at same height
-- **Liveness**: Requires the strict quorum of participating validators and the
-  consensus protocol's timing assumptions, not merely three online hosts.
-- **Quorum**: `intdiv(2*n,3)+1`; three-validator profile is 3-of-3, four-validator
-  local fixture is 3-of-4. Membership is fixed by genesis.
+[Certificate::quorum()](../../src/Consensus/Messages/Certificate.php) computes
+`intdiv(2*n,3)+1`. This is 3-of-3 for three validators and 3-of-4 for the local
+four-validator fixture. Liveness requires the quorum and protocol timing
+assumptions; safety also depends on the assumed fault bound and durable signing
+state. A count of administered machines does not establish independent validator control.
 
-Message/class examples below are explanatory sketches, not wire schemas or exact
-PHP class definitions. Current implementation anchors are
-`src/Consensus/Runtime/ConsensusDriver.php`, `src/Consensus/Messages/Certificate.php`
-and `src/Consensus/Network/Transport.php`.
+## Timers and cadence
 
-### Phases
+The proposal gate uses `ChainConfig::blockTimeSeconds()` (default 60 seconds).
+Round phase timers are separate: the current base unit is
+`min(10, 1 + round * 0.5)` seconds. The driver also has authenticated proposer
+catch-up and phase-hold logic; these do not reset the height-level proposal gate.
+A configured interval is not a finality-latency guarantee. Consult the driver and
+its [consensus tests](../../tests/Consensus/) before changing timing behavior.
 
-```
-Phase 1: Proposal
-├── Proposer selected (round-robin)
-├── Broadcast block to all validators
-└── Validators receive block
+## Canonical messages and transport
 
-Phase 2: Prevote
-├── Each validator votes
-├── Broadcast prevote to all validators
-└── Collect prevotes
+The actual signed type is [Message](../../src/Consensus/Messages/Message.php),
+not separate illustrative Proposal/Prevote PHP classes. It binds kind, chain,
+genesis, height, round, validator, target, block and proof. Signature digests use
+phase-specific domains. Nil targets are represented by empty bytes; a block target
+is 32 bytes. [Certificate](../../src/Consensus/Messages/Certificate.php) canonically
+orders votes and verifies distinct identities and matching vote context.
 
-Phase 3: Precommit
-├── If a matching strict quorum of prevotes is received
-├── Broadcast precommit to all validators
-└── Collect precommits
+[Transport](../../src/Consensus/Network/Transport.php) sends HTTP envelopes with
+`type` and a base64 `payload` of canonical bytes. Internal POST routes are
+`/consensus/proposal`, `/consensus/prevote`, `/consensus/precommit`,
+`/consensus/finality` and `/transactions`; sequential finality synchronization uses
+`GET /sync/{height}`. Finality payloads contain the block and its certificate.
+These internal transport routes are separate from the public `/v1` DTO contract.
 
-Phase 4: Finalize
-├── If a matching strict quorum of precommits is received
-├── Mark block as final
-└── Store finality certificate
-```
+## Signing and recovery
 
-## Message Types
+[SafetyJournal](../../src/Consensus/Journal/SafetyJournal.php) exposes `sign()`,
+`messages()`, `lock()` and `getLock()`. Its identity binds genesis, validator ID
+and public key. Startup verifies recorded message signatures. A repeated identical
+signing request returns its persisted message; conflicting bytes for the same
+height, round and phase are rejected. Preserve `signing.sqlite` and
+`validator.initialized`; loss of initialized safety state must not be repaired by
+creating a blank journal.
 
-### Proposal Message
+The current source uses the shared SQLite rollback-journal durability policy;
+see [state storage](state.md) for the offline migration boundary. That source
+behavior is not evidence of completed physical storage qualification.
 
-```php
-namespace Greenwood\Consensus\Messages;
+Post-genesis history replay verifies certificates and runs the same deterministic
+executor used for live blocks. It rebuilds the derived state index and resumes the
+next height. See [chain history](chain-history.md) and [recovery](recovery.md).
 
-class Proposal {
-    public int $height;
-    public int $round;
-    public string $blockHash;
-    public int $timestamp;
-    public string $proposer;
-    public string $signature;
-}
-```
+## Inspection
 
-### Prevote Message
-
-```php
-class Prevote {
-    public int $height;
-    public int $round;
-    public string $blockHash;
-    public int $timestamp;
-    public string $validator;
-    public string $signature;
-}
-```
-
-### Precommit Message
-
-```php
-class Precommit {
-    public int $height;
-    public int $round;
-    public string $blockHash;
-    public int $timestamp;
-    public string $validator;
-    public string $signature;
-}
-```
-
-### Finality Certificate
-
-```php
-class FinalityCertificate {
-    public int $height;
-    public int $round;
-    public array $precommits;  // validator + signature
-}
-```
-
-## Consensus State
-
-```php
-namespace Greenwood\Consensus;
-
-class ConsensusState {
-    public int $height;
-    public int $round;
-    public ?string $proposedBlock;
-    public array $prevotes;      // validator => signature
-    public array $precommits;    // validator => signature
-    public int $prevoteTimestamp;
-    public int $precommitTimestamp;
-}
-```
-
-## Proposer Rotation
-
-```php
-function getProposer(int $height, array $validators): string {
-    $index = $height % count($validators);
-    return $validators[$index]['address'];
-}
-```
-
-## Round Timers
-
-```php
-// Proposal timeout: 1 second
-// Prevote timeout: 1 second  
-// Precommit timeout: 1 second
-```
-
-## Safety Journal
-
-Tracks validator signatures to prevent double signing:
-
-```php
-namespace Greenwood\Consensus\Journal;
-
-class SafetyJournal {
-    public function recordSignature(
-        string $validator,
-        int $height,
-        int $round,
-        string $signature
-    ): void {
-        // Store in SQLite
-    }
-    
-    public function checkEquivocation(
-        string $validator,
-        int $height,
-        int $round
-    ): bool {
-        // Check for conflicting signatures
-    }
-}
-```
-
-## Network Transport
-
-```php
-namespace Greenwood\Consensus\Network;
-
-class Transport {
-    public function broadcast(
-        string $messageType,
-        array $message,
-        array $peers
-    ): void {
-        // HTTP POST to each peer
-    }
-    
-    public function receive(): array {
-        // HTTP endpoint for incoming messages
-    }
-}
-```
-
-## Consensus Driver
-
-```php
-namespace Greenwood\Consensus;
-
-class ConsensusDriver {
-    public function run(): void {
-        while (true) {
-            $state = $this->loadState();
-            
-            if ($this->shouldPropose($state)) {
-                $this->propose($state);
-            }
-            
-            if ($this->shouldPrevote($state)) {
-                $this->prevote($state);
-            }
-            
-            if ($this->shouldPrecommit($state)) {
-                $this->precommit($state);
-            }
-            
-            if ($this->shouldFinalize($state)) {
-                $this->finalize($state);
-            }
-            
-            $this->sleep($interval);
-        }
-    }
-}
-```
-
-## Recovery
-
-On node restart:
-
-```php
-public function recover(): void {
-    // Load last finality height
-    // Load last state root
-    // Verify finality certificate
-    // Join consensus at current height
-}
-```
-
-## RPC Endpoints
-
-```bash
-# Get finality info
-GET /v1/chain/finality
-
-# Get validators
-GET /v1/chain/validators
-
-# Get chain status
-GET /v1/chain/status
-```
-
-## Testing
-
-```php
-namespace Tests\Consensus;
-
-class TetheredPacemakerModelTest {
-    public function testFinality(): void {
-        // Simulate 4 validators
-        // Propose, prevote, precommit
-        // Verify strict quorum for the genesis validator count
-    }
-    
-    public function testByzantine(): void {
-        // Simulate 1 Byzantine validator
-        // Verify finality still achieved
-    }
-}
-```
+Public reads: `GET /v1/chain/status`, `/v1/chain/finality` and
+`/v1/chain/validators`. Authenticated local operator reads additionally expose
+validator status and consensus state. See [RPC v1](../rpc-v1.md) and
+[operator API](../operator-api.md). Health, membership and certificate-presence
+fields each have narrower meanings than full physical acceptance.
 
 ---
 

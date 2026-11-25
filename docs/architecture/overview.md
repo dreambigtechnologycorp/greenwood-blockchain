@@ -41,7 +41,8 @@ also loads its Ed25519 key and a separate durable `signing.sqlite` journal. The
 journal is not derived state: it prevents a restarted validator from signing a
 conflicting message for the same height, round, and phase.
 
-The public API is an adapter over finalized `Chain`/`State` data. Optional
+The public API is an adapter over finalized `Chain`/`State` data, including the
+native economic/resource records when enabled by genesis. Optional
 operator routes are served from a separately configured Unix socket and require
 a bearer token; they are never exposed by the public listener.
 
@@ -67,7 +68,10 @@ Hosted application orchestration adds a separate control plane: finalized regist
 authority, signed allocation generations, receiver ACKs, provider reservation and
 runtime inspection, and managed edge content readiness. It is not part of block
 validation. See [current functionality](../CURRENT_FUNCTIONALITY.md) for its
-components, durable stores and enablement boundaries.
+components and enablement boundaries, and [project status](../PROJECT_STATUS.md)
+for current deployment evidence. Provider, assignment, policy and operation
+journals contain non-rebuildable authorization/ownership decisions; preserve them
+during storage migration and recovery.
 
 | Data | Owner | Authority | Rebuildable? |
 |---|---|---|---|
@@ -76,7 +80,7 @@ components, durable stores and enablement boundaries.
 | `blocks/*-cert.bin` | node | Finality evidence | Re-fetch only from trusted finalized evidence. |
 | `state.sqlite` | node | Query/index cache | Yes; reconstructed from genesis and blocks. |
 | `signing.sqlite` | validator | Anti-equivocation safety journal | No; loss after initialization fails closed. |
-| provider registry/runtime files | provider | Local orchestration state | Reconciled against finalized state. |
+| provider/controller/policy journals | respective service | Local ownership, authorization and orchestration decisions | Preserve; reconciliation is not permission to discard them. |
 
 ## Deterministic execution path
 

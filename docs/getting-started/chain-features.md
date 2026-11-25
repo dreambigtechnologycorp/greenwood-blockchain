@@ -1,73 +1,25 @@
-# Core Chain Features
+# Implemented network capabilities
 
-Greenwood implements a complete Layer 1 blockchain with these key features.
+This page is a capability map. [Project status](../PROJECT_STATUS.md) records the
+release boundary; [current functionality](../CURRENT_FUNCTIONALITY.md) explains
+operational constraints. No feature here implies a required machine topology.
 
-## Accounts
+| Capability | What the implementation provides | Read next |
+| --- | --- | --- |
+| Consensus | Genesis-fixed equal-power validators, strict greater-than-two-thirds certificates, persistent signing safety | [Consensus](../concepts/consensus.md) |
+| Transactions and state | Canonical signed envelopes, deterministic transitions, verified block replay | [Transactions](../concepts/transactions.md), [state](../architecture/state.md) |
+| Contracts | Restricted deterministic Wasmtime host ABI, gas/fuel and bounded memory, transactional effects | [Contract quickstart](../contracts/quickstart.md) |
+| Compute jobs | Finalized requests, capabilities, assignment and receipts; provider-side execution | [Compute v1](../GREENWOOD_COMPUTE_V1.md) |
+| Hosted applications | Finalized application authority plus signed physical assignment, receiver acknowledgement, edge and runtime checks | [Hosted workflow](../CURRENT_FUNCTIONALITY.md#hosted-applications) |
+| Resource settlement | GWD funding and GRU accounting, qualified resource profiles, explicit subsidy and trust rules | [Economics](../economics/README.md), [metering](../guides/RESOURCE_METERING.md) |
+| Operations | Role-based Ansible configuration, pinned artifacts, credential boundaries, guarded storage and recovery | [Operator onboarding](../operations/ROLE_BASED_ONBOARDING.md) |
 
-- **Ed25519 cryptography** - Industry-standard signatures
-- **Deterministic addresses** - 64-character hex addresses
-- **Balances** - Transferable token balances
-- **Nonces** - Replay protection and ordering
+Off-chain compute results are not automatically replayed or independently proven
+by consensus. A local observer is not independent hardware attestation. The
+signing journal protects against conflicting local signatures; it is not a
+general Byzantine-fault detector. Eligibility, metering and settlement must use
+the actual approved trust class.
 
-## Transactions
-
-- **Signed envelopes** - Type + payload + signature
-- **Deterministic encoding** - Same bytes = same hash
-- **Gas-like pricing** - Fuel-based execution limits
-- **Finality guarantees** - strict `>2/3` quorum derived from the genesis set
-
-## Blocks
-
-- **Fixed validator set** - 4 nodes by default
-- **Prevote/Precommit** - Tendermint-style consensus
-- **Filesystem storage** - Immutable block files
-- **Rebuildable state** - State can be reconstructed
-
-## Consensus
-
-- **BFT finality** - 3-of-3 for the physical three-validator profile; 3-of-4 for local four-validator fixtures
-- **Proposer rotation** - Round-robin proposer selection
-- **Safety journal** - Byzantine fault detection
-- **Restart recovery** - Resume from last finality
-
-## Smart Contracts
-
-- **WASM execution** - Deterministic, sandboxed
-- **State persistence** - Contract storage across blocks
-- **Events** - Emit indexed events
-- **Balances** - Attach tokens to contracts
-
-## Compute Workloads
-
-- **Container execution** - OCI container support
-- **Resource limits** - CPU, memory, PIDs limits
-- **Receipts** - Deterministic execution results
-- **Security isolation** - Containerd isolation
-
-## RPC API
-
-- **Public endpoints** - Query finalized state
-- **Operator endpoints** - Node management
-- **Rate limiting** - Protection against abuse
-- **Health checks** - Liveness and readiness
-
-## Testing
-
-Run the acceptance tests:
-
-```bash
-# Run all integration tests
-php tests/Integration/Pass1Test.php
-
-# Run contract tests
-php tests/Integration/Pass3ATest.php
-
-# Run consensus tests
-php tests/Consensus/TetheredPacemakerModelTest.php
-```
-
----
-
-<!-- docs-nav -->
-**Continue reading:** [Documentation hub](../README.md) · [Getting started](overview.md) · [Local quickstart](quickstart.md)
-<!-- /docs-nav -->
+Run verification through the [test entrypoints](../testing/overview.md), not by
+executing PHPUnit class files directly. To explore without affecting an existing
+network, use the [disposable quickstart](quickstart.md).

@@ -1,11 +1,20 @@
 # Resource service release composition
 
 `scripts/build-resource-services.sh NEW_OUTPUT_DIRECTORY` builds committed source
-into local OCI archives for the meter, attestor and coordinator. Supply a reviewed
+into local OCI archives for the registry, registry-auth, meter, attestor and
+coordinator. Supply a reviewed
 `GREENWOOD_PHP_RUNTIME=registry/image@sha256:…` with PHP 8.5, Sodium, SQLite, POSIX,
 PCNTL and FFI plus the pinned Wasmtime library. The builder does not install or push
-images. Record the OCI manifest digest from build metadata, not the tar SHA256, in
-governance service policies. Publication and physical OCI acceptance remain separate.
+images. It refuses modified or untracked files under `src/` and `system-services/`;
+review and commit the intended source before building. The default platform is
+`linux/arm64`; set `GREENWOOD_SERVICE_PLATFORM=linux/amd64` for that supported
+architecture. Each target must receive artifacts matching its reviewed runtime
+and architecture. Record the OCI manifest digest from build metadata, not the tar SHA256, in
+governance service policies. Build verification writes `SOURCE_COMMIT` and
+`SHA256SUMS`; retain the complete metadata/provenance/SBOM evidence. Publication,
+protected policy updates and physical OCI acceptance remain separate. See
+[project status](../../docs/PROJECT_STATUS.md) before interpreting older artifact
+pins as evidence for the working checkout.
 
 The meter uses its existing private Unix protocol. The attestor and coordinator
 use `resource-worker.php PRIVATE_DIRECTORY`, with an exclusive ownership lock and
