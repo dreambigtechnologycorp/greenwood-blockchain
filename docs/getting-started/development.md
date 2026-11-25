@@ -5,8 +5,9 @@ inventory, production keys, live node state or a network deployment command.
 
 ## 1. Prepare the toolchain
 
-Install PHP 8.5 and Composer 2. The production runtime and CI pin PHP **8.5.12**;
-use that version when reproducing release behavior. Required Composer extensions
+Install PHP 8.5 and Composer 2. The production runtime pins PHP **8.5.12**;
+use that version when reproducing release behavior. CI requests **8.5.13** and
+prints the installed patch version. Required Composer extensions
 are Sodium, PDO SQLite and FFI. Provider/process tests also need POSIX and PCNTL;
 live containerd integration additionally needs the native gRPC extension and
 qualified Linux runtime. See [runtime requirements](../linux-execution-manifest.md).

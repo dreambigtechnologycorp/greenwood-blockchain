@@ -18,11 +18,15 @@ trusted maintainer is available, require one approval and dismiss stale approval
 Review collaborator access separately and grant write access only where needed.
 Confirm the chosen protection or ruleset covers direct pushes and bypass actors.
 
-The `CI` workflow runs existing PHP unit, packaging and independent vector checks
-on pushes and pull requests with read-only permissions and without repository
-secrets. It does not run deployment commands, live containerd jobs or bare-metal
-tests. Native contract, integration and physical acceptance results remain
-separate from these required checks.
+The `CI` workflow runs the complete PHPUnit `source,contracts` suites, packaging
+and independent vector checks on pull requests and pushes to `main`, with
+read-only permissions and without repository secrets. Feature-branch pushes
+are covered by their PR run, avoiding duplicate jobs. The existing required-check
+name `PHP unit checks` is retained; it now includes integration, consensus, RPC,
+CLI, operator, compute and Wasmtime-backed contract tests. CI verifies the pinned
+Wasmtime archive checksum and installs its shared library and matching headers.
+Deployment commands, the separately configured live-containerd `native` suite
+and physical acceptance remain outside these required checks.
 
 After enabling protection, use a harmless PR to verify that failed checks and
 unresolved conversations block merging. Confirm through GitHub's settings or API

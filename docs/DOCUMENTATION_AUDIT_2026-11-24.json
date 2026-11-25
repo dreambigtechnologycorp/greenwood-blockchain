@@ -266,7 +266,7 @@
     {
       "path": "docs/branch-protection.md",
       "disposition": "updated",
-      "sha256": "c0c57f5772f372d92fa1be3230bd1ca849aae773a4c0c21bd65566cb16f01ba2"
+      "sha256": "e73920f723613feec219c3a0300394d59e27a3d661c31a72304ded47c5e9d324"
     },
     {
       "path": "docs/cli.md",
@@ -806,7 +806,7 @@
     {
       "path": "docs/getting-started/development.md",
       "disposition": "new",
-      "sha256": "605072ee2979d552a2a9fb8059c7925f6b76b019ee218c7dfa247d5d5058e5f8"
+      "sha256": "7c41a49022a69eb97ef6eac83bcba52c420b3e57e477f36992625df8474957d1"
     },
     {
       "path": "docs/getting-started/overview.md",
